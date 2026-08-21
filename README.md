@@ -6,13 +6,12 @@
 
 [![CI Pipeline](https://github.com/dixtuel/pulseroute/actions/workflows/ci.yml/badge.svg)](https://github.com/dixtuel/pulseroute/actions)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces)
-[![GitHub Pages Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-indigo.svg)](https://dixtuel.github.io/pulseroute)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
 *Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, brute-force defense, and an embedded modern web dashboard with rich terminal CLI.*
 
-[Live GitHub Pages Demo](https://dixtuel.github.io/pulseroute) • [1-Click Codespaces](#1-click-github-codespaces-instant-demo) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli)
+[Launch Instant Cloud Demo](#instant-cloud-demo-github-codespaces) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Production Deploy](#production-deployment-docker-compose)
 
 ---
 
@@ -34,6 +33,18 @@ PulseRoute bridges the gap between lightweight hobby shorteners and heavyweight 
   - `MODE=public`: Community shortener with sliding-window rate limiting & malware blocklists.
   - `MODE=multi_tenant`: Agency SaaS with isolated workspaces, domain-scoped slugs, and quotas.
 - **Rich Terminal CLI & Embedded Dashboard:** Control everything from a clean terminal UI or the included SPA web panel.
+
+---
+
+## Instant Cloud Demo (GitHub Codespaces)
+
+You can launch and test the entire stack (FastAPI backend, Redis, SQLite/PostgreSQL, and Web Dashboard) directly in your browser with **zero local installation**:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces)
+
+1. Click the **Open in GitHub Codespaces** badge above.
+2. The cloud container will automatically initialize dependencies, start the background workers, and open the interactive Web Dashboard in a new browser tab.
+3. Access Swagger API documentation at `/docs` or control links via the integrated terminal with `pulseroute link create`.
 
 ---
 
@@ -69,19 +80,6 @@ graph TD
 - **GDPR / KVKK Compliance:** Raw visitor IP addresses are never saved to disk. IPs are masked (`192.168.1.0/24`) prior to database persistence.
 - **Data Encryption at Rest:** Sensitive tokens and webhook secrets are encrypted with AES-256-GCM.
 - **Custom Error Handling:** Branded 404/410/500 pages with support for custom fallback URLs per domain.
-
----
-
-## 1-Click GitHub Codespaces (Instant Demo)
-
-Try PulseRoute directly in your browser without installing anything locally:
-
-1. Click [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces)
-2. Once the environment boots, run:
-   ```bash
-   pulseroute serve
-   ```
-3. Open `http://localhost:8000/dashboard` in the forwarded ports tab.
 
 ---
 
