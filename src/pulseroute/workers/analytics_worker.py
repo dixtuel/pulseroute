@@ -2,7 +2,7 @@ import asyncio
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import update
+from sqlalchemy import func, update
 
 from pulseroute.core.database import async_session_maker
 from pulseroute.core.redis import get_redis
@@ -81,7 +81,7 @@ async def run_analytics_batch_worker(batch_size: int = 100, interval_seconds: fl
                     # Update aggregate click counters
                     for l_id, count in link_click_counts.items():
                         await db.execute(
-                            update(ShortLink).where(ShortLink.id == l_id).values(total_clicks=ShortLink.total_clicks + count)
+                            update(ShortLink).where(ShortLink.id == l_id).values(total_clicks=func.coalesce(ShortLink.total_clicks, 0) + count)
                         )
                     await db.commit()
 

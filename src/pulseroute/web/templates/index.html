@@ -214,6 +214,20 @@
                 
                 document.getElementById('statBotClicks').innerText = data.bot_clicks;
 
+                // Render Countries Breakdown
+                const countryContainer = document.getElementById('countriesBreakdown');
+                if (data.countries && data.countries.length) {
+                    countryContainer.innerHTML = '<p class="font-semibold text-slate-300">Top Countries</p>' +
+                        data.countries.map(c => `
+                            <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                                <span class="font-mono text-slate-300">${c.name}</span>
+                                <span class="text-indigo-400 font-bold">${c.count} (${c.percentage}%)</span>
+                            </div>
+                        `).join('');
+                } else {
+                    countryContainer.innerHTML = '<p class="font-semibold text-slate-300">Top Countries</p><div class="text-slate-500">No click data yet</div>';
+                }
+
                 // Render Chart
                 const ctx = document.getElementById('deviceChart').getContext('2d');
                 const labels = data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
