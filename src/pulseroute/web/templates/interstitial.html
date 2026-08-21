@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="{{ delay }};url={{ target_url }}">
     <title>{{ title or "Redirecting..." }} | PulseRoute</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -101,10 +100,10 @@
                 </div>
             </div>
 
-            <!-- Manual Proceed Button -->
+            <!-- Manual Proceed Button (disabled until countdown ends) -->
             <div class="pt-1">
-                <a id="proceedBtn" href="{{ target_url }}" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 font-display font-bold text-xs uppercase tracking-wider text-black transition shadow-lg shadow-amber-500/10 w-full">
-                    <span>Skip & Proceed Immediately</span>
+                <a id="proceedBtn" href="javascript:void(0)" aria-disabled="true" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-panel border border-divider text-slate-500 font-display font-bold text-xs uppercase tracking-wider transition shadow-lg w-full cursor-not-allowed select-none">
+                    <span id="proceedBtnLabel">Please Wait ({{ delay }}s)</span>
                     <i class="fa-solid fa-arrow-right text-[10px]"></i>
                 </a>
             </div>
@@ -120,17 +119,33 @@
         let seconds = parseInt("{{ delay }}") || 5;
         const countdownEl = document.getElementById('countdown');
         const targetUrl = "{{ target_url | safe }}";
+        const proceedBtn = document.getElementById('proceedBtn');
+        const proceedBtnLabel = document.getElementById('proceedBtnLabel');
 
-        const timer = setInterval(() => {
-            seconds--;
-            if (seconds > 0) {
-                countdownEl.innerText = seconds;
-            } else {
-                countdownEl.innerText = "0";
-                clearInterval(timer);
-                window.location.href = targetUrl;
-            }
-        }, 1000);
+        function enableProceedButton() {
+            proceedBtn.href = targetUrl;
+            proceedBtn.removeAttribute('aria-disabled');
+            proceedBtn.classList.remove('bg-panel', 'border', 'border-divider', 'text-slate-500', 'cursor-not-allowed');
+            proceedBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-black', 'shadow-amber-500/10');
+            proceedBtnLabel.innerText = 'Continue to Destination';
+        }
+
+        if (seconds <= 0) {
+            countdownEl.innerText = "0";
+            enableProceedButton();
+        } else {
+            const timer = setInterval(() => {
+                seconds--;
+                if (seconds > 0) {
+                    countdownEl.innerText = seconds;
+                    proceedBtnLabel.innerText = `Please Wait (${seconds}s)`;
+                } else {
+                    countdownEl.innerText = "0";
+                    clearInterval(timer);
+                    enableProceedButton();
+                }
+            }, 1000);
+        }
     </script>
 </body>
 </html>
