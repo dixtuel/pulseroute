@@ -144,6 +144,21 @@
     </nav>
 
     <main class="max-w-7xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
+        <!-- Anonymous Mode Expiration Banner -->
+        <div id="anonymousNotice" class="rounded-xl p-4 bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-clock-rotate-left text-amber-400 text-base"></i>
+                <div>
+                    <span class="text-white font-bold">Anonymous Link Dispatch Active (24-Hour TTL)</span>
+                    <p class="text-slate-400 text-[11px] mt-0.5">Links created without an account expire automatically after 24 hours. Sign in to keep permanent links and custom domains.</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="openModal('loginModal')" class="px-3 py-1.5 rounded bg-panel hover:bg-divider border border-divider text-slate-200 transition">Login</button>
+                <button onclick="openModal('registerModal')" class="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold transition">Create Free Account</button>
+            </div>
+        </div>
+
         <!-- ==================== TAB 1: LINKS ==================== -->
         <div id="tabContent-links" class="space-y-8">
             <!-- Live Dispatch Console (Hero Builder) -->
@@ -237,32 +252,12 @@
                 </div>
             </section>
 
-            <!-- Counters Ribbon -->
-            <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
-                <div class="p-4 rounded-xl bg-carbon border border-divider">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Total Ingested Clicks</span>
-                    <div id="statTotalClicks" class="text-2xl font-bold text-white mt-1">0</div>
-                </div>
-                <div class="p-4 rounded-xl bg-carbon border border-divider">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Active Slugs</span>
-                    <div id="statActiveLinks" class="text-2xl font-bold text-amber-400 mt-1">0</div>
-                </div>
-                <div class="p-4 rounded-xl bg-carbon border border-divider">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Crawler / Bot Filter</span>
-                    <div id="statBotClicks" class="text-2xl font-bold text-cyan-400 mt-1">0</div>
-                </div>
-                <div class="p-4 rounded-xl bg-carbon border border-divider">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Median Latency</span>
-                    <div class="text-2xl font-bold text-emerald-400 mt-1">&lt; 7.2ms</div>
-                </div>
-            </section>
-
             <!-- Links Matrix Table -->
             <section class="space-y-4">
                 <div class="flex items-center justify-between">
                     <div class="flex items-center space-x-2">
                         <i class="fa-solid fa-table-list text-slate-500 text-xs"></i>
-                        <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Active Routing Matrix</h3>
+                        <h3 id="tableTitle" class="font-display font-bold text-sm text-white uppercase tracking-wider">Active Routing Matrix</h3>
                     </div>
                     <div class="flex items-center space-x-3">
                         <input type="text" id="searchInput" oninput="filterLinks()" placeholder="Filter slugs / urls..." 
@@ -279,7 +274,7 @@
                             <tr>
                                 <th class="py-3 px-4">Slug / Short Path</th>
                                 <th class="py-3 px-4">Destination Target</th>
-                                <th class="py-3 px-4 text-center">Clicks</th>
+                                <th class="py-3 px-4 text-center">TTL / Status</th>
                                 <th class="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
@@ -295,34 +290,49 @@
 
         <!-- ==================== TAB 2: ANALYTICS ==================== -->
         <div id="tabContent-analytics" class="hidden space-y-8">
-            <div class="flex items-center justify-between border-b border-divider pb-4">
-                <div>
-                    <h2 class="font-display font-bold text-lg text-white">Live Telemetry & Traffic Ingestion</h2>
-                    <p class="text-xs font-mono text-slate-400 mt-0.5">Non-blocking Redis Stream aggregation with GDPR/KVKK pseudonymization.</p>
+            <!-- Auth Lock Screen for Analytics -->
+            <div id="analyticsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
+                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
                 </div>
-                <button onclick="loadAnalytics()" class="px-3 py-1.5 rounded-lg bg-panel hover:bg-divider border border-divider text-xs font-mono text-slate-300">
-                    <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Refresh Stream
-                </button>
+                <h3 class="font-display font-bold text-lg text-white">Workspace Analytics Locked</h3>
+                <p class="text-xs font-mono text-slate-400">Real-time click streams, device breakdown, and geo-spatial telemetry require an active workspace account.</p>
+                <div class="flex justify-center gap-3 pt-2">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
+                </div>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                <!-- Device Breakdown Doughnut -->
-                <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                    <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>Device Architecture</span>
-                        <span class="text-amber-400">Hardware Profile</span>
+            <div id="analyticsMainContent" class="space-y-8">
+                <div class="flex items-center justify-between border-b border-divider pb-4">
+                    <div>
+                        <h2 class="font-display font-bold text-lg text-white">Live Telemetry & Traffic Ingestion</h2>
+                        <p class="text-xs font-mono text-slate-400 mt-0.5">Non-blocking Redis Stream aggregation with GDPR/KVKK pseudonymization.</p>
                     </div>
-                    <canvas id="deviceChart" height="200"></canvas>
+                    <button onclick="loadAnalytics()" class="px-3 py-1.5 rounded-lg bg-panel hover:bg-divider border border-divider text-xs font-mono text-slate-300">
+                        <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Refresh Stream
+                    </button>
                 </div>
 
-                <!-- Geographic Ingestion -->
-                <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                    <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                        <span>Geographic Telemetry</span>
-                        <span class="text-cyan-400">Country Breakdown</span>
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <!-- Device Breakdown Doughnut -->
+                    <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
+                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Device Architecture</span>
+                            <span class="text-amber-400">Hardware Profile</span>
+                        </div>
+                        <canvas id="deviceChart" height="200"></canvas>
                     </div>
-                    <div id="countriesBreakdown" class="space-y-2 font-mono text-xs pt-2">
-                        <div class="text-slate-600 text-xs">No geo telemetry captured yet</div>
+
+                    <!-- Geographic Ingestion -->
+                    <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
+                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                            <span>Geographic Telemetry</span>
+                            <span class="text-cyan-400">Country Breakdown</span>
+                        </div>
+                        <div id="countriesBreakdown" class="space-y-2 font-mono text-xs pt-2">
+                            <div class="text-slate-600 text-xs">No geo telemetry captured yet</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,113 +340,143 @@
 
         <!-- ==================== TAB 3: CUSTOM DOMAINS ==================== -->
         <div id="tabContent-domains" class="hidden space-y-8">
-            <div class="flex items-center justify-between border-b border-divider pb-4">
-                <div>
-                    <h2 class="font-display font-bold text-lg text-white">Branded Custom Domains</h2>
-                    <p class="text-xs font-mono text-slate-400 mt-0.5">Automated Caddy On-Demand TLS with automated DNS challenge verification.</p>
+            <!-- Auth Lock Screen for Domains -->
+            <div id="domainsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
+                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                    <i class="fa-solid fa-globe text-lg"></i>
+                </div>
+                <h3 class="font-display font-bold text-lg text-white">Custom Domains Locked</h3>
+                <p class="text-xs font-mono text-slate-400">Connect branded domains with automatic Caddy On-Demand TLS by signing into your workspace.</p>
+                <div class="flex justify-center gap-3 pt-2">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
                 </div>
             </div>
 
-            <!-- Add Domain Card -->
-            <section class="rounded-xl bg-carbon border border-divider p-6 space-y-4">
-                <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Connect New Domain</h3>
-                <form id="addDomainForm" class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
-                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
-                            DOMAIN:
-                        </div>
-                        <input type="text" id="newDomainInput" required placeholder="links.mybrand.com or go.domain.xyz" 
-                            class="w-full pl-20 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 outline-none text-white text-xs font-mono">
+            <div id="domainsMainContent" class="space-y-8">
+                <div class="flex items-center justify-between border-b border-divider pb-4">
+                    <div>
+                        <h2 class="font-display font-bold text-lg text-white">Branded Custom Domains</h2>
+                        <p class="text-xs font-mono text-slate-400 mt-0.5">Automated Caddy On-Demand TLS with automated DNS challenge verification.</p>
                     </div>
-                    <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
-                        <span>Add Domain</span>
-                        <i class="fa-solid fa-plus text-xs"></i>
-                    </button>
-                </form>
-
-                <!-- DNS Instructions Output -->
-                <div id="dnsInstructionBox" class="hidden p-4 rounded-lg bg-panel border border-amber-500/30 space-y-2 font-mono text-xs">
-                    <div class="text-amber-400 font-bold flex items-center gap-2">
-                        <i class="fa-solid fa-circle-info"></i> DNS Configuration Required:
-                    </div>
-                    <div id="dnsDetails" class="text-slate-300 text-[11px] leading-relaxed"></div>
                 </div>
-            </section>
 
-            <!-- Domain Matrix Table -->
-            <section class="bg-carbon border border-divider rounded-xl overflow-hidden">
-                <table class="w-full text-left text-xs font-mono">
-                    <thead class="bg-panel border-b border-divider text-slate-400 text-[10px] uppercase">
-                        <tr>
-                            <th class="py-3 px-4">Domain</th>
-                            <th class="py-3 px-4 text-center">Status</th>
-                            <th class="py-3 px-4 text-center">SSL / TLS</th>
-                            <th class="py-3 px-4 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="domainsTableBody" class="divide-y divide-divider/60">
-                        <tr>
-                            <td colspan="4" class="py-8 text-center text-slate-500">Loading custom domains...</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </section>
+                <!-- Add Domain Card -->
+                <section class="rounded-xl bg-carbon border border-divider p-6 space-y-4">
+                    <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Connect New Domain</h3>
+                    <form id="addDomainForm" class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                                DOMAIN:
+                            </div>
+                            <input type="text" id="newDomainInput" required placeholder="links.mybrand.com or go.domain.xyz" 
+                                class="w-full pl-20 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 outline-none text-white text-xs font-mono">
+                        </div>
+                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+                            <span>Add Domain</span>
+                            <i class="fa-solid fa-plus text-xs"></i>
+                        </button>
+                    </form>
+
+                    <!-- DNS Instructions Output -->
+                    <div id="dnsInstructionBox" class="hidden p-4 rounded-lg bg-panel border border-amber-500/30 space-y-2 font-mono text-xs">
+                        <div class="text-amber-400 font-bold flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info"></i> DNS Configuration Required:
+                        </div>
+                        <div id="dnsDetails" class="text-slate-300 text-[11px] leading-relaxed"></div>
+                    </div>
+                </section>
+
+                <!-- Domain Matrix Table -->
+                <section class="bg-carbon border border-divider rounded-xl overflow-hidden">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="bg-panel border-b border-divider text-slate-400 text-[10px] uppercase">
+                            <tr>
+                                <th class="py-3 px-4">Domain</th>
+                                <th class="py-3 px-4 text-center">Status</th>
+                                <th class="py-3 px-4 text-center">SSL / TLS</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="domainsTableBody" class="divide-y divide-divider/60">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-slate-500">Loading custom domains...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </div>
         </div>
 
         <!-- ==================== TAB 4: SETTINGS ==================== -->
         <div id="tabContent-settings" class="hidden space-y-8">
-            <div class="border-b border-divider pb-4">
-                <h2 class="font-display font-bold text-lg text-white">Workspace Configuration</h2>
-                <p class="text-xs font-mono text-slate-400 mt-0.5">Manage API keys, webhooks, AdSense monetization, and workspace identity.</p>
+            <!-- Auth Lock Screen for Settings -->
+            <div id="settingsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
+                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
+                    <i class="fa-solid fa-sliders text-lg"></i>
+                </div>
+                <h3 class="font-display font-bold text-lg text-white">Settings Locked</h3>
+                <p class="text-xs font-mono text-slate-400">Sign in to configure workspace credentials, generate production API keys, and set AdSense monetization.</p>
+                <div class="flex justify-center gap-3 pt-2">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
+                </div>
             </div>
 
-            <!-- Workspace Details -->
-            <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-id-card text-amber-500"></i> General Settings
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-                    <div>
-                        <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Name</label>
-                        <input type="text" id="settingsWsName" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
-                    </div>
-                    <div>
-                        <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Slug</label>
-                        <input type="text" id="settingsWsSlug" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
-                    </div>
+            <div id="settingsMainContent" class="space-y-8">
+                <div class="border-b border-divider pb-4">
+                    <h2 class="font-display font-bold text-lg text-white">Workspace Configuration</h2>
+                    <p class="text-xs font-mono text-slate-400 mt-0.5">Manage API keys, webhooks, AdSense monetization, and workspace identity.</p>
                 </div>
-            </section>
 
-            <!-- API Keys Section -->
-            <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                <div class="flex items-center justify-between">
+                <!-- Workspace Details -->
+                <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
                     <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-key text-amber-500"></i> Secret API Keys
+                        <i class="fa-solid fa-id-card text-amber-500"></i> General Settings
                     </h3>
-                    <button onclick="openModal('apiKeysModal')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider">
-                        + New API Key
-                    </button>
-                </div>
-                <p class="text-xs font-mono text-slate-400">Use API keys with prefix <code class="text-amber-400">pr_live_...</code> to authenticate server-side requests via header <code class="text-slate-200">X-API-Key</code>.</p>
-            </section>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                        <div>
+                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Name</label>
+                            <input type="text" id="settingsWsName" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Slug</label>
+                            <input type="text" id="settingsWsSlug" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
+                        </div>
+                    </div>
+                </section>
 
-            <!-- Monetization & AdSense -->
-            <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                    <i class="fa-solid fa-rectangle-ad text-amber-500"></i> Workspace Monetization & AdSense
-                </h3>
-                <p class="text-xs font-mono text-slate-400">Configure default interstitial countdown timer and Google AdSense units for links created in this workspace.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
-                    <div>
-                        <label class="block text-slate-500 mb-1 text-[10px] uppercase">Default Interstitial Delay (Seconds)</label>
-                        <input type="number" id="wsDefaultDelay" value="0" min="0" max="30" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white">
+                <!-- API Keys Section -->
+                <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-key text-amber-500"></i> Secret API Keys
+                        </h3>
+                        <button onclick="openModal('apiKeysModal')" class="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider">
+                            + New API Key
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-slate-500 mb-1 text-[10px] uppercase">Default Google AdSense Client ID</label>
-                        <input type="text" id="wsAdsenseClient" placeholder="ca-pub-XXXXXXXXXXXXXXXX" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white">
+                    <p class="text-xs font-mono text-slate-400">Use API keys with prefix <code class="text-amber-400">pr_live_...</code> to authenticate server-side requests via header <code class="text-slate-200">X-API-Key</code>.</p>
+                </section>
+
+                <!-- Monetization & AdSense -->
+                <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
+                    <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-rectangle-ad text-amber-500"></i> Workspace Monetization & AdSense
+                    </h3>
+                    <p class="text-xs font-mono text-slate-400">Configure default interstitial countdown timer and Google AdSense units for links created in this workspace.</p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                        <div>
+                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Default Interstitial Delay (Seconds)</label>
+                            <input type="number" id="wsDefaultDelay" value="0" min="0" max="30" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Default Google AdSense Client ID</label>
+                            <input type="text" id="wsAdsenseClient" placeholder="ca-pub-XXXXXXXXXXXXXXXX" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white">
+                        </div>
                     </div>
-                </div>
-            </section>
+                </section>
+            </div>
         </div>
     </main>
 
@@ -566,6 +606,8 @@
 
         function switchTab(tabId) {
             const tabs = ['links', 'analytics', 'domains', 'settings'];
+            const token = getToken();
+
             tabs.forEach(t => {
                 const content = document.getElementById(`tabContent-${t}`);
                 const btn = document.getElementById(`tabBtn-${t}`);
@@ -578,9 +620,30 @@
                 }
             });
 
-            if (tabId === 'analytics') loadAnalytics();
-            if (tabId === 'domains') loadDomains();
-            if (tabId === 'settings') loadSettings();
+            // Handle Auth Gates
+            if (!token) {
+                if (tabId === 'analytics') {
+                    document.getElementById('analyticsAuthGate').classList.remove('hidden');
+                    document.getElementById('analyticsMainContent').classList.add('hidden');
+                } else if (tabId === 'domains') {
+                    document.getElementById('domainsAuthGate').classList.remove('hidden');
+                    document.getElementById('domainsMainContent').classList.add('hidden');
+                } else if (tabId === 'settings') {
+                    document.getElementById('settingsAuthGate').classList.remove('hidden');
+                    document.getElementById('settingsMainContent').classList.add('hidden');
+                }
+            } else {
+                document.getElementById('analyticsAuthGate')?.classList.add('hidden');
+                document.getElementById('analyticsMainContent')?.classList.remove('hidden');
+                document.getElementById('domainsAuthGate')?.classList.add('hidden');
+                document.getElementById('domainsMainContent')?.classList.remove('hidden');
+                document.getElementById('settingsAuthGate')?.classList.add('hidden');
+                document.getElementById('settingsMainContent')?.classList.remove('hidden');
+
+                if (tabId === 'analytics') loadAnalytics();
+                if (tabId === 'domains') loadDomains();
+                if (tabId === 'settings') loadSettings();
+            }
         }
 
         function getToken() {
@@ -612,6 +675,9 @@
             if (!token) {
                 document.getElementById('loggedOutButtons').classList.remove('hidden');
                 document.getElementById('loggedInControls').classList.add('hidden');
+                document.getElementById('anonymousNotice').classList.remove('hidden');
+                document.getElementById('tableTitle').innerText = 'Recent Anonymous Links (24h TTL)';
+                loadLinks();
                 return;
             }
 
@@ -621,6 +687,8 @@
                     const user = await res.json();
                     document.getElementById('loggedOutButtons').classList.add('hidden');
                     document.getElementById('loggedInControls').classList.remove('hidden');
+                    document.getElementById('anonymousNotice').classList.add('hidden');
+                    document.getElementById('tableTitle').innerText = 'Active Workspace Matrix';
                     document.getElementById('userEmailBadge').innerText = user.email;
                     loadWorkspaces();
                 } else {
@@ -646,6 +714,7 @@
                         localStorage.setItem('pr_workspace_id', currentWorkspaceId);
                     }
                     loadSettings();
+                    loadLinks();
                 }
             } catch (e) {
                 console.error(e);
@@ -795,6 +864,7 @@
 
         async function loadLinks() {
             try {
+                const token = getToken();
                 const res = await fetch('/api/v1/links', { headers: getAuthHeaders() });
                 allLinks = await res.json();
                 renderLinksTable(Array.isArray(allLinks) ? allLinks : []);
@@ -805,48 +875,47 @@
 
         function renderLinksTable(links) {
             const tbody = document.getElementById('linksTableBody');
-            document.getElementById('statActiveLinks').innerText = links.length;
-            let totalClicks = 0;
+            const token = getToken();
 
             if (!links.length) {
-                tbody.innerHTML = '<tr><td colspan="4" class="py-12 text-center text-slate-500 font-mono">Zero links in workspace. Dispatch your first link above.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-500 font-mono">${token ? 'Zero links in workspace. Dispatch your first link above.' : 'No active temporary links. Dispatch an anonymous link above (24h TTL).'}</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = '';
             links.forEach(link => {
-                totalClicks += link.total_clicks;
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-panel/50 transition group';
+                
+                // Expiration & TTL status
+                let statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">PERMANENT</span>';
+                if (link.expires_at) {
+                    statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"><i class="fa-solid fa-hourglass-half mr-1"></i> 24h TTL</span>';
+                }
+
                 tr.innerHTML = `
                     <td class="py-3 px-4 font-mono font-semibold text-amber-400">
                         <div class="flex items-center space-x-2">
                             <a href="/${link.slug}" target="_blank" class="hover:underline">/${link.slug}</a>
-                            <a href="/${link.slug}+" target="_blank" class="text-[10px] text-slate-600 hover:text-cyan-400" title="Inspect Public Stats (slug+)">
-                                <i class="fa-solid fa-plus"></i>
-                            </a>
+                            ${token ? `<a href="/${link.slug}+" target="_blank" class="text-[10px] text-slate-600 hover:text-cyan-400" title="Inspect Public Stats (slug+)"><i class="fa-solid fa-plus"></i></a>` : ''}
                         </div>
                         ${link.tags ? `<span class="text-[9px] font-normal text-slate-500 bg-panel px-1.5 py-0.5 rounded border border-divider mt-0.5 inline-block">${link.tags}</span>` : ''}
                     </td>
                     <td class="py-3 px-4 max-w-xs truncate text-slate-400 text-[11px]" title="${link.destination_url}">
                         ${link.destination_url}
                     </td>
-                    <td class="py-3 px-4 text-center font-bold text-white">
-                        ${link.total_clicks}
+                    <td class="py-3 px-4 text-center">
+                        ${statusBadge}
                     </td>
                     <td class="py-3 px-4 text-right space-x-2">
                         <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-slate-500 hover:text-amber-400 p-1 transition" title="SVG QR">
                             <i class="fa-solid fa-qrcode"></i>
                         </a>
-                        <button onclick="deleteLink(${link.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Purge Link">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
+                        ${token ? `<button onclick="deleteLink(${link.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Purge Link"><i class="fa-solid fa-trash"></i></button>` : ''}
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
-
-            document.getElementById('statTotalClicks').innerText = totalClicks;
         }
 
         function filterLinks() {
@@ -860,12 +929,13 @@
         }
 
         async function loadAnalytics() {
+            const token = getToken();
+            if (!token) return;
+
             try {
                 const res = await fetch('/api/v1/analytics', { headers: getAuthHeaders() });
                 const data = await res.json();
                 
-                document.getElementById('statBotClicks').innerText = data.bot_clicks || 0;
-
                 // Render Countries Breakdown
                 const countryContainer = document.getElementById('countriesBreakdown');
                 if (data.countries && data.countries.length) {
@@ -999,8 +1069,6 @@
 
         // Init Lifecycle
         initAuth();
-        loadLinks();
-        loadAnalytics();
     </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
@@ -7,13 +8,28 @@ from pulseroute.core.config import settings
 
 
 def normalize_database_url(url: str) -> str:
-    """Auto-normalizes standard postgresql:// URLs to asyncpg format."""
+    """Auto-normalizes standard postgresql:// URLs to asyncpg format and strips incompatible asyncpg query parameters."""
     if url.startswith("postgres://"):
         url = url.replace("postgres://", "postgresql+asyncpg://", 1)
     elif url.startswith("postgresql://") and not url.startswith("postgresql+asyncpg://"):
         url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    if "sslmode=require" in url:
-        url = url.replace("sslmode=require", "ssl=require")
+
+    if url.startswith("postgresql+asyncpg://") and "?" in url:
+        parts = urlsplit(url)
+        query_params = dict(parse_qsl(parts.query))
+
+        # Remove query parameters that asyncpg.connect() does not accept
+        for unsupported in ("channel_binding", "gssencmode", "target_session_attrs"):
+            query_params.pop(unsupported, None)
+
+        if "sslmode" in query_params:
+            ssl_val = query_params.pop("sslmode")
+            if ssl_val in ("require", "verify-ca", "verify-full"):
+                query_params["ssl"] = "require"
+
+        new_query = urlencode(query_params)
+        url = urlunsplit((parts.scheme, parts.netloc, parts.path, new_query, parts.fragment))
+
     return url
 
 

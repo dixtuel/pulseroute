@@ -1,13 +1,16 @@
+from datetime import UTC, datetime, timedelta
 from typing import List, Optional
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pulseroute.api.deps import get_current_user
 from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
 from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
+from pulseroute.models.user import User
 from pulseroute.schemas.link import LinkCreate, LinkResponse, LinkUpdate
 from pulseroute.services.link_service import LinkService
 
@@ -19,9 +22,13 @@ async def create_short_link(
     link_data: LinkCreate,
     request: Request,
     response: Response,
+    current_user: Optional[User] = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
 ):
+    # Enforce 24-hour expiration for anonymous / unauthenticated users
+    if not current_user and not link_data.expires_at:
+        link_data.expires_at = datetime.now(UTC) + timedelta(hours=24)
     client_ip = request.client.host if request.client else "127.0.0.1"
 
     allowed, remaining = await SlidingWindowRateLimiter.is_allowed(
