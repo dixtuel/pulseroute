@@ -27,12 +27,12 @@ def create(
                 link_data = LinkCreate(destination_url=url, slug=slug, title=title)
                 link = await LinkService.create_link(db, redis_cli=None, data=link_data)
                 short_url = f"http://localhost:8000/{link.slug}"
-                console.print("[bold green]✔ Link created successfully![/bold green]")
+                console.print("[bold green]Link created successfully.[/bold green]")
                 console.print(f"[bold white]Short URL:[/bold white] [cyan]{short_url}[/cyan]")
                 console.print(f"[bold white]Destination:[/bold white] {link.destination_url}")
 
                 if qr:
-                    console.print("\n[bold yellow]QR Code:[/bold yellow]")
+                    console.print("\n[bold white]QR Code:[/bold white]")
                     console.print(generate_qr_ascii(short_url))
             except Exception as e:
                 console.print(f"[bold red]Error:[/bold red] {str(e)}")
@@ -51,7 +51,7 @@ def list_links(limit: int = typer.Option(20, "--limit", "-l")):
                 console.print("[yellow]No links found.[/yellow]")
                 return
 
-            table = Table(title="⚡ PulseRoute Short Links", border_style="cyan")
+            table = Table(title="PulseRoute Short Links", border_style="cyan")
             table.add_column("ID", style="dim")
             table.add_column("Slug", style="cyan bold")
             table.add_column("Destination", style="white")

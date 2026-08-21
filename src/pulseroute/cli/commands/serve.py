@@ -14,7 +14,7 @@ def serve(
 ):
     """Start PulseRoute API server, Background Workers, and Web Dashboard."""
     print_banner()
-    console.print(f"[bold green]🚀 Starting PulseRoute server on http://{host}:{port}[/bold green]")
-    console.print(f"[cyan]📊 Web Dashboard:[/cyan] http://localhost:{port}/dashboard")
-    console.print(f"[cyan]📖 API Docs:[/cyan]      http://localhost:{port}/docs\n")
+    console.print(f"[bold green]Starting PulseRoute server on http://{host}:{port}[/bold green]")
+    console.print(f"[cyan]Web Dashboard:[/cyan] http://localhost:{port}/dashboard")
+    console.print(f"[cyan]API Docs:[/cyan]      http://localhost:{port}/docs\n")
     uvicorn.run("pulseroute.main:app", host=host, port=port, reload=reload)

@@ -17,7 +17,7 @@ def summary(days: int = typer.Option(7, "--days", "-d")):
         await init_db()
         async with async_session_maker() as db:
             data = await AnalyticsService.get_link_analytics(db, days=days)
-            console.print(f"\n[bold magenta]⚡ PulseRoute Analytics (Last {days} Days)[/bold magenta]")
+            console.print(f"\n[bold white]PulseRoute Analytics (Last {days} Days)[/bold white]")
             console.print(f"Total Clicks:      [bold green]{data.total_clicks}[/bold green]")
             console.print(f"Unique Visitors:   [bold cyan]{data.unique_visitors}[/bold cyan]")
             console.print(f"Bot/Crawler Hits:  [bold yellow]{data.bot_clicks}[/bold yellow]\n")
