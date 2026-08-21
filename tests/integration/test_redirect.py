@@ -29,16 +29,22 @@ async def test_redirect_flow(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_redirect_interstitial_page_with_adsense(client: AsyncClient):
-    # Create link with 5s delay and Google AdSense
-    create_res = await client.post("/api/v1/links", json={
-        "destination_url": "https://example.com/sponsored-target",
-        "slug": "ad-link",
-        "interstitial_delay": 5,
-        "interstitial_title": "Please wait for sponsor",
-        "adsense_client_id": "ca-pub-1234567890",
-        "adsense_slot_id": "9876543210"
-    })
-    assert create_res.status_code == 201
+    from pulseroute.core.config import settings
+    orig_monetization = settings.ALLOW_USER_MONETIZATION
+    settings.ALLOW_USER_MONETIZATION = True
+    try:
+        # Create link with 5s delay and Google AdSense
+        create_res = await client.post("/api/v1/links", json={
+            "destination_url": "https://example.com/sponsored-target",
+            "slug": "ad-link",
+            "interstitial_delay": 5,
+            "interstitial_title": "Please wait for sponsor",
+            "adsense_client_id": "ca-pub-1234567890",
+            "adsense_slot_id": "9876543210"
+        })
+        assert create_res.status_code == 201
+    finally:
+        settings.ALLOW_USER_MONETIZATION = orig_monetization
 
     # Browser request with text/html -> Returns Interstitial HTML with AdSense tags
     browser_res = await client.get("/ad-link", headers={"Accept": "text/html"})

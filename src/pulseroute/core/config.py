@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     CADDY_INTERNAL_ASK_SECRET: Optional[str] = None
     ENFORCE_SAFE_BROWSING: bool = True
 
-    # Monetization & AdSense Control (Self-Host Policy)
-    ALLOW_USER_MONETIZATION: bool = True  # Self-hoster can toggle custom AdSense / ad injection
+    # Monetization & AdSense Control (Platform Admin Policy)
+    ALLOW_USER_MONETIZATION: bool = False  # Disabled by default so visitors/users cannot inject custom AdSense
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Fallback publisher ID for platform owner
 
     # Redirect & Tracking Defaults
