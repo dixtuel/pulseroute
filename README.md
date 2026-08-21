@@ -104,9 +104,30 @@ pulseroute analytics summary --days 7
 
 ---
 
-## Production Deployment (Docker Compose)
+## ☁️ Cloud & Self-Hosted Deployment Options
 
-Deploy the full production stack (FastAPI + PostgreSQL + Redis + Caddy with automatic SSL) in one command:
+PulseRoute adapts automatically to your environment — from a zero-config free demo to an enterprise distributed cluster:
+
+### Option 1: 1-Click Free Cloud Deploy (Render Free Web Service)
+PulseRoute includes built-in fallback drivers. When deployed on Render Free Tier without external services, it automatically operates in **Standalone Zero-Config Mode**:
+* **Database:** Embedded SQLite (`sqlite+aiosqlite:///./pulseroute.db`).
+* **Caching & Telemetry:** In-memory rate limiting and direct database click ingestion (no Redis required).
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+
+---
+
+### Option 2: 100% Free Persistent Cloud Setup (Render + Free Serverless DBs)
+To make your Render free deployment completely persistent across container sleep/restarts, attach free cloud databases by adding 2 Environment Variables in your Render Dashboard:
+1. **Free PostgreSQL (0.5 GB Free):** [Neon.tech](https://neon.tech) or [Supabase](https://supabase.com)
+   * Set `DATABASE_URL=postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?ssl=require`
+2. **Free Redis (10,000 commands/day Free):** [Upstash Serverless Redis](https://upstash.com)
+   * Set `REDIS_URL=rediss://default:pass@xxx.upstash.io:6379`
+
+---
+
+### Option 3: Production Self-Hosted (Docker Compose)
+Deploy the full enterprise stack (FastAPI + PostgreSQL 16 + Redis 7 + Caddy On-Demand TLS) in one command on your VPS:
 
 ```bash
 git clone https://github.com/dixtuel/pulseroute.git
@@ -119,7 +140,7 @@ docker compose up -d
 
 ## Testing & Quality Assurance
 
-Run the comprehensive unit and integration test suite:
+Run the comprehensive unit and integration test suite (21 passing tests):
 
 ```bash
 # Run tests with coverage

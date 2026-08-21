@@ -141,7 +141,7 @@ class RedirectService:
         elif os_name == "Android" and link_data.get("android_destination"):
             target_url = link_data["android_destination"]
 
-        # 9. Asynchronous Click Event Dispatch
+        # 9. Asynchronous Click Event Dispatch (Redis Stream or Direct DB Fallback)
         if redis_cli:
             try:
                 event_payload = {
@@ -156,6 +156,30 @@ class RedirectService:
                     "timestamp": str(int(time.time())),
                 }
                 await redis_cli.xadd("pulseroute:events:clicks", event_payload, maxlen=100000)
+            except Exception:
+                pass
+        else:
+            # Standalone / Zero-Redis Fallback (Render Free Tier, Local Testing, Demo Instances)
+            try:
+                from pulseroute.models.click import ClickEvent
+                click_rec = ClickEvent(
+                    link_id=link_data["id"],
+                    country_code=country_code,
+                    city=city,
+                    device_type=device_type,
+                    browser=browser,
+                    os=os_name,
+                    referrer=referrer,
+                    is_bot=is_bot,
+                )
+                db.add(click_rec)
+                from sqlalchemy import func, update
+                await db.execute(
+                    update(ShortLink)
+                    .where(ShortLink.id == link_data["id"])
+                    .values(total_clicks=func.coalesce(ShortLink.total_clicks, 0) + 1)
+                )
+                await db.commit()
             except Exception:
                 pass
 
