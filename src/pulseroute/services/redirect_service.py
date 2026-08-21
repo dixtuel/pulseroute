@@ -76,7 +76,6 @@ class RedirectService:
                         await redis_cli.set(cache_key, "NULL", ex=settings.NEGATIVE_CACHE_TTL)
                     except Exception:
                         pass
-                # Check for custom 404 URL fallback on custom domain
                 if custom_domain_obj and custom_domain_obj.custom_not_found_url:
                     return custom_domain_obj.custom_not_found_url, 302, None
                 return None, 404, "Link not found"
@@ -86,49 +85,60 @@ class RedirectService:
                 "destination_url": link.destination_url,
                 "ios_destination": link.ios_destination or "",
                 "android_destination": link.android_destination or "",
+                "geo_targets": link.geo_targets or {},
+                "expired_url": link.expired_url or "",
                 "has_password": bool(link.password_hash),
+                "public_stats": link.public_stats,
                 "is_active": link.is_active,
                 "expires_at": link.expires_at.isoformat() if link.expires_at else "",
             }
 
-            # Populate cache
             if redis_cli:
                 try:
                     await redis_cli.set(cache_key, json.dumps(link_data), ex=settings.CACHE_DEFAULT_TTL)
                 except Exception:
                     pass
 
-        # 4. Check Link Active & Expiration
+        # 4. Check Link Active
         if not link_data.get("is_active", True):
             return None, 410, "This link has been deactivated."
 
+        # 5. Check Expiration & Expired Fallback (Dub.co standard)
         if link_data.get("expires_at"):
             try:
                 exp_dt = datetime.fromisoformat(link_data["expires_at"])
+                if exp_dt.tzinfo is None:
+                    exp_dt = exp_dt.replace(tzinfo=UTC)
                 if datetime.now(UTC) > exp_dt:
+                    if link_data.get("expired_url"):
+                        return link_data["expired_url"], 307, None
                     return None, 410, "This link has expired."
             except Exception:
                 pass
 
-        # 5. Check Password Protection
+        # 6. Password Protection
         if link_data.get("has_password") and not password:
             return None, 401, "Password required for this short link."
 
-        # 6. Parse Client, Device & Bot Filtering
+        # 7. Device, Geo & Bot Detection
         is_bot, device_type, browser, os_name = parse_user_agent(user_agent)
+        anon_ip = anonymize_ip(client_ip)
+        country_code, _country_name, city = lookup_ip_location(anon_ip)
 
-        # 7. Device-Specific Smart Targeting
+        # 8. Dynamic Target Resolution (Geo-Targeting > Device-Targeting > Default)
         target_url = link_data["destination_url"]
-        if os_name == "iOS" and link_data.get("ios_destination"):
+        geo_map = link_data.get("geo_targets") or {}
+
+        if country_code in geo_map:
+            target_url = geo_map[country_code]
+        elif os_name == "iOS" and link_data.get("ios_destination"):
             target_url = link_data["ios_destination"]
         elif os_name == "Android" and link_data.get("android_destination"):
             target_url = link_data["android_destination"]
 
-        # 8. Async Event Ingestion into Redis Stream (GDPR/KVKK Anonymized IP)
+        # 9. Asynchronous Click Event Dispatch
         if redis_cli:
             try:
-                anon_ip = anonymize_ip(client_ip)
-                country_code, _country_name, city = lookup_ip_location(anon_ip)
                 event_payload = {
                     "link_id": str(link_data["id"]),
                     "country_code": country_code,

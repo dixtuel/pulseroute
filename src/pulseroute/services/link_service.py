@@ -1,4 +1,5 @@
 import json
+from typing import List, Optional
 
 import redis.asyncio as aioredis
 from sqlalchemy import select
@@ -15,17 +16,17 @@ from pulseroute.schemas.link import LinkCreate
 
 class LinkService:
     @staticmethod
-    def _build_cache_key(domain: str | None, slug: str) -> str:
+    def _build_cache_key(domain: Optional[str], slug: str) -> str:
         domain_part = (domain or "default").lower()
         return f"link:{domain_part}:{slug}"
 
     @staticmethod
     async def create_link(
         db: AsyncSession,
-        redis_cli: aioredis.Redis | None,
+        redis_cli: Optional[aioredis.Redis],
         data: LinkCreate,
-        workspace_id: int | None = None,
-        base_domain: str | None = None,
+        workspace_id: Optional[int] = None,
+        base_domain: Optional[str] = None,
     ) -> ShortLink:
         # 1. Validate destination URL safety
         if settings.ENFORCE_SAFE_BROWSING:
@@ -36,7 +37,6 @@ class LinkService:
         # 2. Resolve or generate slug
         slug = data.slug.strip() if data.slug else None
         if slug:
-            # Check for existing slug on the same domain
             query = select(ShortLink).where(ShortLink.slug == slug)
             if data.domain_id:
                 query = query.where(ShortLink.domain_id == data.domain_id)
@@ -58,13 +58,20 @@ class LinkService:
             slug=slug,
             destination_url=data.destination_url,
             title=data.title,
+            tags=data.tags,
             ios_destination=data.ios_destination,
             android_destination=data.android_destination,
+            geo_targets=data.geo_targets,
+            expires_at=data.expires_at,
+            expired_url=data.expired_url,
+            og_title=data.og_title,
+            og_description=data.og_description,
+            og_image=data.og_image,
             password_hash=pwd_hash,
+            public_stats=data.public_stats,
             utm_source=data.utm_source,
             utm_medium=data.utm_medium,
             utm_campaign=data.utm_campaign,
-            expires_at=data.expires_at,
         )
         db.add(link)
         await db.commit()
@@ -83,7 +90,10 @@ class LinkService:
                     "destination_url": link.destination_url,
                     "ios_destination": link.ios_destination or "",
                     "android_destination": link.android_destination or "",
+                    "geo_targets": link.geo_targets or {},
+                    "expired_url": link.expired_url or "",
                     "has_password": bool(link.password_hash),
+                    "public_stats": link.public_stats,
                     "is_active": link.is_active,
                     "expires_at": link.expires_at.isoformat() if link.expires_at else "",
                 }
@@ -94,17 +104,22 @@ class LinkService:
         return link
 
     @staticmethod
-    async def get_link_by_id(db: AsyncSession, link_id: int) -> ShortLink | None:
+    async def get_link_by_id(db: AsyncSession, link_id: int) -> Optional[ShortLink]:
         result = await db.execute(select(ShortLink).where(ShortLink.id == link_id))
+        return result.scalar_one_or_none()
+
+    @staticmethod
+    async def get_link_by_slug(db: AsyncSession, slug: str) -> Optional[ShortLink]:
+        result = await db.execute(select(ShortLink).where(ShortLink.slug == slug))
         return result.scalar_one_or_none()
 
     @staticmethod
     async def list_links(
         db: AsyncSession,
-        workspace_id: int | None = None,
+        workspace_id: Optional[int] = None,
         limit: int = 50,
         offset: int = 0
-    ) -> list[ShortLink]:
+    ) -> List[ShortLink]:
         query = select(ShortLink).order_by(ShortLink.created_at.desc()).limit(limit).offset(offset)
         if workspace_id:
             query = query.where(ShortLink.workspace_id == workspace_id)
@@ -114,14 +129,13 @@ class LinkService:
     @staticmethod
     async def delete_link(
         db: AsyncSession,
-        redis_cli: aioredis.Redis | None,
+        redis_cli: Optional[aioredis.Redis],
         link_id: int
     ) -> bool:
         link = await LinkService.get_link_by_id(db, link_id)
         if not link:
             return False
 
-        # Invalidate Cache
         if redis_cli:
             try:
                 cache_key = LinkService._build_cache_key(None, link.slug)

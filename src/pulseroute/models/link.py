@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from pulseroute.core.database import Base
@@ -25,23 +25,33 @@ class ShortLink(Base):
     slug: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     destination_url: Mapped[str] = mapped_column(String(2048), nullable=False)
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Smart Deep Linking / Device Targeting
+    # Smart Device & Geo Targeting (Dub.co standard)
     ios_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     android_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    geo_targets: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # {"TR": "url_tr", "US": "url_us"}
 
-    # Security & Password Protection
+    # Expiration & Custom Fallback
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    expired_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+
+    # OpenGraph & Social Previews
+    og_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    og_description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    og_image: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+
+    # Security & Public Visibility
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    public_stats: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
     # UTM Parameters
     utm_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
     utm_medium: Mapped[str | None] = mapped_column(String(100), nullable=True)
     utm_campaign: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
-    # Lifecycle & Stats
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     total_clicks: Mapped[int] = mapped_column(Integer, default=0)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     workspace: Mapped["Workspace | None"] = relationship("Workspace", back_populates="links")
