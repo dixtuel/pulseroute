@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: pulseroute-app
+    restart: unless-stopped
+    environment:
+      - APP_MODE=private
+      - DATABASE_URL=postgresql+asyncpg://pulseroute:pulsepass@postgres:5432/pulseroutedb
+      - REDIS_URL=redis://redis:6379/0
+      - PRIMARY_DOMAIN=localhost:8000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: pulseroute-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pulseroute
+      POSTGRES_PASSWORD: pulsepass
+      POSTGRES_DB: pulseroutedb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pulseroute -d pulseroutedb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: pulseroute-redis
+    restart: unless-stopped
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: pulseroute-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+volumes:
+  pgdata:
+  redisdata:
+  caddy_data:
+  caddy_config:

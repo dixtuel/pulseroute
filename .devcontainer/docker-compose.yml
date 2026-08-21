@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    image: mcr.microsoft.com/devcontainers/python:3.12
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    environment:
+      - DATABASE_URL=sqlite+aiosqlite:///./pulseroute.db
+      - REDIS_URL=redis://redis:6379/0
+      - PRIMARY_DOMAIN=localhost:8000
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
