@@ -109,30 +109,30 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
     accept_header = request.headers.get("accept", "")
     if "text/html" in accept_header and not request.url.path.startswith("/api/"):
         if exc.status_code == 404:
-            return templates.TemplateResponse("404.html", {"request": request}, status_code=404)
+            return templates.TemplateResponse(request=request, name="404.html", status_code=404)
         elif exc.status_code == 410:
-            return templates.TemplateResponse("410.html", {"request": request}, status_code=410)
+            return templates.TemplateResponse(request=request, name="410.html", status_code=410)
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
-    return templates.TemplateResponse("privacy.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="privacy.html")
 
 
 @app.get("/terms", response_class=HTMLResponse, tags=["Legal"])
 async def render_terms(request: Request):
-    return templates.TemplateResponse("terms.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="terms.html")
 
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="index.html")
 
 
 # Mount Routers
