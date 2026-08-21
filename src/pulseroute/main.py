@@ -20,9 +20,19 @@ from pulseroute.core.security_middleware import SecurityHeadersMiddleware
 from pulseroute.workers.analytics_worker import run_analytics_batch_worker
 from pulseroute.workers.dns_worker import run_dns_verification_worker
 
-# Paths
+# Paths & Multi-Directory Template Resolution
 BASE_DIR = Path(__file__).resolve().parent
 TEMPLATES_DIR = BASE_DIR / "web" / "templates"
+if not TEMPLATES_DIR.exists() or not (TEMPLATES_DIR / "index.html").exists():
+    for candidate in [
+        Path.cwd() / "src" / "pulseroute" / "web" / "templates",
+        Path.cwd() / "web" / "templates",
+        Path("/app/src/pulseroute/web/templates"),
+        Path("/home/user/app/src/pulseroute/web/templates"),
+    ]:
+        if candidate.exists() and (candidate / "index.html").exists():
+            TEMPLATES_DIR = candidate
+            break
 STATIC_DIR = BASE_DIR / "web" / "static"
 
 

@@ -1,0 +1,2 @@
+recursive-include src/pulseroute/web/templates *.html
+recursive-include src/pulseroute/web/static *

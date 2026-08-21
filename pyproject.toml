@@ -61,6 +61,12 @@ pulseroute = "pulseroute.cli.main:app"
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+pulseroute = [
+    "web/templates/*.html",
+    "web/static/*",
+]
+
 [tool.ruff]
 line-length = 120
 target-version = "py311"
