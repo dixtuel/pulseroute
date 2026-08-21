@@ -33,6 +33,10 @@ class LinkService:
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
 
+        # Monetization policy check
+        if (data.adsense_client_id or data.interstitial_ad_html) and not settings.ALLOW_USER_MONETIZATION:
+            raise ValueError("Custom user ad monetization is disabled on this server by administrator.")
+
         slug = data.slug.strip() if data.slug else None
         if slug:
             query = select(ShortLink).where(ShortLink.slug == slug)
@@ -61,6 +65,8 @@ class LinkService:
             interstitial_delay=data.interstitial_delay,
             interstitial_ad_html=data.interstitial_ad_html,
             interstitial_title=data.interstitial_title,
+            adsense_client_id=data.adsense_client_id,
+            adsense_slot_id=data.adsense_slot_id,
             expires_at=data.expires_at,
             expired_url=data.expired_url,
             og_title=data.og_title,
@@ -93,6 +99,8 @@ class LinkService:
                     "interstitial_delay": link.interstitial_delay,
                     "interstitial_ad_html": link.interstitial_ad_html or "",
                     "interstitial_title": link.interstitial_title or "",
+                    "adsense_client_id": link.adsense_client_id or "",
+                    "adsense_slot_id": link.adsense_slot_id or "",
                     "expired_url": link.expired_url or "",
                     "has_password": bool(link.password_hash),
                     "public_stats": link.public_stats,
@@ -122,6 +130,9 @@ class LinkService:
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
 
+        if ("adsense_client_id" in update_fields or "interstitial_ad_html" in update_fields) and not settings.ALLOW_USER_MONETIZATION:
+            raise ValueError("Custom user ad monetization is disabled on this server by administrator.")
+
         for field, value in update_fields.items():
             setattr(link, field, value)
 
@@ -141,6 +152,8 @@ class LinkService:
                     "interstitial_delay": link.interstitial_delay,
                     "interstitial_ad_html": link.interstitial_ad_html or "",
                     "interstitial_title": link.interstitial_title or "",
+                    "adsense_client_id": link.adsense_client_id or "",
+                    "adsense_slot_id": link.adsense_slot_id or "",
                     "expired_url": link.expired_url or "",
                     "has_password": bool(link.password_hash),
                     "public_stats": link.public_stats,

@@ -5,7 +5,7 @@
 **Enterprise-Grade URL Shortener, Custom Domains & Real-Time Analytics Platform**
 
 [![CI Pipeline](https://github.com/dixtuel/pulseroute/actions/workflows/ci.yml/badge.svg)](https://github.com/dixtuel/pulseroute/actions)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/dixtuel/pulseroute)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=dixtuel/pulseroute)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
@@ -37,7 +37,7 @@ PulseRoute is an open-source link management and attribution platform built for 
 
 You can launch and test the entire stack (FastAPI backend, Redis, SQLite/PostgreSQL, and Web Dashboard) directly in your browser with **zero local installation**:
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/dixtuel/pulseroute)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=dixtuel/pulseroute)
 
 1. Click the **Open in GitHub Codespaces** badge above.
 2. The cloud container will automatically initialize dependencies, start the background workers, and open the interactive Web Dashboard in a new browser tab.

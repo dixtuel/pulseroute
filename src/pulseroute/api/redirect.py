@@ -77,6 +77,8 @@ async def redirect_short_url(
                 "target_url": interstitial["target_url"],
                 "ad_html": interstitial.get("ad_html"),
                 "title": interstitial.get("title"),
+                "adsense_client_id": interstitial.get("adsense_client_id"),
+                "adsense_slot_id": interstitial.get("adsense_slot_id"),
             }
         )
 

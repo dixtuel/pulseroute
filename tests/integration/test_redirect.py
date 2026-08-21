@@ -28,21 +28,24 @@ async def test_redirect_flow(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_redirect_interstitial_page(client: AsyncClient):
-    # Create link with 5s delay
+async def test_redirect_interstitial_page_with_adsense(client: AsyncClient):
+    # Create link with 5s delay and Google AdSense
     create_res = await client.post("/api/v1/links", json={
         "destination_url": "https://example.com/sponsored-target",
         "slug": "ad-link",
         "interstitial_delay": 5,
-        "interstitial_title": "Please wait for sponsor"
+        "interstitial_title": "Please wait for sponsor",
+        "adsense_client_id": "ca-pub-1234567890",
+        "adsense_slot_id": "9876543210"
     })
     assert create_res.status_code == 201
 
-    # Browser request with text/html -> Returns Interstitial HTML with countdown
+    # Browser request with text/html -> Returns Interstitial HTML with AdSense tags
     browser_res = await client.get("/ad-link", headers={"Accept": "text/html"})
     assert browser_res.status_code == 200
-    assert "Please wait for sponsor" in browser_res.text
-    assert "countdown" in browser_res.text
+    assert "ca-pub-1234567890" in browser_res.text
+    assert "9876543210" in browser_res.text
+    assert "adsbygoogle" in browser_res.text
 
 
 @pytest.mark.asyncio

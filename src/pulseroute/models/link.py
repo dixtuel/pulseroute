@@ -27,15 +27,17 @@ class ShortLink(Base):
     title: Mapped[str | None] = mapped_column(String(255), nullable=True)
     tags: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
-    # Smart Device & Geo Targeting (Dub.co standard)
+    # Smart Device & Geo Targeting
     ios_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     android_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     geo_targets: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
-    # Interstitial / Monetized Delay & Ad Page
-    interstitial_delay: Mapped[int] = mapped_column(Integer, default=0)  # 0 = instant, 3/5/10 = countdown
+    # Interstitial / Monetized Delay & AdSense
+    interstitial_delay: Mapped[int] = mapped_column(Integer, default=0)
     interstitial_ad_html: Mapped[str | None] = mapped_column(Text, nullable=True)
     interstitial_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    adsense_client_id: Mapped[str | None] = mapped_column(String(100), nullable=True)  # ca-pub-XXXX
+    adsense_slot_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Expiration & Custom Fallback
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

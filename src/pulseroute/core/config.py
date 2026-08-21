@@ -27,8 +27,12 @@ class Settings(BaseSettings):
     CADDY_INTERNAL_ASK_SECRET: Optional[str] = None
     ENFORCE_SAFE_BROWSING: bool = True
 
+    # Monetization & AdSense Control (Self-Host Policy)
+    ALLOW_USER_MONETIZATION: bool = True  # Self-hoster can toggle custom AdSense / ad injection
+    GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Fallback publisher ID for platform owner
+
     # Redirect & Tracking Defaults
-    DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect for non-cached analytics
+    DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect
     ENABLE_BOT_FILTERING: bool = True
 
 

@@ -15,10 +15,12 @@ class LinkCreate(BaseModel):
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
 
-    # Interstitial Ad & Delay
+    # Interstitial Ad & AdSense
     interstitial_delay: int = 0
     interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
+    adsense_client_id: str | None = None
+    adsense_slot_id: str | None = None
 
     # Fallbacks & Social
     expires_at: datetime | None = None
@@ -45,6 +47,8 @@ class LinkUpdate(BaseModel):
     interstitial_delay: int | None = None
     interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
+    adsense_client_id: str | None = None
+    adsense_slot_id: str | None = None
     expires_at: datetime | None = None
     expired_url: str | None = None
     public_stats: bool | None = None
@@ -59,6 +63,7 @@ class LinkResponse(BaseModel):
     title: str | None = None
     tags: str | None = None
     interstitial_delay: int = 0
+    adsense_client_id: str | None = None
     short_url: str
     total_clicks: int
     public_stats: bool
@@ -73,6 +78,7 @@ class LinkDetailResponse(LinkResponse):
     geo_targets: dict[str, str] | None = None
     interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
+    adsense_slot_id: str | None = None
     expired_url: str | None = None
     og_title: str | None = None
     og_description: str | None = None
