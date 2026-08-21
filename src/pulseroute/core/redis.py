@@ -6,15 +6,26 @@ from pulseroute.core.config import settings
 redis_client: aioredis.Redis | None = None
 
 
+def normalize_redis_url(url: str) -> str:
+    """Ensures SSL/TLS scheme for cloud Redis providers like Upstash."""
+    clean = url.strip()
+    if "upstash.io" in clean and clean.startswith("redis://"):
+        clean = clean.replace("redis://", "rediss://", 1)
+    return clean
+
+
 async def get_redis() -> aioredis.Redis | None:
     global redis_client
     if redis_client is None and settings.REDIS_URL:
         try:
+            formatted_url = normalize_redis_url(settings.REDIS_URL)
             redis_client = aioredis.from_url(
-                settings.REDIS_URL,
+                formatted_url,
                 encoding="utf-8",
                 decode_responses=True,
-                socket_timeout=2.0,
+                socket_timeout=3.0,
+                socket_connect_timeout=3.0,
+                retry_on_timeout=True,
             )
             await redis_client.ping()
         except Exception:
