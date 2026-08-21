@@ -1,4 +1,5 @@
 import asyncio
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -6,14 +7,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy import text
 
 from pulseroute.api.internal.caddy import router as caddy_router
 from pulseroute.api.redirect import router as redirect_router
 from pulseroute.api.v1 import api_v1_router
 from pulseroute.core.config import settings
-from pulseroute.core.database import init_db
+from pulseroute.core.database import async_session_maker, init_db
 from pulseroute.core.logging import setup_logging
-from pulseroute.core.redis import close_redis
+from pulseroute.core.redis import close_redis, get_redis
 from pulseroute.core.security_middleware import SecurityHeadersMiddleware
 from pulseroute.workers.analytics_worker import run_analytics_batch_worker
 from pulseroute.workers.dns_worker import run_dns_verification_worker
@@ -26,18 +28,15 @@ STATIC_DIR = BASE_DIR / "web" / "static"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     setup_logging(debug=settings.DEBUG)
     await init_db()
 
-    # Start background workers as async tasks
     worker_tasks = []
     worker_tasks.append(asyncio.create_task(run_analytics_batch_worker()))
     worker_tasks.append(asyncio.create_task(run_dns_verification_worker()))
 
     yield
 
-    # Shutdown
     for task in worker_tasks:
         task.cancel()
     await close_redis()
@@ -62,8 +61,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Templates
 templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
+
+
+# Health & Diagnostics
+@app.get("/healthz", tags=["Diagnostics"])
+async def health_check():
+    start_time = time.time()
+    db_ok = False
+    redis_ok = False
+
+    # Check DB
+    try:
+        async with async_session_maker() as db:
+            await db.execute(text("SELECT 1"))
+            db_ok = True
+    except Exception:
+        pass
+
+    # Check Redis
+    try:
+        r = await get_redis()
+        if r:
+            await r.ping()
+            redis_ok = True
+    except Exception:
+        pass
+
+    elapsed_ms = round((time.time() - start_time) * 1000, 2)
+    is_healthy = db_ok
+
+    return JSONResponse(
+        status_code=200 if is_healthy else 503,
+        content={
+            "status": "healthy" if is_healthy else "degraded",
+            "version": "1.0.0",
+            "mode": settings.APP_MODE.value,
+            "database": "connected" if db_ok else "disconnected",
+            "redis": "connected" if redis_ok else "disabled_or_unavailable",
+            "latency_ms": elapsed_ms,
+        }
+    )
 
 
 # Custom HTML Exception Handlers for Web Browsers

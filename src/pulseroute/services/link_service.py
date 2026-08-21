@@ -2,7 +2,7 @@ import json
 from typing import List, Optional
 
 import redis.asyncio as aioredis
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.common.abuse_filter import is_url_safe
@@ -11,7 +11,7 @@ from pulseroute.core.config import settings
 from pulseroute.core.security import hash_password
 from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
-from pulseroute.schemas.link import LinkCreate
+from pulseroute.schemas.link import LinkCreate, LinkUpdate
 
 
 class LinkService:
@@ -104,6 +104,51 @@ class LinkService:
         return link
 
     @staticmethod
+    async def update_link(
+        db: AsyncSession,
+        redis_cli: Optional[aioredis.Redis],
+        link_id: int,
+        data: LinkUpdate,
+    ) -> Optional[ShortLink]:
+        link = await LinkService.get_link_by_id(db, link_id)
+        if not link:
+            return None
+
+        update_fields = data.model_dump(exclude_unset=True)
+        if "destination_url" in update_fields and settings.ENFORCE_SAFE_BROWSING:
+            safe, reason = is_url_safe(update_fields["destination_url"])
+            if not safe:
+                raise ValueError(f"URL Safety Violation: {reason}")
+
+        for field, value in update_fields.items():
+            setattr(link, field, value)
+
+        await db.commit()
+        await db.refresh(link)
+
+        # Invalidate / Refresh Cache
+        if redis_cli:
+            try:
+                cache_key = LinkService._build_cache_key(None, link.slug)
+                cache_payload = {
+                    "id": link.id,
+                    "destination_url": link.destination_url,
+                    "ios_destination": link.ios_destination or "",
+                    "android_destination": link.android_destination or "",
+                    "geo_targets": link.geo_targets or {},
+                    "expired_url": link.expired_url or "",
+                    "has_password": bool(link.password_hash),
+                    "public_stats": link.public_stats,
+                    "is_active": link.is_active,
+                    "expires_at": link.expires_at.isoformat() if link.expires_at else "",
+                }
+                await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
+            except Exception:
+                pass
+
+        return link
+
+    @staticmethod
     async def get_link_by_id(db: AsyncSession, link_id: int) -> Optional[ShortLink]:
         result = await db.execute(select(ShortLink).where(ShortLink.id == link_id))
         return result.scalar_one_or_none()
@@ -117,12 +162,30 @@ class LinkService:
     async def list_links(
         db: AsyncSession,
         workspace_id: Optional[int] = None,
+        search: Optional[str] = None,
+        tag: Optional[str] = None,
+        is_active: Optional[bool] = None,
         limit: int = 50,
         offset: int = 0
     ) -> List[ShortLink]:
-        query = select(ShortLink).order_by(ShortLink.created_at.desc()).limit(limit).offset(offset)
+        query = select(ShortLink).order_by(ShortLink.created_at.desc())
+
         if workspace_id:
             query = query.where(ShortLink.workspace_id == workspace_id)
+        if tag:
+            query = query.where(ShortLink.tags.ilike(f"%{tag}%"))
+        if is_active is not None:
+            query = query.where(ShortLink.is_active.is_(is_active))
+        if search:
+            query = query.where(
+                or_(
+                    ShortLink.slug.ilike(f"%{search}%"),
+                    ShortLink.title.ilike(f"%{search}%"),
+                    ShortLink.destination_url.ilike(f"%{search}%")
+                )
+            )
+
+        query = query.limit(limit).offset(offset)
         result = await db.execute(query)
         return list(result.scalars().all())
 

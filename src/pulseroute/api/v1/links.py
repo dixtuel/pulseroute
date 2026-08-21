@@ -1,14 +1,14 @@
 from typing import List, Optional
 
 import redis.asyncio as aioredis
-from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
 from pulseroute.core.config import AppMode, settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
-from pulseroute.schemas.link import LinkCreate, LinkResponse
+from pulseroute.schemas.link import LinkCreate, LinkResponse, LinkUpdate
 from pulseroute.services.link_service import LinkService
 
 router = APIRouter(prefix="/links", tags=["Links"])
@@ -60,14 +60,50 @@ async def create_short_link(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
+@router.patch("/{link_id}", response_model=LinkResponse)
+async def update_short_link(
+    link_id: int,
+    link_data: LinkUpdate,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
+):
+    try:
+        link = await LinkService.update_link(db, redis_cli, link_id, link_data)
+        if not link:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
+
+        host = request.headers.get("host") or settings.PRIMARY_DOMAIN
+        return {
+            "id": link.id,
+            "slug": link.slug,
+            "destination_url": link.destination_url,
+            "title": link.title,
+            "tags": link.tags,
+            "short_url": f"http://{host}/{link.slug}",
+            "total_clicks": link.total_clicks,
+            "public_stats": link.public_stats,
+            "is_active": link.is_active,
+            "created_at": link.created_at,
+            "expires_at": link.expires_at,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
 @router.get("", response_model=List[LinkResponse])
 async def list_links(
+    search: Optional[str] = Query(None, description="Search by slug, title or destination"),
+    tag: Optional[str] = Query(None, description="Filter by tag"),
+    is_active: Optional[bool] = Query(None, description="Filter active status"),
     limit: int = 50,
     offset: int = 0,
     request: Request = None,
     db: AsyncSession = Depends(get_db),
 ):
-    links = await LinkService.list_links(db, limit=limit, offset=offset)
+    links = await LinkService.list_links(
+        db, search=search, tag=tag, is_active=is_active, limit=limit, offset=offset
+    )
     host = request.headers.get("host") if request else settings.PRIMARY_DOMAIN
     return [
         {
