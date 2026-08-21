@@ -52,13 +52,79 @@ async def lifespan(app: FastAPI):
     await close_redis()
 
 
+OPENAPI_DESCRIPTION = """
+### ⚡ High-Frequency Link Dispatch, Custom Domains & Real-Time Telemetry Platform
+
+PulseRoute is an open-source, enterprise-grade edge routing infrastructure designed for ultra-low latency link dispatch, multi-tenant workspace isolation, and privacy-preserving visitor analytics.
+
+---
+
+#### 🛡 Authentication & Security
+PulseRoute supports dual-mode authorization:
+* **JWT Bearer Token:** Include in headers: `Authorization: Bearer <your_jwt_token>` (obtained via `/api/v1/auth/login`).
+* **Secret API Key:** Include in headers: `X-API-Key: pr_live_...` or `Authorization: Bearer pr_live_...` (issued per workspace).
+
+---
+
+#### 🚀 Key Features
+1. **Sub-10ms Deterministic Redirects:** Distributed 64-bit Snowflake ID generation & Base62 encoding.
+2. **Multi-Tenant Workspaces:** Strict row-level query filtering & RBAC (`owner`, `admin`, `member`).
+3. **Automated Custom Domain TLS:** Instant Caddy On-Demand TLS handshake with DNS verification.
+4. **Non-Blocking Telemetry:** Redis Stream ingestion with async batch persistence & GDPR/KVKK IP masking.
+5. **Monetization & Interstitial Ads:** Workspace-level AdSense integration and custom timer pages.
+"""
+
+TAGS_METADATA = [
+    {
+        "name": "Authentication",
+        "description": "User registration, JWT session issuance, and `/me` profile inspection.",
+    },
+    {
+        "name": "Workspaces & Tenant Isolation",
+        "description": "Create isolated workspaces, invite team members, and issue production API keys.",
+    },
+    {
+        "name": "Short Links & Routing",
+        "description": "Dispatch high-performance short links, configure iOS/Android fallbacks, and manage UTM tags.",
+    },
+    {
+        "name": "Telemetry & Analytics",
+        "description": "Query live click streams, device architecture distribution, and geo-spatial analytics.",
+    },
+    {
+        "name": "Custom Domains & TLS",
+        "description": "Onboard branded domains with Caddy On-Demand TLS and automated DNS verification challenges.",
+    },
+    {
+        "name": "QR Engine",
+        "description": "Render crisp vector SVG and high-DPI PNG QR codes with custom styling.",
+    },
+    {
+        "name": "Abuse & Security",
+        "description": "Malicious URL detection, phishing domain filters, and rate limit brute force jails.",
+    },
+    {
+        "name": "Diagnostics",
+        "description": "Live health checks, latency measurements, and database/Redis connection probes.",
+    },
+]
+
 app = FastAPI(
-    title="PulseRoute API",
-    description="Enterprise-Grade URL Shortener, Custom Domains & Real-Time Analytics Platform",
+    title="PulseRoute Enterprise Routing API",
+    description=OPENAPI_DESCRIPTION,
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
+    openapi_tags=TAGS_METADATA,
+    swagger_ui_parameters={
+        "docExpansion": "list",
+        "defaultModelsExpandDepth": 2,
+        "syntaxHighlight.theme": "monokai",
+        "persistAuthorization": True,
+        "displayRequestDuration": True,
+        "filter": True,
+    },
 )
 
 # Middleware

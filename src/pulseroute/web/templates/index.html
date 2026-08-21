@@ -90,11 +90,36 @@
                 </div>
             </div>
 
-            <!-- Workspace Indicator -->
-            <div class="flex items-center space-x-3 text-xs font-mono">
-                <div class="px-3 py-1.5 rounded-lg bg-panel border border-divider flex items-center gap-2 text-slate-300">
-                    <i class="fa-solid fa-building text-slate-500"></i>
-                    <span>Default Workspace</span>
+            <!-- Workspace & Auth Indicator -->
+            <div id="authSection" class="flex items-center space-x-3 text-xs font-mono">
+                <!-- Logged Out State -->
+                <div id="loggedOutButtons" class="flex items-center space-x-2">
+                    <button onclick="openModal('loginModal')" class="px-3.5 py-1.5 rounded-lg bg-panel hover:bg-divider text-slate-200 transition border border-divider">
+                        <i class="fa-solid fa-arrow-right-to-bracket mr-1.5 text-amber-500"></i> Login
+                    </button>
+                    <button onclick="openModal('registerModal')" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold transition">
+                        Register
+                    </button>
+                </div>
+
+                <!-- Logged In State (Hidden by default) -->
+                <div id="loggedInControls" class="hidden flex items-center space-x-3">
+                    <!-- Workspace Dropdown -->
+                    <div class="relative">
+                        <select id="workspaceSelect" onchange="onWorkspaceChange()" class="px-3 py-1.5 rounded-lg bg-panel border border-divider text-slate-200 outline-none focus:border-amber-500 text-xs font-mono cursor-pointer pr-8">
+                            <option value="">Default Workspace</option>
+                        </select>
+                    </div>
+                    <button onclick="openModal('newWorkspaceModal')" class="p-1.5 text-slate-400 hover:text-amber-400 transition" title="Create Workspace">
+                        <i class="fa-solid fa-plus-circle text-sm"></i>
+                    </button>
+                    <button onclick="openModal('apiKeysModal')" class="px-2.5 py-1.5 rounded-lg bg-panel hover:bg-divider border border-divider text-slate-300 transition flex items-center gap-1.5" title="API Keys">
+                        <i class="fa-solid fa-key text-amber-400"></i> Keys
+                    </button>
+                    <span id="userEmailBadge" class="text-slate-400 font-mono hidden md:inline px-2 py-1 bg-panel rounded border border-divider/60"></span>
+                    <button onclick="signOut()" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
+                        <i class="fa-solid fa-power-off text-xs"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -276,6 +301,112 @@
         </section>
     </main>
 
+    <!-- Modals -->
+    <!-- Login Modal -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-2 border-b border-divider">
+                <h3 class="font-display font-bold text-sm text-white">Login to PulseRoute</h3>
+                <button onclick="closeModal('loginModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="loginForm" class="space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">EMAIL</label>
+                    <input type="email" id="loginEmail" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">PASSWORD</label>
+                    <input type="password" id="loginPassword" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
+                    Sign In
+                </button>
+            </form>
+            <div class="text-center text-[11px] text-slate-500">
+                Don't have an account? <button onclick="closeModal('loginModal'); openModal('registerModal')" class="text-amber-400 hover:underline">Register</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div id="registerModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-2 border-b border-divider">
+                <h3 class="font-display font-bold text-sm text-white">Create PulseRoute Account</h3>
+                <button onclick="closeModal('registerModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="registerForm" class="space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">FULL NAME</label>
+                    <input type="text" id="regName" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">EMAIL</label>
+                    <input type="email" id="regEmail" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">PASSWORD (Min 8 chars)</label>
+                    <input type="password" id="regPassword" required minlength="8" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
+                    Create Account & Workspace
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Workspace Modal -->
+    <div id="newWorkspaceModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-2 border-b border-divider">
+                <h3 class="font-display font-bold text-sm text-white">New Workspace</h3>
+                <button onclick="closeModal('newWorkspaceModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="newWorkspaceForm" class="space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">WORKSPACE NAME</label>
+                    <input type="text" id="wsName" required placeholder="Growth Team" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">SLUG</label>
+                    <input type="text" id="wsSlug" required placeholder="growth-team" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
+                    Provision Workspace
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- API Keys Modal -->
+    <div id="apiKeysModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-carbon border border-divider rounded-xl max-w-md w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center pb-2 border-b border-divider">
+                <h3 class="font-display font-bold text-sm text-white">Workspace API Keys</h3>
+                <button onclick="closeModal('apiKeysModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p class="text-xs font-mono text-slate-400">Generate secret API keys (<code class="text-amber-400 font-mono">pr_live_...</code>) for server-to-server dispatch without JWT expiration.</p>
+            
+            <form id="createApiKeyForm" class="space-y-3 font-mono text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">KEY LABEL</label>
+                    <input type="text" id="apiKeyLabel" required value="Production API Key" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                </div>
+                <button type="submit" class="w-full py-2 rounded bg-panel hover:bg-divider border border-divider text-amber-400 font-semibold transition">
+                    <i class="fa-solid fa-plus mr-1"></i> Generate New Secret Key
+                </button>
+            </form>
+
+            <div id="newKeyBox" class="hidden p-3 rounded bg-amber-500/10 border border-amber-500/30 space-y-1 font-mono text-xs">
+                <span class="text-[10px] text-amber-400 font-bold uppercase block">Copy Key Now (Shown Once):</span>
+                <div class="flex items-center justify-between">
+                    <code id="generatedKeyValue" class="text-white text-xs font-bold break-all"></code>
+                    <button onclick="copyGeneratedKey()" class="ml-2 px-2 py-1 rounded bg-amber-500 text-black text-[10px] font-bold">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Footer -->
     <footer class="border-t border-divider bg-carbon py-6 text-center text-[11px] font-mono text-slate-500">
         <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
@@ -291,12 +422,215 @@
     <script>
         let deviceChart = null;
         let allLinks = [];
+        let userWorkspaces = [];
+        let currentWorkspaceId = localStorage.getItem('pr_workspace_id') || null;
+
+        function getToken() {
+            return localStorage.getItem('pr_token');
+        }
+
+        function getAuthHeaders() {
+            const token = getToken();
+            const headers = { 'Content-Type': 'application/json' };
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+            if (currentWorkspaceId) {
+                headers['X-Workspace-Id'] = currentWorkspaceId;
+            }
+            return headers;
+        }
+
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        async function initAuth() {
+            const token = getToken();
+            if (!token) {
+                document.getElementById('loggedOutButtons').classList.remove('hidden');
+                document.getElementById('loggedInControls').classList.add('hidden');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/v1/auth/me', { headers: getAuthHeaders() });
+                if (res.ok) {
+                    const user = await res.json();
+                    document.getElementById('loggedOutButtons').classList.add('hidden');
+                    document.getElementById('loggedInControls').classList.remove('hidden');
+                    document.getElementById('userEmailBadge').innerText = user.email;
+                    loadWorkspaces();
+                } else {
+                    signOut();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function loadWorkspaces() {
+            try {
+                const res = await fetch('/api/v1/workspaces', { headers: getAuthHeaders() });
+                if (res.ok) {
+                    userWorkspaces = await res.json();
+                    const select = document.getElementById('workspaceSelect');
+                    select.innerHTML = userWorkspaces.map(w => `
+                        <option value="${w.id}" ${w.id == currentWorkspaceId ? 'selected' : ''}>${w.name}</option>
+                    `).join('');
+
+                    if (userWorkspaces.length && !currentWorkspaceId) {
+                        currentWorkspaceId = userWorkspaces[0].id;
+                        localStorage.setItem('pr_workspace_id', currentWorkspaceId);
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        function onWorkspaceChange() {
+            currentWorkspaceId = document.getElementById('workspaceSelect').value;
+            localStorage.setItem('pr_workspace_id', currentWorkspaceId);
+            loadLinks();
+            loadAnalytics();
+        }
+
+        function signOut() {
+            localStorage.removeItem('pr_token');
+            localStorage.removeItem('pr_workspace_id');
+            window.location.reload();
+        }
+
+        // Login Handler
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const res = await fetch('/api/v1/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    localStorage.setItem('pr_token', data.access_token);
+                    closeModal('loginModal');
+                    window.location.reload();
+                } else {
+                    alert(data.detail || 'Login failed');
+                }
+            } catch (e) {
+                alert('Connection error during login');
+            }
+        });
+
+        // Register Handler
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const fullName = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+
+            try {
+                const res = await fetch('/api/v1/auth/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ full_name: fullName, email, password })
+                });
+                if (res.ok) {
+                    // Auto login
+                    const loginRes = await fetch('/api/v1/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email, password })
+                    });
+                    const loginData = await loginRes.json();
+                    localStorage.setItem('pr_token', loginData.access_token);
+                    closeModal('registerModal');
+                    window.location.reload();
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || 'Registration failed');
+                }
+            } catch (e) {
+                alert('Connection error during registration');
+            }
+        });
+
+        // Create Workspace Handler
+        document.getElementById('newWorkspaceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('wsName').value;
+            const slug = document.getElementById('wsSlug').value;
+
+            try {
+                const res = await fetch('/api/v1/workspaces', {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ name, slug })
+                });
+                if (res.ok) {
+                    const ws = await res.json();
+                    currentWorkspaceId = ws.id;
+                    localStorage.setItem('pr_workspace_id', currentWorkspaceId);
+                    closeModal('newWorkspaceModal');
+                    loadWorkspaces();
+                    loadLinks();
+                } else {
+                    const data = await res.json();
+                    alert(data.detail || 'Failed to create workspace');
+                }
+            } catch (e) {
+                alert('Connection error');
+            }
+        });
+
+        // Generate API Key Handler
+        document.getElementById('createApiKeyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const wsId = currentWorkspaceId || (userWorkspaces[0] ? userWorkspaces[0].id : null);
+            if (!wsId) {
+                alert('Please select or create a workspace first');
+                return;
+            }
+
+            const label = document.getElementById('apiKeyLabel').value;
+            try {
+                const res = await fetch(`/api/v1/workspaces/${wsId}/api-keys?key_name=${encodeURIComponent(label)}`, {
+                    method: 'POST',
+                    headers: getAuthHeaders()
+                });
+                if (res.ok) {
+                    const keyData = await res.json();
+                    document.getElementById('generatedKeyValue').innerText = keyData.api_key;
+                    document.getElementById('newKeyBox').classList.remove('hidden');
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Failed to generate key');
+                }
+            } catch (e) {
+                alert('Error generating API key');
+            }
+        });
+
+        function copyGeneratedKey() {
+            const key = document.getElementById('generatedKeyValue').innerText;
+            navigator.clipboard.writeText(key);
+            alert('API Key copied to clipboard');
+        }
 
         async function loadLinks() {
             try {
-                const res = await fetch('/api/v1/links');
+                const res = await fetch('/api/v1/links', { headers: getAuthHeaders() });
                 allLinks = await res.json();
-                renderLinksTable(allLinks);
+                renderLinksTable(Array.isArray(allLinks) ? allLinks : []);
             } catch (e) {
                 console.error(e);
             }
@@ -360,10 +694,10 @@
 
         async function loadAnalytics() {
             try {
-                const res = await fetch('/api/v1/analytics');
+                const res = await fetch('/api/v1/analytics', { headers: getAuthHeaders() });
                 const data = await res.json();
                 
-                document.getElementById('statBotClicks').innerText = data.bot_clicks;
+                document.getElementById('statBotClicks').innerText = data.bot_clicks || 0;
 
                 // Render Countries Breakdown
                 const countryContainer = document.getElementById('countriesBreakdown');
@@ -380,8 +714,8 @@
 
                 // Render Technical Telemetry Doughnut Chart
                 const ctx = document.getElementById('deviceChart').getContext('2d');
-                const labels = data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
-                const counts = data.devices.length ? data.devices.map(d => d.count) : [0, 0, 0];
+                const labels = data.devices && data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
+                const counts = data.devices && data.devices.length ? data.devices.map(d => d.count) : [0, 0, 0];
 
                 if (deviceChart) deviceChart.destroy();
                 deviceChart = new Chart(ctx, {
@@ -412,7 +746,7 @@
 
         async function deleteLink(id) {
             if (!confirm('Purge this short link from routing matrix?')) return;
-            await fetch(`/api/v1/links/${id}`, { method: 'DELETE' });
+            await fetch(`/api/v1/links/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
             loadLinks();
         }
 
@@ -433,7 +767,7 @@
             try {
                 const res = await fetch('/api/v1/links', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: getAuthHeaders(),
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
@@ -459,7 +793,8 @@
             alert('Short URL copied to clipboard');
         }
 
-        // Init
+        // Init Lifecycle
+        initAuth();
         loadLinks();
         loadAnalytics();
     </script>

@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pulseroute.api.deps import require_authenticated_user
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
 from pulseroute.core.security import create_access_token, hash_password, verify_password
@@ -75,3 +76,12 @@ async def login(
     await BruteForceGuard.record_success(redis_cli, client_ip)
     token = create_access_token(data={"sub": str(user.id), "email": user.email}, expires_delta=timedelta(days=7))
     return {"access_token": token, "token_type": "bearer"}
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_profile(
+    user: User = Depends(require_authenticated_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Retrieve currently authenticated user profile."""
+    return user
