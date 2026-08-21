@@ -1,38 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service | PulseRoute</title>
+    <title>Terms of Service & Acceptable Use | PulseRoute</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Plus Jakarta Sans', sans-serif; }</style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#07090A',
+                        carbon: '#0E1316',
+                        panel: '#141B1F',
+                        divider: '#202A30',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #07090A; color: #E2E8F0; }
+        .grid-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+        }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen py-12 px-6">
-    <div class="max-w-3xl mx-auto space-y-8 bg-slate-900/60 border border-slate-800 p-8 rounded-2xl">
-        <div class="border-b border-slate-800 pb-4">
-            <h1 class="text-2xl font-bold text-white">Terms of Service & Acceptable Use</h1>
-            <p class="text-xs text-slate-400 mt-1">Effective: August 2026</p>
+<body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
+    <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
+        <div class="border-b border-divider pb-4">
+            <h1 class="text-xl font-display font-bold text-white tracking-tight">Terms of Service & Acceptable Use</h1>
+            <p class="text-xs text-slate-500 font-mono mt-1">TELEMETRY OPERATOR POLICY • 2026</p>
         </div>
 
-        <section class="space-y-3 text-sm text-slate-300">
-            <h2 class="text-lg font-semibold text-white">1. Acceptable Use Policy</h2>
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">1. Acceptable Use Policy</h2>
             <p>PulseRoute may not be used to distribute malware, phishing campaigns, scam pages, or illegal content. Links violating this policy are subject to immediate termination.</p>
         </section>
 
-        <section class="space-y-3 text-sm text-slate-300">
-            <h2 class="text-lg font-semibold text-white">2. Rate Limiting & Abuse Protection</h2>
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">2. Rate Limiting & Abuse Protection</h2>
             <p>Automated scraping, denial-of-service attempts, and brute-force attacks against link creation or authentication endpoints will trigger automatic IP jail and request blocking.</p>
         </section>
 
-        <section class="space-y-3 text-sm text-slate-300">
-            <h2 class="text-lg font-semibold text-white">3. Self-Hosted Warranty Disclaimer</h2>
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">3. Self-Hosted Warranty Disclaimer</h2>
             <p>The software is provided under the MIT License on an "AS IS" basis without warranties of any kind regarding uptime or availability.</p>
         </section>
 
-        <div class="pt-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-400">
-            <span>PulseRoute Open Source Platform</span>
-            <a href="/dashboard" class="text-indigo-400 hover:underline">Back to Dashboard</a>
+        <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
+            <span>PulseRoute Telemetry Console</span>
+            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
         </div>
     </div>
 </body>

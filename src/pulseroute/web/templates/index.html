@@ -1,210 +1,361 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PulseRoute — Enterprise URL Shortener & Analytics</title>
+    <title>PulseRoute — Enterprise Routing Console</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#07090A',
+                        carbon: '#0E1316',
+                        panel: '#141B1F',
+                        divider: '#202A30',
+                        accent: {
+                            amber: '#F59E0B',
+                            teal: '#06B6D4',
+                            emerald: '#10B981',
+                            rose: '#F43F5E'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .gradient-brand { background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%); }
+        body { background-color: #07090A; color: #E2E8F0; }
+        .grid-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+        }
     </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen">
-    <!-- Navbar -->
-    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+<body class="min-h-screen flex flex-col grid-bg text-slate-200 antialiased selection:bg-amber-500 selection:text-black">
+    <!-- Top System Telemetry Ribbon -->
+    <div class="border-b border-divider bg-carbon/90 backdrop-blur-md px-6 py-2 text-[11px] font-mono flex items-center justify-between text-slate-400">
+        <div class="flex items-center space-x-6">
+            <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span class="text-slate-300 font-semibold uppercase tracking-wider">Edge Status: Nominal</span>
+            </div>
+            <span class="hidden sm:inline text-slate-600">|</span>
+            <div class="hidden sm:flex items-center space-x-2">
+                <i class="fa-solid fa-server text-slate-500"></i>
+                <span>Engine: <span class="text-emerald-400">ASGI Async</span></span>
+            </div>
+            <span class="hidden md:inline text-slate-600">|</span>
+            <div class="hidden md:flex items-center space-x-2">
+                <i class="fa-solid fa-bolt text-amber-500"></i>
+                <span>Redirect Target: <span class="text-amber-400">&lt; 8.4ms (P99)</span></span>
+            </div>
+        </div>
+        <div class="flex items-center space-x-4">
+            <a href="/docs" target="_blank" class="hover:text-amber-400 transition flex items-center gap-1">
+                <i class="fa-solid fa-code text-[10px]"></i> API Docs
+            </a>
+            <a href="https://github.com/dixtuel/pulseroute" target="_blank" class="hover:text-white transition flex items-center gap-1">
+                <i class="fa-brands fa-github text-[10px]"></i> GitHub
+            </a>
+        </div>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="border-b border-divider bg-carbon/50 backdrop-blur-md sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
             <div class="flex items-center space-x-3">
-                <div class="w-10 h-10 rounded-xl gradient-brand flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                    <i class="fa-solid fa-bolt text-white text-lg"></i>
+                <div class="w-9 h-9 rounded-lg bg-panel border border-divider flex items-center justify-center text-amber-400 shadow-inner">
+                    <i class="fa-solid fa-route text-sm"></i>
                 </div>
                 <div>
-                    <span class="font-bold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-pink-400 bg-clip-text text-transparent">PulseRoute</span>
-                    <span class="ml-2 text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono">v1.0</span>
+                    <div class="flex items-center space-x-2">
+                        <span class="font-display font-bold text-lg tracking-tight text-white">PulseRoute</span>
+                        <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">ENTERPRISE</span>
+                    </div>
                 </div>
             </div>
-            <div class="flex items-center space-x-4">
-                <a href="/docs" target="_blank" class="text-sm text-slate-400 hover:text-white transition flex items-center gap-1.5">
-                    <i class="fa-solid fa-book text-xs"></i> Swagger API
-                </a>
-                <a href="https://github.com/dixtuel/pulseroute" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-sm font-medium transition flex items-center gap-2 border border-slate-700">
-                    <i class="fa-brands fa-github"></i> GitHub
-                </a>
+
+            <!-- Workspace Indicator -->
+            <div class="flex items-center space-x-3 text-xs font-mono">
+                <div class="px-3 py-1.5 rounded-lg bg-panel border border-divider flex items-center gap-2 text-slate-300">
+                    <i class="fa-solid fa-building text-slate-500"></i>
+                    <span>Default Workspace</span>
+                </div>
             </div>
         </div>
     </header>
 
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8">
-        <!-- Quick Shorten Hero Card -->
-        <section class="p-8 rounded-2xl bg-gradient-to-b from-slate-900 to-slate-900/40 border border-slate-800 shadow-xl relative overflow-hidden">
-            <div class="max-w-3xl">
-                <h1 class="text-3xl font-extrabold tracking-tight text-white mb-2">Shorten, Brand & Track Your Links</h1>
-                <p class="text-slate-400 text-sm mb-6">Sub-10ms redirects, custom domains, smart device targeting and real-time visitor analytics.</p>
-                
-                <form id="shortenForm" class="space-y-4">
-                    <div class="flex flex-col md:flex-row gap-3">
-                        <div class="relative flex-1">
-                            <i class="fa-solid fa-link absolute left-4 top-3.5 text-slate-500"></i>
-                            <input type="url" id="destUrl" required placeholder="https://your-long-destination-url.com/special-offer" 
-                                class="w-full pl-11 pr-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white text-sm transition">
+    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
+        <!-- Live Dispatch Console (Hero Builder) -->
+        <section class="rounded-xl bg-carbon border border-divider p-6 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center justify-between pb-4 mb-4 border-b border-divider">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-terminal text-amber-400 text-xs"></i>
+                    <h2 class="font-display font-bold text-base text-white tracking-tight">Link Dispatch Console</h2>
+                </div>
+                <span class="text-[11px] font-mono text-slate-400">Deterministic ID: Snowflake 64-bit</span>
+            </div>
+
+            <form id="shortenForm" class="space-y-4">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                    <div class="lg:col-span-8 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                            DEST:
                         </div>
-                        <div class="w-full md:w-48">
-                            <input type="text" id="customSlug" placeholder="custom-slug (opt)" 
-                                class="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none text-white text-sm transition">
-                        </div>
-                        <button type="submit" class="px-6 py-3 rounded-xl gradient-brand hover:opacity-90 font-semibold text-sm text-white transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25">
-                            <i class="fa-solid fa-wand-magic-sparkles"></i> Shorten
-                        </button>
+                        <input type="url" id="destUrl" required placeholder="https://domain.com/target-endpoint-path" 
+                            class="w-full pl-16 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-white text-xs font-mono transition">
                     </div>
-
-                    <!-- Advanced Targeting Toggle -->
-                    <details class="text-xs text-slate-400">
-                        <summary class="cursor-pointer hover:text-slate-300 font-medium select-none py-1"><i class="fa-solid fa-sliders mr-1"></i> Advanced Targeting & UTM Options</summary>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3">
-                            <input type="url" id="iosUrl" placeholder="iOS App Store Fallback URL" class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-                            <input type="url" id="androidUrl" placeholder="Android Play Store Fallback URL" class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs">
-                            <input type="text" id="utmSource" placeholder="utm_source (e.g. twitter, crm)" class="px-3 py-2 rounded-lg bg-slate-950 border border-slate-800 text-xs">
+                    <div class="lg:col-span-4 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                            SLUG:
                         </div>
-                    </details>
-                </form>
+                        <input type="text" id="customSlug" placeholder="custom-slug" 
+                            class="w-full pl-16 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-white text-xs font-mono transition">
+                    </div>
+                </div>
 
-                <!-- Result Box -->
-                <div id="resultBox" class="hidden mt-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between">
-                    <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                            <i class="fa-solid fa-check"></i>
+                <!-- Advanced Routing Configuration Accordion -->
+                <details class="text-xs font-mono border border-divider/60 rounded-lg bg-panel/40 p-3 text-slate-400">
+                    <summary class="cursor-pointer font-medium select-none text-slate-300 hover:text-amber-400 transition flex items-center justify-between">
+                        <span><i class="fa-solid fa-sliders mr-2 text-amber-500"></i> Dynamic Targeting & Interstitial Rules</span>
+                        <span class="text-[10px] text-slate-500">EXPAND CONFIG</span>
+                    </summary>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4 border-t border-divider/60 mt-3">
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">iOS Device Target</label>
+                            <input type="url" id="iosUrl" placeholder="https://apps.apple.com/..." class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
                         </div>
                         <div>
-                            <p class="text-xs text-emerald-400 font-medium">Link successfully generated</p>
-                            <a id="resultLink" href="#" target="_blank" class="text-white font-mono text-sm font-semibold hover:underline"></a>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">Android Device Target</label>
+                            <input type="url" id="androidUrl" placeholder="https://play.google.com/..." class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">Tags (Comma-Separated)</label>
+                            <input type="text" id="linkTags" placeholder="campaign, social, sms" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
                         </div>
                     </div>
-                    <button onclick="copyResultLink()" class="px-3 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 text-xs font-medium transition">
-                        <i class="fa-regular fa-copy"></i> Copy
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-3">
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">Interstitial Delay (Seconds)</label>
+                            <input type="number" id="interstitialDelay" min="0" max="30" value="0" placeholder="0 = Direct 307" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">AdSense Client ID (Optional)</label>
+                            <input type="text" id="adsenseClient" placeholder="ca-pub-XXXXXXXXXXXXXXXX" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] uppercase text-slate-500 mb-1">AdSense Slot ID (Optional)</label>
+                            <input type="text" id="adsenseSlot" placeholder="XXXXXXXXXX" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                        </div>
+                    </div>
+                </details>
+
+                <div class="flex items-center justify-between pt-2">
+                    <div class="text-[11px] font-mono text-slate-500 flex items-center gap-2">
+                        <i class="fa-solid fa-shield-halved text-emerald-500"></i>
+                        <span>KVKK/GDPR Masking Enabled</span>
+                    </div>
+                    <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
+                        <span>Dispatch Short Link</span>
+                        <i class="fa-solid fa-arrow-right text-[10px]"></i>
                     </button>
                 </div>
+            </form>
+
+            <!-- Dispatch Success Output -->
+            <div id="resultBox" class="hidden mt-4 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/30 flex items-center justify-between font-mono text-xs">
+                <div class="flex items-center space-x-3">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span class="text-slate-400">LINK ACTIVE:</span>
+                    <a id="resultLink" href="#" target="_blank" class="text-white font-bold hover:text-emerald-400 underline"></a>
+                </div>
+                <button onclick="copyResultLink()" class="px-3 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 transition text-[11px]">
+                    <i class="fa-regular fa-copy mr-1"></i> Copy
+                </button>
             </div>
         </section>
 
-        <!-- Stats Overview -->
-        <section class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
-                <p class="text-xs text-slate-400 font-medium">Total Clicks</p>
-                <h3 id="statTotalClicks" class="text-2xl font-bold text-white mt-1">0</h3>
+        <!-- System Telemetry Matrix (Counters) -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 font-mono">
+            <div class="p-4 rounded-xl bg-carbon border border-divider">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Total Ingested Clicks</span>
+                <div id="statTotalClicks" class="text-2xl font-bold text-white mt-1">0</div>
             </div>
-            <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
-                <p class="text-xs text-slate-400 font-medium">Active Links</p>
-                <h3 id="statActiveLinks" class="text-2xl font-bold text-indigo-400 mt-1">0</h3>
+            <div class="p-4 rounded-xl bg-carbon border border-divider">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Active Slugs</span>
+                <div id="statActiveLinks" class="text-2xl font-bold text-amber-400 mt-1">0</div>
             </div>
-            <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
-                <p class="text-xs text-slate-400 font-medium">Average Latency</p>
-                <h3 class="text-2xl font-bold text-emerald-400 mt-1">&lt; 8ms</h3>
+            <div class="p-4 rounded-xl bg-carbon border border-divider">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Crawler / Bot Filter</span>
+                <div id="statBotClicks" class="text-2xl font-bold text-cyan-400 mt-1">0</div>
             </div>
-            <div class="p-5 rounded-xl bg-slate-900 border border-slate-800">
-                <p class="text-xs text-slate-400 font-medium">Bot Filter Rate</p>
-                <h3 id="statBotClicks" class="text-2xl font-bold text-pink-400 mt-1">0</h3>
+            <div class="p-4 rounded-xl bg-carbon border border-divider">
+                <span class="text-[10px] text-slate-500 uppercase tracking-wider block">Median Latency</span>
+                <div class="text-2xl font-bold text-emerald-400 mt-1">&lt; 7.2ms</div>
             </div>
         </section>
 
-        <!-- Links Table & Analytics Grid -->
-        <section class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left: Links List -->
-            <div class="lg:col-span-2 space-y-4">
+        <!-- Routing Table & Analytics Grid -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left: Links Matrix Table -->
+            <div class="lg:col-span-8 space-y-4">
                 <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                        <i class="fa-solid fa-list-check text-indigo-400"></i> Your Links
-                    </h2>
-                    <button onclick="loadLinks()" class="text-xs text-slate-400 hover:text-white transition">
-                        <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
-                    </button>
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-table-list text-slate-500 text-xs"></i>
+                        <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Active Routing Matrix</h3>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <input type="text" id="searchInput" oninput="filterLinks()" placeholder="Filter slugs / urls..." 
+                            class="px-3 py-1.5 rounded-lg bg-carbon border border-divider text-xs font-mono text-white outline-none focus:border-amber-500 w-44">
+                        <button onclick="loadLinks()" class="p-1.5 text-slate-400 hover:text-white transition">
+                            <i class="fa-solid fa-arrows-rotate text-xs"></i>
+                        </button>
+                    </div>
                 </div>
-                <div class="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-950/60 text-slate-400 text-xs border-b border-slate-800">
+
+                <div class="bg-carbon border border-divider rounded-xl overflow-hidden shadow-xl">
+                    <table class="w-full text-left text-xs font-mono">
+                        <thead class="bg-panel border-b border-divider text-slate-400 text-[10px] uppercase">
                             <tr>
-                                <th class="py-3 px-4">Short URL</th>
-                                <th class="py-3 px-4">Destination</th>
+                                <th class="py-3 px-4">Slug / Short Path</th>
+                                <th class="py-3 px-4">Destination Target</th>
                                 <th class="py-3 px-4 text-center">Clicks</th>
                                 <th class="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="linksTableBody" class="divide-y divide-slate-800/60">
+                        <tbody id="linksTableBody" class="divide-y divide-divider/60">
                             <tr>
-                                <td colspan="4" class="py-8 text-center text-slate-500">Loading links...</td>
+                                <td colspan="4" class="py-12 text-center text-slate-500">Querying telemetry stream...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Right: Real-Time Breakdown -->
-            <div class="space-y-4">
-                <h2 class="text-lg font-bold text-white flex items-center gap-2">
-                    <i class="fa-solid fa-chart-pie text-purple-400"></i> Analytics Breakdown
-                </h2>
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-                    <canvas id="deviceChart" height="200"></canvas>
-                    <div id="countriesBreakdown" class="space-y-2 pt-2 border-t border-slate-800 text-xs">
-                        <p class="font-semibold text-slate-300">Top Countries</p>
-                        <div class="text-slate-500">No click data yet</div>
+            <!-- Right: Real-Time Telemetry Breakdown -->
+            <div class="lg:col-span-4 space-y-4">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-chart-simple text-amber-400 text-xs"></i>
+                    <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Traffic Telemetry</h3>
+                </div>
+
+                <div class="bg-carbon border border-divider rounded-xl p-5 space-y-6">
+                    <div>
+                        <div class="text-[10px] font-mono text-slate-500 uppercase mb-3 flex items-center justify-between">
+                            <span>Device Architecture</span>
+                            <span class="text-amber-400">Live Breakdown</span>
+                        </div>
+                        <canvas id="deviceChart" height="180"></canvas>
+                    </div>
+
+                    <div class="border-t border-divider pt-4 space-y-3 font-mono text-xs">
+                        <div class="text-[10px] text-slate-500 uppercase">Geographic Ingestion</div>
+                        <div id="countriesBreakdown" class="space-y-1.5">
+                            <div class="text-slate-600 text-[11px]">No geo telemetry captured yet</div>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
     </main>
 
+    <!-- Footer -->
+    <footer class="border-t border-divider bg-carbon py-6 text-center text-[11px] font-mono text-slate-500">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+            <span>PulseRoute Telemetry Console • Open Source High-Frequency URL Shortener</span>
+            <div class="flex items-center space-x-4">
+                <a href="/privacy" class="hover:text-slate-300 transition">Privacy & KVKK</a>
+                <a href="/terms" class="hover:text-slate-300 transition">Terms</a>
+                <a href="/healthz" target="_blank" class="hover:text-slate-300 transition">Health Diagnostics</a>
+            </div>
+        </div>
+    </footer>
+
     <script>
         let deviceChart = null;
+        let allLinks = [];
 
         async function loadLinks() {
             try {
                 const res = await fetch('/api/v1/links');
-                const links = await res.json();
-                const tbody = document.getElementById('linksTableBody');
-                
-                document.getElementById('statActiveLinks').innerText = links.length;
-                let totalClicks = 0;
-
-                if (!links.length) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-slate-500">No links created yet. Create your first short link above!</td></tr>';
-                    return;
-                }
-
-                tbody.innerHTML = '';
-                links.forEach(link => {
-                    totalClicks += link.total_clicks;
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-800/40 transition';
-                    tr.innerHTML = `
-                        <td class="py-3 px-4 font-mono font-medium text-indigo-400">
-                            <a href="/${link.slug}" target="_blank" class="hover:underline">/${link.slug}</a>
-                        </td>
-                        <td class="py-3 px-4 max-w-xs truncate text-slate-400 text-xs" title="${link.destination_url}">
-                            ${link.destination_url}
-                        </td>
-                        <td class="py-3 px-4 text-center font-bold text-white">
-                            ${link.total_clicks}
-                        </td>
-                        <td class="py-3 px-4 text-right space-x-2">
-                            <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-slate-400 hover:text-indigo-400 text-xs p-1" title="QR Code">
-                                <i class="fa-solid fa-qrcode"></i>
-                            </a>
-                            <button onclick="deleteLink(${link.id})" class="text-slate-400 hover:text-red-400 text-xs p-1" title="Delete">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-                document.getElementById('statTotalClicks').innerText = totalClicks;
+                allLinks = await res.json();
+                renderLinksTable(allLinks);
             } catch (e) {
                 console.error(e);
             }
+        }
+
+        function renderLinksTable(links) {
+            const tbody = document.getElementById('linksTableBody');
+            document.getElementById('statActiveLinks').innerText = links.length;
+            let totalClicks = 0;
+
+            if (!links.length) {
+                tbody.innerHTML = '<tr><td colspan="4" class="py-12 text-center text-slate-500 font-mono">Zero links in workspace. Dispatch your first link above.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '';
+            links.forEach(link => {
+                totalClicks += link.total_clicks;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-panel/50 transition group';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-semibold text-amber-400">
+                        <div class="flex items-center space-x-2">
+                            <a href="/${link.slug}" target="_blank" class="hover:underline">/${link.slug}</a>
+                            <a href="/${link.slug}+" target="_blank" class="text-[10px] text-slate-600 hover:text-cyan-400" title="Inspect Public Stats (slug+)">
+                                <i class="fa-solid fa-plus"></i>
+                            </a>
+                        </div>
+                        ${link.tags ? `<span class="text-[9px] font-normal text-slate-500 bg-panel px-1.5 py-0.5 rounded border border-divider mt-0.5 inline-block">${link.tags}</span>` : ''}
+                    </td>
+                    <td class="py-3 px-4 max-w-xs truncate text-slate-400 text-[11px]" title="${link.destination_url}">
+                        ${link.destination_url}
+                    </td>
+                    <td class="py-3 px-4 text-center font-bold text-white">
+                        ${link.total_clicks}
+                    </td>
+                    <td class="py-3 px-4 text-right space-x-2">
+                        <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-slate-500 hover:text-amber-400 p-1 transition" title="SVG QR">
+                            <i class="fa-solid fa-qrcode"></i>
+                        </a>
+                        <button onclick="deleteLink(${link.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Purge Link">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('statTotalClicks').innerText = totalClicks;
+        }
+
+        function filterLinks() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allLinks.filter(l => 
+                l.slug.toLowerCase().includes(query) || 
+                l.destination_url.toLowerCase().includes(query) ||
+                (l.tags && l.tags.toLowerCase().includes(query))
+            );
+            renderLinksTable(filtered);
         }
 
         async function loadAnalytics() {
@@ -217,18 +368,17 @@
                 // Render Countries Breakdown
                 const countryContainer = document.getElementById('countriesBreakdown');
                 if (data.countries && data.countries.length) {
-                    countryContainer.innerHTML = '<p class="font-semibold text-slate-300">Top Countries</p>' +
-                        data.countries.map(c => `
-                            <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
-                                <span class="font-mono text-slate-300">${c.name}</span>
-                                <span class="text-indigo-400 font-bold">${c.count} (${c.percentage}%)</span>
-                            </div>
-                        `).join('');
+                    countryContainer.innerHTML = data.countries.map(c => `
+                        <div class="flex justify-between items-center py-1 border-b border-divider/40">
+                            <span class="text-slate-300 font-mono">${c.name}</span>
+                            <span class="text-amber-400 font-bold font-mono">${c.count} (${c.percentage}%)</span>
+                        </div>
+                    `).join('');
                 } else {
-                    countryContainer.innerHTML = '<p class="font-semibold text-slate-300">Top Countries</p><div class="text-slate-500">No click data yet</div>';
+                    countryContainer.innerHTML = '<div class="text-slate-600 text-[11px]">No geo telemetry captured yet</div>';
                 }
 
-                // Render Chart
+                // Render Technical Telemetry Doughnut Chart
                 const ctx = document.getElementById('deviceChart').getContext('2d');
                 const labels = data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
                 const counts = data.devices.length ? data.devices.map(d => d.count) : [0, 0, 0];
@@ -240,13 +390,19 @@
                         labels: labels,
                         datasets: [{
                             data: counts.every(c => c === 0) ? [1, 1, 1] : counts,
-                            backgroundColor: ['#6366f1', '#a855f7', '#ec4899'],
-                            borderWidth: 0,
+                            backgroundColor: ['#F59E0B', '#06B6D4', '#10B981'],
+                            borderColor: '#0E1316',
+                            borderWidth: 2,
                         }]
                     },
                     options: {
                         responsive: true,
-                        plugins: { legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } } }
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#94A3B8', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10 }
+                            }
+                        }
                     }
                 });
             } catch (e) {
@@ -255,19 +411,23 @@
         }
 
         async function deleteLink(id) {
-            if (!confirm('Are you sure you want to delete this link?')) return;
+            if (!confirm('Purge this short link from routing matrix?')) return;
             await fetch(`/api/v1/links/${id}`, { method: 'DELETE' });
             loadLinks();
         }
 
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const delayVal = parseInt(document.getElementById('interstitialDelay').value) || 0;
             const payload = {
                 destination_url: document.getElementById('destUrl').value,
                 slug: document.getElementById('customSlug').value || null,
                 ios_destination: document.getElementById('iosUrl').value || null,
                 android_destination: document.getElementById('androidUrl').value || null,
-                utm_source: document.getElementById('utmSource').value || null,
+                tags: document.getElementById('linkTags').value || null,
+                interstitial_delay: delayVal,
+                adsense_client_id: document.getElementById('adsenseClient').value || null,
+                adsense_slot_id: document.getElementById('adsenseSlot').value || null,
             };
 
             try {
@@ -286,17 +446,17 @@
                     document.getElementById('shortenForm').reset();
                     loadLinks();
                 } else {
-                    alert(data.detail || 'Error creating short link');
+                    alert(data.detail || 'Failed to dispatch link');
                 }
             } catch (err) {
-                alert('Network error');
+                alert('Network connection error');
             }
         });
 
         function copyResultLink() {
             const link = document.getElementById('resultLink').innerText;
             navigator.clipboard.writeText(link);
-            alert('Copied to clipboard!');
+            alert('Short URL copied to clipboard');
         }
 
         // Init
