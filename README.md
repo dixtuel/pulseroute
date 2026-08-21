@@ -4,44 +4,28 @@
 
 **Enterprise-Grade URL Shortener, Custom Domains & Real-Time Analytics Platform**
 
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-pulseroute.onrender.com-00B4D8?style=flat&logo=render)](https://pulseroute.onrender.com)
 [![CI Pipeline](https://github.com/dixtuel/pulseroute/actions/workflows/ci.yml/badge.svg)](https://github.com/dixtuel/pulseroute/actions)
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=dixtuel/pulseroute)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
 *Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, and an embedded modern dashboard with rich terminal CLI.*
 
-[Launch Instant Cloud Demo](#instant-cloud-demo-github-codespaces) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Production Deploy](#production-deployment-docker-compose)
+[🚀 Live Cloud Demo](https://pulseroute.onrender.com) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Production Deploy](#production-deployment-docker-compose)
 
 ---
 
 </div>
 
-## Overview
+## 🌐 Live Cloud Demo
 
-PulseRoute is an open-source link management and attribution platform built for developers, marketing teams, and infrastructure engineers who demand **complete data ownership**, **lightning-fast redirection speeds**, and **zero-friction custom domain onboarding**.
+PulseRoute is running live in production on Render with full Postgres & Redis backing:
 
-### Key Highlights:
-- **Ultra-Fast Redirects (<10ms):** Redis Cache-Aside with Singleflight distributed locking and negative caching against cache stampede attacks.
-- **Custom Domains & Zero-Config SSL:** Native Caddy On-Demand TLS integration (`/api/v1/internal/caddy-check`) with DNS TXT/CNAME validation.
-- **Asynchronous Non-Blocking Analytics:** Ingests clicks instantly into Redis Streams (`XADD`), batch-consumed by async workers into PostgreSQL with GeoIP and Bot detection.
-- **Geo & Device Targeting:** Automatically route by visitor country (e.g. Turkey -> Turkish site, US -> US site) or operating system (iOS -> App Store, Android -> Google Play).
-- **Expired URL Fallback:** Gracefully redirect expired campaigns to custom fallback destinations instead of returning 404 errors.
-- **GDPR & KVKK Compliance:** In-memory IP anonymization (truncates IPv4 last octet, hashes IPv6) and cookieless aggregate tracking.
-- **Security Hardening:** AES-256 field-level encryption for sensitive credentials, brute-force login jail (15-min IP lockout), and strict Security Headers (HSTS, CSP, X-Frame-Options).
-- **Rich Terminal CLI & Embedded Dashboard:** Control everything from a clean terminal UI or the included SPA web panel.
+👉 **[https://pulseroute.onrender.com](https://pulseroute.onrender.com)**
 
----
-
-## Instant Cloud Demo (GitHub Codespaces)
-
-You can launch and test the entire stack (FastAPI backend, Redis, SQLite/PostgreSQL, and Web Dashboard) directly in your browser with **zero local installation**:
-
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=dixtuel/pulseroute)
-
-1. Click the **Open in GitHub Codespaces** badge above.
-2. The cloud container will automatically initialize dependencies, start the background workers, and open the interactive Web Dashboard in a new browser tab.
-3. Access Swagger API documentation at `/docs` or control links via the integrated terminal with `pulseroute link create`.
+* **Live Telemetry Dashboard:** [pulseroute.onrender.com/dashboard](https://pulseroute.onrender.com/dashboard)
+* **Interactive OpenAPI & Swagger Docs:** [pulseroute.onrender.com/docs](https://pulseroute.onrender.com/docs)
+* **Health & Edge Diagnostics:** [pulseroute.onrender.com/healthz](https://pulseroute.onrender.com/healthz)
 
 ---
 
