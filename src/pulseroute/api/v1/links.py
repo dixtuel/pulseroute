@@ -21,7 +21,7 @@ def build_short_url(request: Optional[Request], slug: str) -> str:
     if not request:
         return f"/{slug}"
     host = request.headers.get("host") or settings.PRIMARY_DOMAIN
-    proto = request.headers.get("x-forwarded-proto") or ("https" if "onrender.com" in host or (not host.startswith("localhost") and not host.startswith("127.0.0.1")) else "http")
+    proto = request.headers.get("x-forwarded-proto") or ("http" if (host.startswith("localhost") or host.startswith("127.0.0.1")) else "https")
     return f"{proto}://{host}/{slug}"
 
 

@@ -15,14 +15,11 @@ from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
 
 
-def is_system_domain(host: str) -> bool:
+def is_primary_domain(host: str) -> bool:
+    """Checks if the request host matches the configured PRIMARY_DOMAIN or local test loopbacks."""
     clean_host = host.split(":")[0].lower()
     primary_host = settings.PRIMARY_DOMAIN.split(":")[0].lower()
-    if clean_host in (primary_host, "localhost", "127.0.0.1", "0.0.0.0", "testserver", "testclient"):
-        return True
-    if clean_host.endswith(".onrender.com") or clean_host.endswith(".railway.app") or clean_host.endswith(".zeabur.app") or clean_host.endswith(".fly.dev"):
-        return True
-    return False
+    return clean_host in (primary_host, "localhost", "127.0.0.1", "0.0.0.0", "testserver", "testclient")
 
 
 class RedirectService:
@@ -41,7 +38,7 @@ class RedirectService:
         Returns (destination_url: Optional[str], status_code: int, error_or_auth_message: Optional[str], interstitial_data: Optional[dict])
         """
         # 1. Parse host vs primary domain
-        if is_system_domain(host):
+        if is_primary_domain(host):
             domain_name = None
         else:
             domain_name = host.split(":")[0].lower()
