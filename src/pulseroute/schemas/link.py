@@ -10,10 +10,15 @@ class LinkCreate(BaseModel):
     tags: str | None = None
     domain_id: int | None = None
 
-    # Targeting (Dub.co feature-set)
+    # Targeting
     ios_destination: str | None = None
     android_destination: str | None = None
-    geo_targets: dict[str, str] | None = None  # e.g. {"TR": "https://...", "US": "https://..."}
+    geo_targets: dict[str, str] | None = None
+
+    # Interstitial Ad & Delay
+    interstitial_delay: int = 0
+    interstitial_ad_html: str | None = None
+    interstitial_title: str | None = None
 
     # Fallbacks & Social
     expires_at: datetime | None = None
@@ -37,6 +42,9 @@ class LinkUpdate(BaseModel):
     ios_destination: str | None = None
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
+    interstitial_delay: int | None = None
+    interstitial_ad_html: str | None = None
+    interstitial_title: str | None = None
     expires_at: datetime | None = None
     expired_url: str | None = None
     public_stats: bool | None = None
@@ -50,6 +58,7 @@ class LinkResponse(BaseModel):
     destination_url: str
     title: str | None = None
     tags: str | None = None
+    interstitial_delay: int = 0
     short_url: str
     total_clicks: int
     public_stats: bool
@@ -62,6 +71,8 @@ class LinkDetailResponse(LinkResponse):
     ios_destination: str | None = None
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
+    interstitial_ad_html: str | None = None
+    interstitial_title: str | None = None
     expired_url: str | None = None
     og_title: str | None = None
     og_description: str | None = None

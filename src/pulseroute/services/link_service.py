@@ -28,13 +28,11 @@ class LinkService:
         workspace_id: Optional[int] = None,
         base_domain: Optional[str] = None,
     ) -> ShortLink:
-        # 1. Validate destination URL safety
         if settings.ENFORCE_SAFE_BROWSING:
             safe, reason = is_url_safe(data.destination_url)
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
 
-        # 2. Resolve or generate slug
         slug = data.slug.strip() if data.slug else None
         if slug:
             query = select(ShortLink).where(ShortLink.slug == slug)
@@ -48,10 +46,8 @@ class LinkService:
         else:
             slug = await generate_unique_slug(redis_cli, length=6)
 
-        # 3. Handle password protection
         pwd_hash = hash_password(data.password) if data.password else None
 
-        # 4. Create DB record
         link = ShortLink(
             workspace_id=workspace_id,
             domain_id=data.domain_id,
@@ -62,6 +58,9 @@ class LinkService:
             ios_destination=data.ios_destination,
             android_destination=data.android_destination,
             geo_targets=data.geo_targets,
+            interstitial_delay=data.interstitial_delay,
+            interstitial_ad_html=data.interstitial_ad_html,
+            interstitial_title=data.interstitial_title,
             expires_at=data.expires_at,
             expired_url=data.expired_url,
             og_title=data.og_title,
@@ -77,7 +76,7 @@ class LinkService:
         await db.commit()
         await db.refresh(link)
 
-        # 5. Populate Redis Cache
+        # Cache in Redis
         if redis_cli:
             try:
                 domain_str = None
@@ -91,6 +90,9 @@ class LinkService:
                     "ios_destination": link.ios_destination or "",
                     "android_destination": link.android_destination or "",
                     "geo_targets": link.geo_targets or {},
+                    "interstitial_delay": link.interstitial_delay,
+                    "interstitial_ad_html": link.interstitial_ad_html or "",
+                    "interstitial_title": link.interstitial_title or "",
                     "expired_url": link.expired_url or "",
                     "has_password": bool(link.password_hash),
                     "public_stats": link.public_stats,
@@ -136,6 +138,9 @@ class LinkService:
                     "ios_destination": link.ios_destination or "",
                     "android_destination": link.android_destination or "",
                     "geo_targets": link.geo_targets or {},
+                    "interstitial_delay": link.interstitial_delay,
+                    "interstitial_ad_html": link.interstitial_ad_html or "",
+                    "interstitial_title": link.interstitial_title or "",
                     "expired_url": link.expired_url or "",
                     "has_password": bool(link.password_hash),
                     "public_stats": link.public_stats,

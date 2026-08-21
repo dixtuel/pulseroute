@@ -26,9 +26,9 @@ class RedirectService:
         client_ip: str,
         referrer: Optional[str],
         password: Optional[str] = None,
-    ) -> Tuple[Optional[str], int, Optional[str]]:
+    ) -> Tuple[Optional[str], int, Optional[str], Optional[dict]]:
         """
-        Returns (destination_url: Optional[str], status_code: int, error_or_auth_message: Optional[str])
+        Returns (destination_url: Optional[str], status_code: int, error_or_auth_message: Optional[str], interstitial_data: Optional[dict])
         """
         # 1. Parse host vs primary domain
         custom_domain = host.split(":")[0].lower()
@@ -46,7 +46,7 @@ class RedirectService:
             try:
                 cached_json = await redis_cli.get(cache_key)
                 if cached_json == "NULL":
-                    return None, 404, "Link not found"
+                    return None, 404, "Link not found", None
                 if cached_json:
                     link_data = json.loads(cached_json)
             except Exception:
@@ -63,7 +63,7 @@ class RedirectService:
                 if custom_domain_obj:
                     query = query.where(ShortLink.domain_id == custom_domain_obj.id)
                 else:
-                    return None, 404, "Custom domain not registered"
+                    return None, 404, "Custom domain not registered", None
             else:
                 query = query.where(ShortLink.domain_id.is_(None))
 
@@ -77,8 +77,8 @@ class RedirectService:
                     except Exception:
                         pass
                 if custom_domain_obj and custom_domain_obj.custom_not_found_url:
-                    return custom_domain_obj.custom_not_found_url, 302, None
-                return None, 404, "Link not found"
+                    return custom_domain_obj.custom_not_found_url, 302, None, None
+                return None, 404, "Link not found", None
 
             link_data = {
                 "id": link.id,
@@ -86,6 +86,9 @@ class RedirectService:
                 "ios_destination": link.ios_destination or "",
                 "android_destination": link.android_destination or "",
                 "geo_targets": link.geo_targets or {},
+                "interstitial_delay": link.interstitial_delay,
+                "interstitial_ad_html": link.interstitial_ad_html or "",
+                "interstitial_title": link.interstitial_title or "",
                 "expired_url": link.expired_url or "",
                 "has_password": bool(link.password_hash),
                 "public_stats": link.public_stats,
@@ -101,7 +104,7 @@ class RedirectService:
 
         # 4. Check Link Active
         if not link_data.get("is_active", True):
-            return None, 410, "This link has been deactivated."
+            return None, 410, "This link has been deactivated.", None
 
         # 5. Check Expiration & Expired Fallback (Dub.co standard)
         if link_data.get("expires_at"):
@@ -111,14 +114,14 @@ class RedirectService:
                     exp_dt = exp_dt.replace(tzinfo=UTC)
                 if datetime.now(UTC) > exp_dt:
                     if link_data.get("expired_url"):
-                        return link_data["expired_url"], 307, None
-                    return None, 410, "This link has expired."
+                        return link_data["expired_url"], 307, None, None
+                    return None, 410, "This link has expired.", None
             except Exception:
                 pass
 
         # 6. Password Protection
         if link_data.get("has_password") and not password:
-            return None, 401, "Password required for this short link."
+            return None, 401, "Password required for this short link.", None
 
         # 7. Device, Geo & Bot Detection
         is_bot, device_type, browser, os_name = parse_user_agent(user_agent)
@@ -154,4 +157,14 @@ class RedirectService:
             except Exception:
                 pass
 
-        return target_url, settings.DEFAULT_REDIRECT_STATUS, None
+        # 10. Interstitial / Ad delay check
+        interstitial_data = None
+        if link_data.get("interstitial_delay", 0) > 0 and not is_bot:
+            interstitial_data = {
+                "delay": link_data["interstitial_delay"],
+                "target_url": target_url,
+                "ad_html": link_data.get("interstitial_ad_html"),
+                "title": link_data.get("interstitial_title"),
+            }
+
+        return target_url, settings.DEFAULT_REDIRECT_STATUS, None, interstitial_data

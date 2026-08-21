@@ -28,6 +28,24 @@ async def test_redirect_flow(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_redirect_interstitial_page(client: AsyncClient):
+    # Create link with 5s delay
+    create_res = await client.post("/api/v1/links", json={
+        "destination_url": "https://example.com/sponsored-target",
+        "slug": "ad-link",
+        "interstitial_delay": 5,
+        "interstitial_title": "Please wait for sponsor"
+    })
+    assert create_res.status_code == 201
+
+    # Browser request with text/html -> Returns Interstitial HTML with countdown
+    browser_res = await client.get("/ad-link", headers={"Accept": "text/html"})
+    assert browser_res.status_code == 200
+    assert "Please wait for sponsor" in browser_res.text
+    assert "countdown" in browser_res.text
+
+
+@pytest.mark.asyncio
 async def test_redirect_expired_fallback(client: AsyncClient):
     # Create expired link with fallback url
     create_res = await client.post("/api/v1/links", json={

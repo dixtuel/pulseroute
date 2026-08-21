@@ -24,11 +24,10 @@ async def create_short_link(
 ):
     client_ip = request.client.host if request.client else "127.0.0.1"
 
-    # Global burst rate limit per IP
     allowed, remaining = await SlidingWindowRateLimiter.is_allowed(
         redis_cli,
         key=f"create:{client_ip}",
-        limit=30,  # 30 links per minute
+        limit=30,
         window_seconds=60,
     )
     if not allowed:
@@ -48,6 +47,7 @@ async def create_short_link(
             "destination_url": link.destination_url,
             "title": link.title,
             "tags": link.tags,
+            "interstitial_delay": link.interstitial_delay,
             "short_url": short_url,
             "total_clicks": link.total_clicks,
             "public_stats": link.public_stats,
@@ -79,6 +79,7 @@ async def update_short_link(
             "destination_url": link.destination_url,
             "title": link.title,
             "tags": link.tags,
+            "interstitial_delay": link.interstitial_delay,
             "short_url": f"http://{host}/{link.slug}",
             "total_clicks": link.total_clicks,
             "public_stats": link.public_stats,
@@ -111,6 +112,7 @@ async def list_links(
             "destination_url": lnk.destination_url,
             "title": lnk.title,
             "tags": lnk.tags,
+            "interstitial_delay": lnk.interstitial_delay,
             "short_url": f"http://{host}/{lnk.slug}",
             "total_clicks": lnk.total_clicks,
             "public_stats": lnk.public_stats,

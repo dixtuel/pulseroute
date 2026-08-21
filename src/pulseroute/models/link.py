@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from pulseroute.core.database import Base
@@ -30,7 +30,12 @@ class ShortLink(Base):
     # Smart Device & Geo Targeting (Dub.co standard)
     ios_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
     android_destination: Mapped[str | None] = mapped_column(String(2048), nullable=True)
-    geo_targets: Mapped[dict | None] = mapped_column(JSON, nullable=True)  # {"TR": "url_tr", "US": "url_us"}
+    geo_targets: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    # Interstitial / Monetized Delay & Ad Page
+    interstitial_delay: Mapped[int] = mapped_column(Integer, default=0)  # 0 = instant, 3/5/10 = countdown
+    interstitial_ad_html: Mapped[str | None] = mapped_column(Text, nullable=True)
+    interstitial_title: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     # Expiration & Custom Fallback
     expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
