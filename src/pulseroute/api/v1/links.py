@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response,
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
-from pulseroute.core.config import AppMode, settings
+from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
 from pulseroute.schemas.link import LinkCreate, LinkResponse, LinkUpdate
@@ -24,20 +24,19 @@ async def create_short_link(
 ):
     client_ip = request.client.host if request.client else "127.0.0.1"
 
-    # Rate limiting for public creation
-    if settings.APP_MODE == AppMode.PUBLIC:
-        allowed, remaining = await SlidingWindowRateLimiter.is_allowed(
-            redis_cli,
-            key=f"create:{client_ip}",
-            limit=settings.RATE_LIMIT_PUBLIC_CREATE,
-            window_seconds=60,
+    # Global burst rate limit per IP
+    allowed, remaining = await SlidingWindowRateLimiter.is_allowed(
+        redis_cli,
+        key=f"create:{client_ip}",
+        limit=30,  # 30 links per minute
+        window_seconds=60,
+    )
+    if not allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Rate limit exceeded. Please wait before creating more links."
         )
-        if not allowed:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="Rate limit exceeded. Please wait before creating more links."
-            )
-        response.headers["X-RateLimit-Remaining"] = str(remaining)
+    response.headers["X-RateLimit-Remaining"] = str(remaining)
 
     try:
         link = await LinkService.create_link(db, redis_cli, link_data)

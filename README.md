@@ -9,7 +9,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
-*Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, brute-force defense, and an embedded modern web dashboard with rich terminal CLI.*
+*Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, and an embedded modern dashboard with rich terminal CLI.*
 
 [Launch Instant Cloud Demo](#instant-cloud-demo-github-codespaces) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Production Deploy](#production-deployment-docker-compose)
 
@@ -19,19 +19,16 @@
 
 ## Overview
 
-PulseRoute bridges the gap between lightweight hobby shorteners and heavyweight enterprise SaaS (such as Bitly and Dub.co). It is built for developers, marketing teams, and infrastructure engineers who demand **complete data ownership**, **lightning-fast redirection speeds**, and **zero-friction custom domain onboarding**.
+PulseRoute is an open-source link management and attribution platform built for developers, marketing teams, and infrastructure engineers who demand **complete data ownership**, **lightning-fast redirection speeds**, and **zero-friction custom domain onboarding**.
 
 ### Key Highlights:
 - **Ultra-Fast Redirects (<10ms):** Redis Cache-Aside with Singleflight distributed locking and negative caching against cache stampede attacks.
 - **Custom Domains & Zero-Config SSL:** Native Caddy On-Demand TLS integration (`/api/v1/internal/caddy-check`) with DNS TXT/CNAME validation.
 - **Asynchronous Non-Blocking Analytics:** Ingests clicks instantly into Redis Streams (`XADD`), batch-consumed by async workers into PostgreSQL with GeoIP and Bot detection.
+- **Geo & Device Targeting:** Automatically route by visitor country (e.g. Turkey -> Turkish site, US -> US site) or operating system (iOS -> App Store, Android -> Google Play).
+- **Expired URL Fallback:** Gracefully redirect expired campaigns to custom fallback destinations instead of returning 404 errors.
 - **GDPR & KVKK Compliance:** In-memory IP anonymization (truncates IPv4 last octet, hashes IPv6) and cookieless aggregate tracking.
 - **Security Hardening:** AES-256 field-level encryption for sensitive credentials, brute-force login jail (15-min IP lockout), and strict Security Headers (HSTS, CSP, X-Frame-Options).
-- **Smart Device Deep-Linking:** Automatically route iOS users to the App Store, Android users to Google Play, and Desktop users to your landing page.
-- **3 Configurable Deployment Modes:** 
-  - `MODE=private`: Enterprise & internal SMS/CRM tool.
-  - `MODE=public`: Community shortener with sliding-window rate limiting & malware blocklists.
-  - `MODE=multi_tenant`: Agency SaaS with isolated workspaces, domain-scoped slugs, and quotas.
 - **Rich Terminal CLI & Embedded Dashboard:** Control everything from a clean terminal UI or the included SPA web panel.
 
 ---

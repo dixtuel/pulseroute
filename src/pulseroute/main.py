@@ -96,7 +96,6 @@ async def health_check():
         content={
             "status": "healthy" if is_healthy else "degraded",
             "version": "1.0.0",
-            "mode": settings.APP_MODE.value,
             "database": "connected" if db_ok else "disconnected",
             "redis": "connected" if redis_ok else "disabled_or_unavailable",
             "latency_ms": elapsed_ms,
@@ -118,7 +117,7 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "app_mode": settings.APP_MODE.value})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
@@ -133,7 +132,7 @@ async def render_terms(request: Request):
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request, "app_mode": settings.APP_MODE.value})
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 # Mount Routers

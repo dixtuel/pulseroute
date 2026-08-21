@@ -6,12 +6,12 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pulseroute.core.config import AppMode, settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
 from pulseroute.core.security import create_access_token, hash_password, verify_password
 from pulseroute.core.security_middleware import BruteForceGuard
 from pulseroute.models.user import User
+from pulseroute.models.workspace import Workspace, WorkspaceMember
 from pulseroute.schemas.auth import LoginRequest, Token, UserCreate, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -19,18 +19,11 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 @router.post("/register", response_model=UserResponse)
 async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
-    if settings.APP_MODE == AppMode.PRIVATE and not settings.ALLOW_PUBLIC_REGISTRATION:
-        count_res = await db.execute(select(User))
-        if count_res.first() is not None:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Public registration is disabled in Private mode."
-            )
-
     existing = await db.execute(select(User).where(User.email == user_in.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered.")
 
+    # 1. Create User
     user = User(
         email=user_in.email,
         hashed_password=hash_password(user_in.password),
@@ -38,8 +31,23 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
         is_superuser=False,
     )
     db.add(user)
+    await db.flush()
+
+    # 2. Automatically provision personal Workspace (Dub-like pattern)
+    clean_name = user_in.full_name or user_in.email.split("@")[0]
+    workspace = Workspace(
+        name=f"{clean_name}'s Workspace",
+        slug=f"{user_in.email.split('@')[0].lower()}-{user.id}",
+    )
+    db.add(workspace)
+    await db.flush()
+
+    # 3. Add as Owner
+    member = WorkspaceMember(workspace_id=workspace.id, user_id=user.id, role="owner")
+    db.add(member)
     await db.commit()
     await db.refresh(user)
+
     return user
 
 
@@ -52,7 +60,6 @@ async def login(
 ):
     client_ip = request.client.host if request.client else "127.0.0.1"
 
-    # Check brute force jail
     if await BruteForceGuard.is_ip_jailed(redis_cli, client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
