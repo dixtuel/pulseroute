@@ -17,6 +17,14 @@ from pulseroute.services.link_service import LinkService
 router = APIRouter(prefix="/links", tags=["Links"])
 
 
+def build_short_url(request: Optional[Request], slug: str) -> str:
+    if not request:
+        return f"/{slug}"
+    host = request.headers.get("host") or settings.PRIMARY_DOMAIN
+    proto = request.headers.get("x-forwarded-proto") or ("https" if "onrender.com" in host or (not host.startswith("localhost") and not host.startswith("127.0.0.1")) else "http")
+    return f"{proto}://{host}/{slug}"
+
+
 @router.post("", response_model=LinkResponse, status_code=status.HTTP_201_CREATED)
 async def create_short_link(
     link_data: LinkCreate,
@@ -46,8 +54,7 @@ async def create_short_link(
 
     try:
         link = await LinkService.create_link(db, redis_cli, link_data)
-        host = request.headers.get("host") or settings.PRIMARY_DOMAIN
-        short_url = f"http://{host}/{link.slug}"
+        short_url = build_short_url(request, link.slug)
         return {
             "id": link.id,
             "slug": link.slug,
@@ -80,7 +87,7 @@ async def update_short_link(
         if not link:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
 
-        host = request.headers.get("host") or settings.PRIMARY_DOMAIN
+        short_url = build_short_url(request, link.slug)
         return {
             "id": link.id,
             "slug": link.slug,
@@ -89,7 +96,7 @@ async def update_short_link(
             "tags": link.tags,
             "interstitial_delay": link.interstitial_delay,
             "adsense_client_id": link.adsense_client_id,
-            "short_url": f"http://{host}/{link.slug}",
+            "short_url": short_url,
             "total_clicks": link.total_clicks,
             "public_stats": link.public_stats,
             "is_active": link.is_active,
@@ -113,7 +120,6 @@ async def list_links(
     links = await LinkService.list_links(
         db, search=search, tag=tag, is_active=is_active, limit=limit, offset=offset
     )
-    host = request.headers.get("host") if request else settings.PRIMARY_DOMAIN
     return [
         {
             "id": lnk.id,
@@ -123,7 +129,7 @@ async def list_links(
             "tags": lnk.tags,
             "interstitial_delay": lnk.interstitial_delay,
             "adsense_client_id": lnk.adsense_client_id,
-            "short_url": f"http://{host}/{lnk.slug}",
+            "short_url": build_short_url(request, lnk.slug),
             "total_clicks": lnk.total_clicks,
             "public_stats": lnk.public_stats,
             "is_active": lnk.is_active,

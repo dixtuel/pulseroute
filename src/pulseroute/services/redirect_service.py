@@ -15,6 +15,16 @@ from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
 
 
+def is_system_domain(host: str) -> bool:
+    clean_host = host.split(":")[0].lower()
+    primary_host = settings.PRIMARY_DOMAIN.split(":")[0].lower()
+    if clean_host in (primary_host, "localhost", "127.0.0.1", "0.0.0.0", "testserver", "testclient"):
+        return True
+    if clean_host.endswith(".onrender.com") or clean_host.endswith(".railway.app") or clean_host.endswith(".zeabur.app") or clean_host.endswith(".fly.dev"):
+        return True
+    return False
+
+
 class RedirectService:
     @staticmethod
     async def resolve_and_track(
@@ -31,12 +41,10 @@ class RedirectService:
         Returns (destination_url: Optional[str], status_code: int, error_or_auth_message: Optional[str], interstitial_data: Optional[dict])
         """
         # 1. Parse host vs primary domain
-        custom_domain = host.split(":")[0].lower()
-        primary_host = settings.PRIMARY_DOMAIN.split(":")[0].lower()
-        if custom_domain in (primary_host, "localhost", "127.0.0.1", "testserver", "testclient"):
+        if is_system_domain(host):
             domain_name = None
         else:
-            domain_name = custom_domain
+            domain_name = host.split(":")[0].lower()
 
         cache_key = f"link:{domain_name or 'default'}:{slug}"
         link_data = None
@@ -63,7 +71,8 @@ class RedirectService:
                 if custom_domain_obj:
                     query = query.where(ShortLink.domain_id == custom_domain_obj.id)
                 else:
-                    return None, 404, "Custom domain not registered", None
+                    # Fallback to default domain link if custom domain is not registered
+                    query = query.where(ShortLink.domain_id.is_(None))
             else:
                 query = query.where(ShortLink.domain_id.is_(None))
 
