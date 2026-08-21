@@ -29,7 +29,9 @@ class Settings(BaseSettings):
 
     # Monetization & AdSense Control (Platform Admin Policy)
     ALLOW_USER_MONETIZATION: bool = False  # Disabled by default so visitors/users cannot inject custom AdSense
-    GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Fallback publisher ID for platform owner
+    DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled globally (e.g. 3 or 5)
+    GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
+    GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner Ad unit slot ID (e.g. XXXXXXXXXX)
 
     # Redirect & Tracking Defaults
     DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect

@@ -67,8 +67,9 @@ async def redirect_short_url(
         else:
             raise HTTPException(status_code=404, detail=err_msg)
 
-    # If Interstitial Ad / Delay is configured and browser requests HTML
-    if interstitial and "text/html" in accept_header:
+    # If Interstitial Ad / Delay is configured and client is a browser
+    is_browser_req = "text/html" in accept_header or "*/*" in accept_header or not accept_header
+    if interstitial and is_browser_req:
         return templates.TemplateResponse(
             request=request,
             name="interstitial.html",

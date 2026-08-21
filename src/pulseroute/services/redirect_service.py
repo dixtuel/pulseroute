@@ -191,16 +191,19 @@ class RedirectService:
 
         # 10. Interstitial / Ad delay check
         interstitial_data = None
-        if link_data.get("interstitial_delay", 0) > 0 and not is_bot:
-            # Fallback to server global AdSense client ID if configured
-            adsense_client = link_data.get("adsense_client_id") or settings.GLOBAL_ADSENSE_CLIENT_ID
+        link_delay = link_data.get("interstitial_delay", 0)
+        effective_delay = link_delay if link_delay > 0 else settings.DEFAULT_INTERSTITIAL_DELAY
+        adsense_client = link_data.get("adsense_client_id") or settings.GLOBAL_ADSENSE_CLIENT_ID
+        adsense_slot = link_data.get("adsense_slot_id") or settings.GLOBAL_ADSENSE_SLOT_ID
+
+        if (effective_delay > 0 or adsense_client) and not is_bot:
             interstitial_data = {
-                "delay": link_data["interstitial_delay"],
+                "delay": effective_delay if effective_delay > 0 else 3,
                 "target_url": target_url,
                 "ad_html": link_data.get("interstitial_ad_html"),
-                "title": link_data.get("interstitial_title"),
+                "title": link_data.get("interstitial_title") or link_data.get("title"),
                 "adsense_client_id": adsense_client,
-                "adsense_slot_id": link_data.get("adsense_slot_id"),
+                "adsense_slot_id": adsense_slot,
             }
 
         return target_url, settings.DEFAULT_REDIRECT_STATUS, None, interstitial_data
