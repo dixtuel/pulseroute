@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
@@ -191,24 +191,35 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
+@app.get("/ads.txt", response_class=PlainTextResponse, tags=["Monetization"])
+async def get_ads_txt():
+    """Serves Google AdSense publisher verification ads.txt dynamically from env."""
+    if settings.ADS_TXT_CONTENT:
+        return PlainTextResponse(content=settings.ADS_TXT_CONTENT.strip(), media_type="text/plain")
+    if settings.GLOBAL_ADSENSE_CLIENT_ID:
+        pub_id = settings.GLOBAL_ADSENSE_CLIENT_ID.replace("ca-pub-", "pub-")
+        return PlainTextResponse(content=f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0\n", media_type="text/plain")
+    raise HTTPException(status_code=404, detail="ads.txt is not configured on this instance.")
+
+
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse(request=request, name="index.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
 
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
-    return templates.TemplateResponse(request=request, name="privacy.html")
+    return templates.TemplateResponse(request=request, name="privacy.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
 
 
 @app.get("/terms", response_class=HTMLResponse, tags=["Legal"])
 async def render_terms(request: Request):
-    return templates.TemplateResponse(request=request, name="terms.html")
+    return templates.TemplateResponse(request=request, name="terms.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
 
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html")
+    return templates.TemplateResponse(request=request, name="index.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
 
 
 # Mount Routers

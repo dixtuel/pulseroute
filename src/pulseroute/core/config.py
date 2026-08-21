@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled globally (e.g. 3 or 5)
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
     GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner Ad unit slot ID (e.g. XXXXXXXXXX)
+    ADS_TXT_CONTENT: Optional[str] = None           # Platform owner ads.txt raw content
 
     # Redirect & Tracking Defaults
     DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect
