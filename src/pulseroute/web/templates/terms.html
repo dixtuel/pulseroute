@@ -42,26 +42,36 @@
     <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
         <div class="border-b border-divider pb-4">
             <h1 class="text-xl font-display font-bold text-white tracking-tight">Terms of Service & Acceptable Use</h1>
-            <p class="text-xs text-slate-500 font-mono mt-1">TELEMETRY OPERATOR POLICY • 2026</p>
+            <p class="text-xs text-slate-500 font-mono mt-1">LAST REVIEWED FOR THIS CODEBASE • 2026-08-22</p>
         </div>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">1. Acceptable Use Policy</h2>
-            <p>PulseRoute may not be used to distribute malware, phishing campaigns, scam pages, or illegal content. Links violating this policy are subject to immediate termination.</p>
+            <h2 class="text-sm font-display font-bold text-white">1. What This Instance Is</h2>
+            <p>This is a running instance of PulseRoute, open-source link-shortening software distributed under the MIT License. These terms govern your use of <em>this instance</em>; the software itself may be self-hosted elsewhere under separate terms set by that operator.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">2. Rate Limiting & Abuse Protection</h2>
-            <p>Automated scraping, denial-of-service attempts, and brute-force attacks against link creation or authentication endpoints will trigger automatic IP jail and request blocking.</p>
+            <h2 class="text-sm font-display font-bold text-white">2. Acceptable Use Policy</h2>
+            <p>This service may not be used to distribute malware, phishing pages, scam content, or illegal material. Destination URLs are screened at creation time against known-malicious domains and blocked executable file types; links found to violate this policy may be disabled without notice.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">3. Self-Hosted Warranty Disclaimer</h2>
-            <p>The software is provided under the MIT License on an "AS IS" basis without warranties of any kind regarding uptime or availability.</p>
+            <h2 class="text-sm font-display font-bold text-white">3. Accounts & Workspaces</h2>
+            <p>Each account is responsible for the links, domains, and workspace members under its own workspace. Anonymous, unauthenticated link creation is limited to a 24-hour lifetime and rate-limited per IP address.</p>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">4. Rate Limiting & Abuse Protection</h2>
+            <p>Automated scraping and repeated failed login attempts against authentication endpoints trigger a temporary IP lockout; link creation is subject to per-IP rate limits. These measures reduce abuse and application-layer strain but are not a guarantee against all forms of denial-of-service traffic.</p>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">5. Self-Hosted Warranty Disclaimer</h2>
+            <p>The underlying software is provided under the MIT License on an "AS IS" basis, without warranty of any kind, including as to uptime, availability, or fitness for a particular purpose. See <a href="/privacy" class="text-amber-400 hover:underline">the Privacy Policy</a> for how your data is handled.</p>
         </section>
 
         <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
-            <span>PulseRoute Telemetry Console</span>
+            <span>PulseRoute — Self-Hosted Instance</span>
             <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
         </div>
     </div>

@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     PORT: int = 8000
     SECRET_KEY: str = Field(default="pulseroute-super-secure-change-in-production-secret-key-32b")
     PRIMARY_DOMAIN: str = "localhost:8000"
+    OPERATOR_CONTACT_EMAIL: Optional[str] = None  # Shown on /privacy as the data-controller contact for this instance.
 
     # Database & Cache
     DATABASE_URL: str = "sqlite+aiosqlite:///./pulseroute.db"

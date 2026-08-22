@@ -42,31 +42,46 @@
     <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
         <div class="border-b border-divider pb-4">
             <h1 class="text-xl font-display font-bold text-white tracking-tight">Privacy Policy & KVKK / GDPR Notice</h1>
-            <p class="text-xs text-slate-500 font-mono mt-1">TELEMETRY COMPLIANCE STANDARD • 2026</p>
+            <p class="text-xs text-slate-500 font-mono mt-1">LAST REVIEWED FOR THIS CODEBASE • 2026-08-22</p>
         </div>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">1. Data Privacy Principles</h2>
-            <p>PulseRoute is engineered with Privacy-by-Design principles in accordance with EU General Data Protection Regulation (GDPR) and Turkey Personal Data Protection Law (KVKK No. 6698).</p>
+            <h2 class="text-sm font-display font-bold text-white">1. Scope & Data Controller</h2>
+            <p>PulseRoute is self-hosted, open-source software (MIT License). This notice describes how the PulseRoute application itself handles data at the code level; the operator running this specific instance — reachable at <code class="text-amber-400">{{ operator_contact_email or 'the address listed by the site operator, if any' }}</code> — is the data controller for any personal data processed here, not the PulseRoute project.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">2. IP Address Anonymization</h2>
-            <p>Raw visitor IP addresses are never committed to permanent storage. All incoming network addresses are masked in volatile memory by truncating the final octet (IPv4 /24 mask) or prefixing (IPv6 /48 mask).</p>
+            <h2 class="text-sm font-display font-bold text-white">2. Account Data & Passwords</h2>
+            <p>Registering an account stores your e-mail address, optional display name, and a password hash. Passwords are hashed with bcrypt (one-way, salted) before storage — the plaintext password is never written to disk and cannot be recovered or "decrypted" by anyone, including the operator; a forgotten password can only be reset, not retrieved.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">3. Cookieless Tracking</h2>
-            <p>The link dispatch engine operates completely without persistent tracking cookies. Telemetry is derived strictly from standard HTTP header fields.</p>
+            <h2 class="text-sm font-display font-bold text-white">3. Workspace & Link Data Isolation</h2>
+            <p>Every account gets its own workspace on signup; there is no shared workspace between users. Links, click analytics, and custom domains are only visible to, and only manageable by, members of the workspace that owns them — every relevant API endpoint verifies workspace membership before returning or changing data. Links created without an account are not attached to any workspace, expire automatically after 24 hours, and cannot be edited or deleted by anyone (including the person who created them) through the API.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">4. Data Encryption & Security</h2>
-            <p>Sensitive credentials, API keys, and webhook secrets are protected using AES-256 field encryption. Direct SQL parameters prevent injection attacks.</p>
+            <h2 class="text-sm font-display font-bold text-white">4. IP Address Anonymization & Cookieless Tracking</h2>
+            <p>Raw visitor IP addresses are never committed to permanent storage. Incoming addresses are masked before persistence by truncating the final octet (IPv4 /24) or the trailing bits (IPv6 /48). Click telemetry (device, browser, referrer, approximate geography) is derived from standard HTTP headers and the masked IP only — no tracking cookies are set by the redirect engine.</p>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">5. Application-Level Security Measures</h2>
+            <ul class="list-disc list-inside space-y-1">
+                <li><strong>SQL injection:</strong> all database access goes through a parameterized async ORM (SQLAlchemy) — no raw string-built SQL.</li>
+                <li><strong>Brute-force protection:</strong> repeated failed logins from the same IP trigger a 15-minute lockout after 5 attempts.</li>
+                <li><strong>Abusive traffic / basic DDoS mitigation:</strong> link creation and other write endpoints are rate-limited per IP (sliding-window). This reduces application-layer abuse but is not a substitute for network-level DDoS protection — operators exposed to volumetric attacks should place a CDN/WAF in front of their deployment.</li>
+                <li><strong>Malicious destination filtering:</strong> known phishing/malware domains and executable file extensions are rejected at link-creation time.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">6. Your Rights & Data Removal</h2>
+            <p>Under GDPR and KVKK (Law No. 6698) you may request access to, correction of, or erasure of your account data by contacting the instance operator above. Deleting an account removes its workspace and every link, domain, and click record that belongs to it.</p>
         </section>
 
         <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
-            <span>PulseRoute Telemetry Console</span>
+            <span>PulseRoute — Self-Hosted Instance</span>
             <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
         </div>
     </div>
