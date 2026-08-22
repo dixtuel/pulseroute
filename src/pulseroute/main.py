@@ -6,6 +6,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 
@@ -124,6 +125,8 @@ app = FastAPI(
         "filter": True,
     },
 )
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Middleware
 app.add_middleware(SecurityHeadersMiddleware)
