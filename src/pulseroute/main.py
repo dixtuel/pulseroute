@@ -205,7 +205,10 @@ async def get_ads_txt():
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+    })
 
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
@@ -226,7 +229,10 @@ async def render_terms(request: Request):
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+    })
 
 
 # Mount Routers
