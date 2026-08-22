@@ -2,6 +2,7 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from pulseroute.core.config import settings
 from pulseroute.core.database import Base, get_db
 from pulseroute.main import app
 
@@ -13,11 +14,18 @@ test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_db():
+    # Registration tests use made-up domains (company.com, competitor.com, ...) -- don't hit
+    # real DNS in the test suite; the email-domain-check logic itself is unit-tested separately.
+    orig_email_check = settings.ENFORCE_EMAIL_DOMAIN_CHECK
+    settings.ENFORCE_EMAIL_DOMAIN_CHECK = False
+
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+    settings.ENFORCE_EMAIL_DOMAIN_CHECK = orig_email_check
 
 
 async def override_get_db():

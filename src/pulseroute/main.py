@@ -207,9 +207,11 @@ async def render_dashboard(request: Request):
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
+    contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
     return templates.TemplateResponse(request=request, name="privacy.html", context={
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-        "operator_contact_email": settings.OPERATOR_CONTACT_EMAIL,
+        "operator_contact_user": contact_user or None,
+        "operator_contact_domain": contact_domain or None,
         "primary_domain": settings.PRIMARY_DOMAIN,
     })
 

@@ -39,8 +39,8 @@ class BruteForceGuard:
                 pass
 
         now = time.time()
-        failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 900]  # 15 minutes
-        return len(failures) >= 5
+        failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 600]  # 10 minutes
+        return len(failures) >= 10
 
     @staticmethod
     async def record_failure(redis_cli: Optional[aioredis.Redis], ip: str) -> None:
@@ -50,14 +50,14 @@ class BruteForceGuard:
                 key = f"jail:fails:{ip}"
                 count = await redis_cli.incr(key)
                 if count == 1:
-                    await redis_cli.expire(key, 900)
-                if count >= 5:
-                    await redis_cli.set(f"jail:login:{ip}", "locked", ex=900)
+                    await redis_cli.expire(key, 600)
+                if count >= 10:
+                    await redis_cli.set(f"jail:login:{ip}", "locked", ex=600)
                 return
             except Exception:
                 pass
 
-        failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 900]
+        failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 600]
         failures.append(now)
         _memory_jail[ip] = failures
 

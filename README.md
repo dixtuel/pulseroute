@@ -58,7 +58,7 @@ graph TD
 
 - **SQL Injection Prevention:** 100% parameterized queries via SQLAlchemy Async ORM.
 - **Multi-Tenant Workspace Isolation:** Every account gets its own workspace (`owner` role) on signup — there is no shared workspace. All link, analytics, and custom-domain endpoints require authentication and verify workspace membership before returning or mutating anything; anonymous links (24h TTL) have no owner and can't be managed via the API at all, only viewed in aggregate (`GET /api/v1/links/stats/anonymous-count`).
-- **Brute-Force Protection:** Automated rate limiting and 15-minute IP jailing after 5 consecutive failed authentication attempts.
+- **Brute-Force Protection:** Automated rate limiting and 10-minute IP jailing after 10 consecutive failed authentication attempts.
 - **GDPR / KVKK Compliance:** Raw visitor IP addresses are never saved to disk. IPs are masked (`192.168.1.0/24`) prior to database persistence.
 - **Data Encryption at Rest:** Sensitive tokens and webhook secrets are encrypted with AES-256-GCM.
 - **Custom Error Handling:** Branded 404/410/500 pages with support for custom fallback URLs per domain.
@@ -134,8 +134,10 @@ Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). T
 | `REDIS_URL` | `redis://127.0.0.1:6379/0` | Cache + click-stream backend; omit entirely to run in zero-Redis fallback mode. |
 | `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `yourapp.onrender.com` or `links.example.com`). |
 | `ALLOW_CUSTOM_DOMAINS` | `true` | Whether logged-in workspace owners/admins can add a custom domain at all. Set `false` to disable the feature entirely. |
-| `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. (Only usable via the API/CLI today — the web dashboard has no domain picker yet.) |
+| `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. |
 | `ENFORCE_SAFE_BROWSING` | `true` | Rejects known-malicious/phishing destination URLs at link-creation time. |
+| `ENFORCE_EMAIL_DOMAIN_CHECK` | `true` | Rejects registration if the email's domain has no MX/A record at all (catches typo/garbage domains). Fails open on DNS timeouts. |
+| `OPERATOR_CONTACT_EMAIL` | unset | Shown (bot-obfuscated) on `/privacy` as the data-controller contact for this instance. |
 | `GLOBAL_ADSENSE_CLIENT_ID` / `GLOBAL_ADSENSE_SLOT_ID` | unset | The single, server-wide Google AdSense unit shown on interstitial pages (see Security & Privacy above — this is not per-user). |
 | `SECRET_KEY` | insecure placeholder | **Change this** in any real deployment — signs JWTs. |
 
@@ -145,7 +147,7 @@ Note: there is no per-user API key feature — JWT (`Authorization: Bearer <toke
 
 ## Testing & Quality Assurance
 
-Run the comprehensive unit and integration test suite (27 passing tests):
+Run the comprehensive unit and integration test suite (32 passing tests):
 
 ```bash
 # Run tests with coverage

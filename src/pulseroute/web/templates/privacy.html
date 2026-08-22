@@ -47,7 +47,13 @@
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
             <h2 class="text-sm font-display font-bold text-white">1. Scope & Data Controller</h2>
-            <p>PulseRoute is self-hosted, open-source software (MIT License). This notice describes how the PulseRoute application itself handles data at the code level; the operator running this specific instance — reachable at <code class="text-amber-400">{{ operator_contact_email or 'the address listed by the site operator, if any' }}</code> — is the data controller for any personal data processed here, not the PulseRoute project.</p>
+            <p>PulseRoute is self-hosted, open-source software (MIT License). This notice describes how the PulseRoute application itself handles data at the code level; the operator running this specific instance
+                {% if operator_contact_user and operator_contact_domain %}
+                — reachable at <code class="text-amber-400" id="opContact" data-u="{{ operator_contact_user }}" data-d="{{ operator_contact_domain }}">contact address</code><script>(function(){var e=document.getElementById('opContact');e.textContent=e.dataset.u+String.fromCharCode(64)+e.dataset.d;})();</script>
+                {% else %}
+                (contact the operator directly if you know how to reach them)
+                {% endif %}
+                — is the data controller for any personal data processed here, not the PulseRoute project.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
@@ -69,7 +75,7 @@
             <h2 class="text-sm font-display font-bold text-white">5. Application-Level Security Measures</h2>
             <ul class="list-disc list-inside space-y-1">
                 <li><strong>SQL injection:</strong> all database access goes through a parameterized async ORM (SQLAlchemy) — no raw string-built SQL.</li>
-                <li><strong>Brute-force protection:</strong> repeated failed logins from the same IP trigger a 15-minute lockout after 5 attempts.</li>
+                <li><strong>Brute-force protection:</strong> repeated failed logins from the same IP trigger a 10-minute lockout after 10 attempts.</li>
                 <li><strong>Abusive traffic / basic DDoS mitigation:</strong> link creation and other write endpoints are rate-limited per IP (sliding-window). This reduces application-layer abuse but is not a substitute for network-level DDoS protection — operators exposed to volumetric attacks should place a CDN/WAF in front of their deployment.</li>
                 <li><strong>Malicious destination filtering:</strong> known phishing/malware domains and executable file extensions are rejected at link-creation time.</li>
             </ul>

@@ -7,6 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.api.deps import require_authenticated_user
+from pulseroute.common.email_validator import email_domain_accepts_mail
+from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
 from pulseroute.core.security import create_access_token, hash_password, verify_password
@@ -23,6 +25,12 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     existing = await db.execute(select(User).where(User.email == user_in.email))
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already registered.")
+
+    if settings.ENFORCE_EMAIL_DOMAIN_CHECK and not await email_domain_accepts_mail(user_in.email):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="This email's domain does not appear to accept mail. Please use a real email address.",
+        )
 
     # 1. Create User
     user = User(
@@ -64,7 +72,7 @@ async def login(
     if await BruteForceGuard.is_ip_jailed(redis_cli, client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many failed login attempts. IP address temporarily blocked for 15 minutes."
+            detail="Too many failed login attempts. IP address temporarily blocked for 10 minutes."
         )
 
     result = await db.execute(select(User).where(User.email == login_data.email))
