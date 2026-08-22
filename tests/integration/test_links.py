@@ -83,6 +83,28 @@ async def test_anonymous_link_creation_and_count(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_duplicate_slug_on_default_domain_is_rejected(client: AsyncClient):
+    """Two different people, neither using a custom domain, cannot claim the same slug."""
+    headers1, workspace1 = await _register_and_get_workspace(client, "slugowner1@company.com")
+    headers2, workspace2 = await _register_and_get_workspace(client, "slugowner2@company.com")
+
+    first = await client.post("/api/v1/links", json={
+        "destination_url": "https://a.example.com",
+        "slug": "shared-slug",
+        "workspace_id": workspace1,
+    }, headers=headers1)
+    assert first.status_code == 201
+
+    second = await client.post("/api/v1/links", json={
+        "destination_url": "https://b.example.com",
+        "slug": "shared-slug",
+        "workspace_id": workspace2,
+    }, headers=headers2)
+    assert second.status_code == 400
+    assert "already taken" in second.json()["detail"]
+
+
+@pytest.mark.asyncio
 async def test_health_check(client: AsyncClient):
     res = await client.get("/healthz")
     assert res.status_code == 200

@@ -5,6 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.api.deps import require_authenticated_user, verify_workspace_access
+from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.models.domain import CustomDomain
 from pulseroute.models.user import User
@@ -27,6 +28,12 @@ async def add_custom_domain(
     current_user: User = Depends(require_authenticated_user),
     db: AsyncSession = Depends(get_db),
 ):
+    if not settings.ALLOW_CUSTOM_DOMAINS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Custom domains are disabled on this server by the administrator.",
+        )
+
     await verify_workspace_access(domain_in.workspace_id, current_user, db, required_roles=("owner", "admin"))
 
     try:

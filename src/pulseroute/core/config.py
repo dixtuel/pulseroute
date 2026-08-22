@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     NEGATIVE_CACHE_TTL: int = 60    # 60s for non-existent slugs
 
     # Custom Domains & TLS
+    ALLOW_CUSTOM_DOMAINS: bool = True  # Any logged-in workspace owner/admin can add one by default;
+    # set to false to disable custom-domain onboarding entirely on this instance (nobody can add one, logged in or not).
     CUSTOM_DOMAIN_CNAME_TARGET: str = "cname.pulseroute.io"
     CADDY_INTERNAL_ASK_SECRET: Optional[str] = None
     ENFORCE_SAFE_BROWSING: bool = True

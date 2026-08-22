@@ -60,9 +60,7 @@ PulseRoute is an open-source, enterprise-grade edge routing infrastructure desig
 ---
 
 #### 🛡 Authentication & Security
-PulseRoute supports dual-mode authorization:
 * **JWT Bearer Token:** Include in headers: `Authorization: Bearer <your_jwt_token>` (obtained via `/api/v1/auth/login`).
-* **Secret API Key:** Include in headers: `X-API-Key: pr_live_...` or `Authorization: Bearer pr_live_...` (issued per workspace).
 
 ---
 
@@ -71,7 +69,7 @@ PulseRoute supports dual-mode authorization:
 2. **Multi-Tenant Workspaces:** Strict row-level query filtering & RBAC (`owner`, `admin`, `member`).
 3. **Automated Custom Domain TLS:** Instant Caddy On-Demand TLS handshake with DNS verification.
 4. **Non-Blocking Telemetry:** Redis Stream ingestion with async batch persistence & GDPR/KVKK IP masking.
-5. **Monetization & Interstitial Ads:** Workspace-level AdSense integration and custom timer pages.
+5. **Interstitial Countdown Pages:** Configurable delay page with a single, admin-configured platform-wide AdSense unit (no per-user monetization).
 """
 
 TAGS_METADATA = [
@@ -81,7 +79,7 @@ TAGS_METADATA = [
     },
     {
         "name": "Workspaces & Tenant Isolation",
-        "description": "Create isolated workspaces, invite team members, and issue production API keys.",
+        "description": "Create isolated per-user workspaces and manage team membership roles.",
     },
     {
         "name": "Short Links & Routing",
@@ -93,7 +91,7 @@ TAGS_METADATA = [
     },
     {
         "name": "Custom Domains & TLS",
-        "description": "Onboard branded domains with Caddy On-Demand TLS and automated DNS verification challenges.",
+        "description": "Onboard branded domains with Caddy On-Demand TLS and automated DNS verification challenges. Requires login; the server administrator can disable onboarding entirely via `ALLOW_CUSTOM_DOMAINS`.",
     },
     {
         "name": "QR Engine",
