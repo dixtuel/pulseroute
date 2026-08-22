@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
@@ -11,6 +11,7 @@ from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
 from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
+from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
 from pulseroute.models.user import User
 from pulseroute.schemas.link import LinkCreate, LinkResponse, LinkUpdate
@@ -19,7 +20,9 @@ from pulseroute.services.link_service import LinkService
 router = APIRouter(prefix="/links", tags=["Links"])
 
 
-def build_short_url(request: Optional[Request], slug: str) -> str:
+def build_short_url(request: Optional[Request], slug: str, custom_domain: Optional[str] = None) -> str:
+    if custom_domain:
+        return f"https://{custom_domain}/{slug}"
     if not request:
         return f"/{slug}"
     host = request.headers.get("host") or settings.PRIMARY_DOMAIN
@@ -27,7 +30,7 @@ def build_short_url(request: Optional[Request], slug: str) -> str:
     return f"{proto}://{host}/{slug}"
 
 
-def _serialize_link(link: ShortLink, request: Optional[Request]) -> dict:
+def _serialize_link(link: ShortLink, request: Optional[Request], domain_name: Optional[str] = None) -> dict:
     return {
         "id": link.id,
         "slug": link.slug,
@@ -35,13 +38,27 @@ def _serialize_link(link: ShortLink, request: Optional[Request]) -> dict:
         "title": link.title,
         "tags": link.tags,
         "interstitial_delay": link.interstitial_delay,
-        "short_url": build_short_url(request, link.slug),
+        "short_url": build_short_url(request, link.slug, custom_domain=domain_name),
         "total_clicks": link.total_clicks,
         "public_stats": link.public_stats,
         "is_active": link.is_active,
         "created_at": link.created_at,
         "expires_at": link.expires_at,
     }
+
+
+async def _domain_name(db: AsyncSession, domain_id: Optional[int]) -> Optional[str]:
+    if not domain_id:
+        return None
+    result = await db.execute(select(CustomDomain.domain).where(CustomDomain.id == domain_id))
+    return result.scalar_one_or_none()
+
+
+async def _domain_names(db: AsyncSession, domain_ids: set[int]) -> Dict[int, str]:
+    if not domain_ids:
+        return {}
+    result = await db.execute(select(CustomDomain.id, CustomDomain.domain).where(CustomDomain.id.in_(domain_ids)))
+    return dict(result.all())
 
 
 @router.get("/stats/anonymous-count")
@@ -91,7 +108,8 @@ async def create_short_link(
 
     try:
         link = await LinkService.create_link(db, redis_cli, link_data, workspace_id=workspace_id)
-        return _serialize_link(link, request)
+        domain_name = await _domain_name(db, link.domain_id)
+        return _serialize_link(link, request, domain_name)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -113,7 +131,8 @@ async def update_short_link(
 
     try:
         link = await LinkService.update_link(db, redis_cli, link_id, link_data)
-        return _serialize_link(link, request)
+        domain_name = await _domain_name(db, link.domain_id)
+        return _serialize_link(link, request, domain_name)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
@@ -135,7 +154,8 @@ async def list_links(
     links = await LinkService.list_links(
         db, workspace_id=workspace_id, search=search, tag=tag, is_active=is_active, limit=limit, offset=offset
     )
-    return [_serialize_link(lnk, request) for lnk in links]
+    domain_names = await _domain_names(db, {lnk.domain_id for lnk in links if lnk.domain_id})
+    return [_serialize_link(lnk, request, domain_names.get(lnk.domain_id)) for lnk in links]
 
 
 @router.delete("/{link_id}", status_code=status.HTTP_204_NO_CONTENT)

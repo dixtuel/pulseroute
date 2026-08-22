@@ -163,6 +163,31 @@ async def test_require_custom_domain_mode(client: AsyncClient, db_session):
 
 
 @pytest.mark.asyncio
+async def test_link_short_url_uses_its_own_custom_domain(client: AsyncClient, db_session):
+    """short_url must reflect the link's actual custom domain, not whatever host the API request came in on."""
+    from pulseroute.models.domain import CustomDomain
+
+    headers, workspace_id = await _register_and_get_workspace(client, "domain-shorturl@company.com")
+
+    domain = CustomDomain(workspace_id=workspace_id, domain="branded.example", verification_code="x", is_verified=True)
+    db_session.add(domain)
+    await db_session.commit()
+    await db_session.refresh(domain)
+
+    res = await client.post("/api/v1/links", json={
+        "destination_url": "https://example.com/target",
+        "domain_id": domain.id,
+        "workspace_id": workspace_id,
+    }, headers=headers)
+    assert res.status_code == 201
+    assert res.json()["short_url"].startswith("https://branded.example/")
+
+    list_res = await client.get(f"/api/v1/links?workspace_id={workspace_id}", headers=headers)
+    assert list_res.status_code == 200
+    assert list_res.json()[0]["short_url"].startswith("https://branded.example/")
+
+
+@pytest.mark.asyncio
 async def test_health_check(client: AsyncClient):
     res = await client.get("/healthz")
     assert res.status_code == 200

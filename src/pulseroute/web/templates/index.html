@@ -184,6 +184,13 @@
                         </div>
                     </div>
 
+                    <div id="linkDomainWrap" class="hidden">
+                        <label class="block text-[10px] uppercase text-slate-500 mb-1">Domain</label>
+                        <select id="linkDomainSelect" class="w-full px-3 py-2 rounded-lg bg-panel border border-divider focus:border-amber-500 outline-none text-white text-xs font-mono cursor-pointer">
+                            <option value="">Default Domain (this instance)</option>
+                        </select>
+                    </div>
+
                     <!-- Advanced Routing Configuration Accordion -->
                     <details class="text-xs font-mono border border-divider/60 rounded-lg bg-panel/40 p-3 text-slate-400">
                         <summary class="cursor-pointer font-medium select-none text-slate-300 hover:text-amber-400 transition flex items-center justify-between">
@@ -666,6 +673,7 @@
                     }
                     loadSettings();
                     loadLinks();
+                    refreshWorkspaceDomains();
                 }
             } catch (e) {
                 console.error(e);
@@ -678,6 +686,7 @@
             loadLinks();
             loadAnalytics();
             loadSettings();
+            refreshWorkspaceDomains();
         }
 
         function loadSettings() {
@@ -898,16 +907,82 @@
             }
         }
 
-        async function loadDomains() {
+        let workspaceDomains = [];
+
+        async function refreshWorkspaceDomains() {
+            const domainWrap = document.getElementById('linkDomainWrap');
+            if (!getToken() || !currentWorkspaceId) {
+                workspaceDomains = [];
+                domainWrap.classList.add('hidden');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/v1/domains?workspace_id=${currentWorkspaceId}`, { headers: getAuthHeaders() });
+                workspaceDomains = res.ok ? await res.json() : [];
+            } catch (e) {
+                workspaceDomains = [];
+            }
+            domainWrap.classList.remove('hidden');
+            renderDomainSelector();
+            renderDomainsTable();
+        }
+
+        function renderDomainSelector() {
+            const select = document.getElementById('linkDomainSelect');
+            const verified = workspaceDomains.filter(d => d.is_verified);
+            select.innerHTML = ['<option value="">Default Domain (this instance)</option>']
+                .concat(verified.map(d => `<option value="${d.id}">${d.domain}</option>`))
+                .join('');
+        }
+
+        function renderDomainsTable() {
             const tbody = document.getElementById('domainsTableBody');
-            tbody.innerHTML = `
+            const rows = [`
                 <tr>
                     <td class="py-3 px-4 font-mono font-semibold text-white">Default Routing Host</td>
                     <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">ACTIVE</span></td>
                     <td class="py-3 px-4 text-center"><span class="text-emerald-400"><i class="fa-solid fa-lock"></i> Automatic</span></td>
                     <td class="py-3 px-4 text-right text-slate-500">System Root</td>
                 </tr>
-            `;
+            `];
+            workspaceDomains.forEach(d => {
+                const statusBadge = d.is_verified
+                    ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">VERIFIED</span>'
+                    : '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">PENDING DNS</span>';
+                rows.push(`
+                    <tr>
+                        <td class="py-3 px-4 font-mono font-semibold text-white">${d.domain}</td>
+                        <td class="py-3 px-4 text-center">${statusBadge}</td>
+                        <td class="py-3 px-4 text-center">${d.is_verified ? '<span class="text-emerald-400"><i class="fa-solid fa-lock"></i> Automatic</span>' : '<span class="text-slate-500">Pending</span>'}</td>
+                        <td class="py-3 px-4 text-right space-x-2">
+                            ${!d.is_verified ? `<button onclick="verifyDomainRow(${d.id})" class="text-slate-400 hover:text-amber-400 text-[11px]" title="Re-check DNS">Verify</button>` : ''}
+                            <button onclick="deleteDomainRow(${d.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Remove Domain"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `);
+            });
+            tbody.innerHTML = rows.join('');
+        }
+
+        async function verifyDomainRow(id) {
+            try {
+                await fetch(`/api/v1/domains/${id}/verify`, { method: 'POST', headers: getAuthHeaders() });
+            } finally {
+                refreshWorkspaceDomains();
+            }
+        }
+
+        async function deleteDomainRow(id) {
+            if (!confirm('Remove this custom domain?')) return;
+            try {
+                await fetch(`/api/v1/domains/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+            } finally {
+                refreshWorkspaceDomains();
+            }
+        }
+
+        function loadDomains() {
+            refreshWorkspaceDomains();
         }
 
         // Add Custom Domain Handler
@@ -927,6 +1002,8 @@
                         2. Add <b>TXT</b> challenge <code>_pulseroute-challenge.${data.domain}</code> with value: <code>${data.verification_code}</code>
                     `;
                     document.getElementById('dnsInstructionBox').classList.remove('hidden');
+                    document.getElementById('newDomainInput').value = '';
+                    refreshWorkspaceDomains();
                 } else {
                     alert(data.detail || 'Failed to register domain');
                 }
@@ -944,6 +1021,7 @@
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const delayVal = parseInt(document.getElementById('interstitialDelay').value) || 0;
+            const domainVal = document.getElementById('linkDomainSelect').value;
             const payload = {
                 destination_url: document.getElementById('destUrl').value,
                 slug: document.getElementById('customSlug').value || null,
@@ -953,6 +1031,7 @@
                 interstitial_delay: delayVal,
                 expired_url: document.getElementById('expiredUrl').value || null,
                 workspace_id: (getToken() && currentWorkspaceId) ? parseInt(currentWorkspaceId, 10) : null,
+                domain_id: domainVal ? parseInt(domainVal, 10) : null,
             };
 
             try {
