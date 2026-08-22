@@ -6,8 +6,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.core.database import get_db
-from pulseroute.core.security import decode_access_token, hash_api_key
-from pulseroute.models.user import ApiKey, User
+from pulseroute.core.security import decode_access_token
+from pulseroute.models.user import User
 from pulseroute.models.workspace import Workspace, WorkspaceMember
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -22,18 +22,6 @@ async def get_current_user(
 
     token = auth.credentials
 
-    # 1. Check if it's an API Key (pr_live_...)
-    if token.startswith("pr_"):
-        key_hash = hash_api_key(token)
-        res = await db.execute(
-            select(User).join(ApiKey, User.id == ApiKey.user_id).where(ApiKey.key_hash == key_hash, User.is_active.is_(True))
-        )
-        user = res.scalar_one_or_none()
-        if user:
-            return user
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid API Key")
-
-    # 2. Check JWT Bearer token
     payload = decode_access_token(token)
     if not payload or "sub" not in payload:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired token")

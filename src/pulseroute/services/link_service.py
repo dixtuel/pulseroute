@@ -33,10 +33,6 @@ class LinkService:
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
 
-        # Monetization policy check
-        if (data.adsense_client_id or data.interstitial_ad_html) and not settings.ALLOW_USER_MONETIZATION:
-            raise ValueError("Custom user ad monetization is disabled on this server by administrator.")
-
         slug = data.slug.strip() if data.slug else None
         if slug:
             query = select(ShortLink).where(ShortLink.slug == slug)
@@ -63,10 +59,7 @@ class LinkService:
             android_destination=data.android_destination,
             geo_targets=data.geo_targets,
             interstitial_delay=data.interstitial_delay,
-            interstitial_ad_html=data.interstitial_ad_html,
             interstitial_title=data.interstitial_title,
-            adsense_client_id=data.adsense_client_id,
-            adsense_slot_id=data.adsense_slot_id,
             expires_at=data.expires_at,
             expired_url=data.expired_url,
             og_title=data.og_title,
@@ -129,9 +122,6 @@ class LinkService:
             safe, reason = is_url_safe(update_fields["destination_url"])
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
-
-        if ("adsense_client_id" in update_fields or "interstitial_ad_html" in update_fields) and not settings.ALLOW_USER_MONETIZATION:
-            raise ValueError("Custom user ad monetization is disabled on this server by administrator.")
 
         for field, value in update_fields.items():
             setattr(link, field, value)

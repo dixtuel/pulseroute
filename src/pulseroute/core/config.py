@@ -27,8 +27,8 @@ class Settings(BaseSettings):
     CADDY_INTERNAL_ASK_SECRET: Optional[str] = None
     ENFORCE_SAFE_BROWSING: bool = True
 
-    # Monetization & AdSense Control (Platform Admin Policy)
-    ALLOW_USER_MONETIZATION: bool = False  # Disabled by default so visitors/users cannot inject custom AdSense
+    # Monetization & AdSense Control (Platform Admin Policy -- single verified publisher account only,
+    # AdSense requires per-site ownership verification so per-user/per-workspace accounts are not offered)
     DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled globally (e.g. 3 or 5)
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
     GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner Ad unit slot ID (e.g. XXXXXXXXXX)

@@ -41,23 +41,56 @@ async def test_user_registration_and_workspace_isolation(client: AsyncClient):
     token2 = login2.json()["access_token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
 
-    # 5. User 2 tries to generate an API key on User 1's workspace -> MUST BE FORBIDDEN 403
-    forbidden_attempt = await client.post(
-        f"/api/v1/workspaces/{user1_ws_id}/api-keys",
-        headers=headers2
-    )
-    assert forbidden_attempt.status_code == 403
+    # 5. User 2 tries to list User 1's workspace links -> MUST BE FORBIDDEN 403
+    forbidden_list = await client.get(f"/api/v1/links?workspace_id={user1_ws_id}", headers=headers2)
+    assert forbidden_list.status_code == 403
 
-    # 6. User 1 generates API key on own workspace -> 200 OK
-    api_key_res = await client.post(
-        f"/api/v1/workspaces/{user1_ws_id}/api-keys",
-        headers=headers1
-    )
-    assert api_key_res.status_code == 200
-    raw_api_key = api_key_res.json()["api_key"]
-    assert raw_api_key.startswith("pr_live_")
+    # 6. User 1 creates a link in their own workspace
+    link_res = await client.post("/api/v1/links", json={
+        "destination_url": "https://example.com/secret",
+        "workspace_id": user1_ws_id,
+    }, headers=headers1)
+    assert link_res.status_code == 201
+    link_id = link_res.json()["id"]
 
-    # 7. Authenticate via raw API key
-    api_key_headers = {"Authorization": f"Bearer {raw_api_key}"}
-    ws_via_api_key = await client.get("/api/v1/workspaces", headers=api_key_headers)
-    assert ws_via_api_key.status_code == 200
+    # 7. User 2 cannot see, edit, or delete User 1's link
+    forbidden_patch = await client.patch(f"/api/v1/links/{link_id}", json={"title": "hijacked"}, headers=headers2)
+    assert forbidden_patch.status_code == 403
+
+    forbidden_delete = await client.delete(f"/api/v1/links/{link_id}", headers=headers2)
+    assert forbidden_delete.status_code == 403
+
+    forbidden_analytics = await client.get(
+        f"/api/v1/analytics?workspace_id={user1_ws_id}&link_id={link_id}", headers=headers2
+    )
+    assert forbidden_analytics.status_code == 403
+
+    # 8. User 1 can manage their own link
+    own_patch = await client.patch(f"/api/v1/links/{link_id}", json={"title": "owned"}, headers=headers1)
+    assert own_patch.status_code == 200
+
+    own_analytics = await client.get(
+        f"/api/v1/analytics?workspace_id={user1_ws_id}&link_id={link_id}", headers=headers1
+    )
+    assert own_analytics.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_anonymous_links_have_no_owner_and_cannot_be_managed(client: AsyncClient):
+    anon_res = await client.post("/api/v1/links", json={"destination_url": "https://example.com/anon"})
+    assert anon_res.status_code == 201
+    link_id = anon_res.json()["id"]
+
+    reg = await client.post("/api/v1/auth/register", json={
+        "email": "bystander@company.com",
+        "password": "SecurePassword123!",
+        "full_name": "Bystander"
+    })
+    assert reg.status_code == 200
+    login = await client.post("/api/v1/auth/login", json={
+        "email": "bystander@company.com", "password": "SecurePassword123!"
+    })
+    headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+    delete_res = await client.delete(f"/api/v1/links/{link_id}", headers=headers)
+    assert delete_res.status_code == 404

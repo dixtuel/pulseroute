@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class DomainCreate(BaseModel):
     domain: str = Field(description="Custom domain name e.g. links.mybrand.com")
-    workspace_id: Optional[int] = None
+    workspace_id: int
     custom_not_found_url: str | None = None
 
 

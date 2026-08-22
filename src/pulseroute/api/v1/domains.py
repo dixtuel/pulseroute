@@ -1,19 +1,34 @@
-from typing import List, Optional
+from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pulseroute.api.deps import require_authenticated_user, verify_workspace_access
 from pulseroute.core.database import get_db
 from pulseroute.models.domain import CustomDomain
+from pulseroute.models.user import User
 from pulseroute.schemas.domain import DomainCreate, DomainResponse, DomainVerifyResponse
 from pulseroute.services.domain_service import DomainService
 
 router = APIRouter(prefix="/domains", tags=["Custom Domains & DNS Onboarding"])
 
 
+async def _get_domain_or_404(db: AsyncSession, domain_id: int) -> CustomDomain:
+    domain = await db.get(CustomDomain, domain_id)
+    if not domain or domain.workspace_id is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Domain not found")
+    return domain
+
+
 @router.post("", response_model=DomainResponse, status_code=status.HTTP_201_CREATED)
-async def add_custom_domain(domain_in: DomainCreate, db: AsyncSession = Depends(get_db)):
+async def add_custom_domain(
+    domain_in: DomainCreate,
+    current_user: User = Depends(require_authenticated_user),
+    db: AsyncSession = Depends(get_db),
+):
+    await verify_workspace_access(domain_in.workspace_id, current_user, db, required_roles=("owner", "admin"))
+
     try:
         domain = await DomainService.add_custom_domain(
             db,
@@ -37,13 +52,15 @@ async def add_custom_domain(domain_in: DomainCreate, db: AsyncSession = Depends(
 
 @router.get("", response_model=List[DomainResponse])
 async def list_custom_domains(
-    workspace_id: Optional[int] = Query(None),
+    workspace_id: int,
+    current_user: User = Depends(require_authenticated_user),
     db: AsyncSession = Depends(get_db),
 ):
-    query = select(CustomDomain).order_by(CustomDomain.created_at.desc())
-    if workspace_id:
-        query = query.where(CustomDomain.workspace_id == workspace_id)
-    result = await db.execute(query)
+    await verify_workspace_access(workspace_id, current_user, db)
+
+    result = await db.execute(
+        select(CustomDomain).where(CustomDomain.workspace_id == workspace_id).order_by(CustomDomain.created_at.desc())
+    )
     domains = list(result.scalars().all())
 
     return [
@@ -61,10 +78,13 @@ async def list_custom_domains(
 
 
 @router.post("/{domain_id}/verify", response_model=DomainVerifyResponse)
-async def verify_custom_domain(domain_id: int, db: AsyncSession = Depends(get_db)):
-    domain = await db.get(CustomDomain, domain_id)
-    if not domain:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Domain not found")
+async def verify_custom_domain(
+    domain_id: int,
+    current_user: User = Depends(require_authenticated_user),
+    db: AsyncSession = Depends(get_db),
+):
+    domain = await _get_domain_or_404(db, domain_id)
+    await verify_workspace_access(domain.workspace_id, current_user, db, required_roles=("owner", "admin"))
 
     is_verified, msg = await DomainService.verify_domain_dns(db, domain_id)
     dns_guide = DomainService.get_dns_instructions(domain.domain, domain.verification_code)
@@ -79,9 +99,13 @@ async def verify_custom_domain(domain_id: int, db: AsyncSession = Depends(get_db
 
 
 @router.delete("/{domain_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_custom_domain(domain_id: int, db: AsyncSession = Depends(get_db)):
-    domain = await db.get(CustomDomain, domain_id)
-    if not domain:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Domain not found")
+async def delete_custom_domain(
+    domain_id: int,
+    current_user: User = Depends(require_authenticated_user),
+    db: AsyncSession = Depends(get_db),
+):
+    domain = await _get_domain_or_404(db, domain_id)
+    await verify_workspace_access(domain.workspace_id, current_user, db, required_roles=("owner", "admin"))
+
     await db.delete(domain)
     await db.commit()

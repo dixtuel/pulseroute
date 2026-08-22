@@ -44,30 +44,46 @@ class AnalyticsService:
     @staticmethod
     async def get_link_analytics(
         db: AsyncSession,
+        workspace_id: Optional[int] = None,
         link_id: Optional[int] = None,
         days: int = 7,
     ) -> AnalyticsSummaryResponse:
+        """
+        `workspace_id` scopes results to a workspace's own links and must be supplied by
+        any caller reached via authenticated API routes (see api/v1/analytics.py). It is
+        left unset only for the opt-in public "slug+" stats page, which is gated separately
+        by `ShortLink.public_stats` and always passes an explicit `link_id`.
+        """
         since_time = datetime.now(UTC) - timedelta(days=days)
 
+        def scoped(query):
+            if workspace_id is not None:
+                query = query.join(ShortLink, ShortLink.id == ClickEvent.link_id).where(
+                    ShortLink.workspace_id == workspace_id
+                )
+            if link_id:
+                query = query.where(ClickEvent.link_id == link_id)
+            return query
+
         # 1. Total clicks
-        total_clicks_query = select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time)
-        if link_id:
-            total_clicks_query = total_clicks_query.where(ClickEvent.link_id == link_id)
+        total_clicks_query = scoped(
+            select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time)
+        )
         total_clicks_res = await db.execute(total_clicks_query)
         total_clicks = total_clicks_res.scalar() or 0
 
         # 2. Bot clicks
-        bot_query = select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time, ClickEvent.is_bot.is_(True))
-        if link_id:
-            bot_query = bot_query.where(ClickEvent.link_id == link_id)
+        bot_query = scoped(
+            select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time, ClickEvent.is_bot.is_(True))
+        )
         bot_clicks_res = await db.execute(bot_query)
         bot_clicks = bot_clicks_res.scalar() or 0
 
         # Helper for breakdown
         async def get_breakdown(column, is_referrer: bool = False) -> List[BreakdownItem]:
-            query = select(column, func.count(ClickEvent.id).label("cnt")).where(ClickEvent.clicked_at >= since_time)
-            if link_id:
-                query = query.where(ClickEvent.link_id == link_id)
+            query = scoped(
+                select(column, func.count(ClickEvent.id).label("cnt")).where(ClickEvent.clicked_at >= since_time)
+            )
             query = query.group_by(column).order_by(desc("cnt")).limit(10)
 
             res = await db.execute(query)
@@ -94,12 +110,12 @@ class AnalyticsService:
         }
 
         # Fetch actual clicks per day
-        ts_query = select(
-            func.date(ClickEvent.clicked_at).label("day"),
-            func.count(ClickEvent.id).label("cnt")
-        ).where(ClickEvent.clicked_at >= since_time)
-        if link_id:
-            ts_query = ts_query.where(ClickEvent.link_id == link_id)
+        ts_query = scoped(
+            select(
+                func.date(ClickEvent.clicked_at).label("day"),
+                func.count(ClickEvent.id).label("cnt")
+            ).where(ClickEvent.clicked_at >= since_time)
+        )
         ts_query = ts_query.group_by(func.date(ClickEvent.clicked_at))
 
         ts_res = await db.execute(ts_query)

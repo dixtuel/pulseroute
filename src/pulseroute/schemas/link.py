@@ -9,18 +9,16 @@ class LinkCreate(BaseModel):
     title: str | None = None
     tags: str | None = None
     domain_id: int | None = None
+    workspace_id: int | None = None
 
     # Targeting
     ios_destination: str | None = None
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
 
-    # Interstitial Ad & AdSense
+    # Interstitial countdown (ad content itself is platform-wide only, see GLOBAL_ADSENSE_* settings)
     interstitial_delay: int = 0
-    interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
-    adsense_client_id: str | None = None
-    adsense_slot_id: str | None = None
 
     # Fallbacks & Social
     expires_at: datetime | None = None
@@ -45,10 +43,7 @@ class LinkUpdate(BaseModel):
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
     interstitial_delay: int | None = None
-    interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
-    adsense_client_id: str | None = None
-    adsense_slot_id: str | None = None
     expires_at: datetime | None = None
     expired_url: str | None = None
     public_stats: bool | None = None
@@ -63,7 +58,6 @@ class LinkResponse(BaseModel):
     title: str | None = None
     tags: str | None = None
     interstitial_delay: int = 0
-    adsense_client_id: str | None = None
     short_url: str
     total_clicks: int
     public_stats: bool
@@ -76,9 +70,7 @@ class LinkDetailResponse(LinkResponse):
     ios_destination: str | None = None
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
-    interstitial_ad_html: str | None = None
     interstitial_title: str | None = None
-    adsense_slot_id: str | None = None
     expired_url: str | None = None
     og_title: str | None = None
     og_description: str | None = None

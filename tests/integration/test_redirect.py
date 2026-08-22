@@ -29,29 +29,34 @@ async def test_redirect_flow(client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_redirect_interstitial_page_with_adsense(client: AsyncClient):
+    """
+    AdSense is a single, server-administrator-controlled account (GLOBAL_ADSENSE_*),
+    never something an individual user/link can set -- Google AdSense requires per-site
+    ownership verification, so per-user monetization isn't offered at all.
+    """
     from pulseroute.core.config import settings
-    orig_monetization = settings.ALLOW_USER_MONETIZATION
-    settings.ALLOW_USER_MONETIZATION = True
+    orig_client, orig_slot = settings.GLOBAL_ADSENSE_CLIENT_ID, settings.GLOBAL_ADSENSE_SLOT_ID
+    settings.GLOBAL_ADSENSE_CLIENT_ID = "ca-pub-1234567890"
+    settings.GLOBAL_ADSENSE_SLOT_ID = "9876543210"
     try:
-        # Create link with 5s delay and Google AdSense
+        # Create link with a 5s interstitial delay (no per-link ad fields exist anymore)
         create_res = await client.post("/api/v1/links", json={
             "destination_url": "https://example.com/sponsored-target",
             "slug": "ad-link",
             "interstitial_delay": 5,
             "interstitial_title": "Please wait for sponsor",
-            "adsense_client_id": "ca-pub-1234567890",
-            "adsense_slot_id": "9876543210"
         })
         assert create_res.status_code == 201
-    finally:
-        settings.ALLOW_USER_MONETIZATION = orig_monetization
 
-    # Browser request with text/html -> Returns Interstitial HTML with AdSense tags
-    browser_res = await client.get("/ad-link", headers={"Accept": "text/html"})
-    assert browser_res.status_code == 200
-    assert "ca-pub-1234567890" in browser_res.text
-    assert "9876543210" in browser_res.text
-    assert "adsbygoogle" in browser_res.text
+        # Browser request with text/html -> Returns Interstitial HTML with the platform's AdSense tags
+        browser_res = await client.get("/ad-link", headers={"Accept": "text/html"})
+        assert browser_res.status_code == 200
+        assert "ca-pub-1234567890" in browser_res.text
+        assert "9876543210" in browser_res.text
+        assert "adsbygoogle" in browser_res.text
+    finally:
+        settings.GLOBAL_ADSENSE_CLIENT_ID = orig_client
+        settings.GLOBAL_ADSENSE_SLOT_ID = orig_slot
 
 
 @pytest.mark.asyncio

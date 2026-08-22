@@ -1,5 +1,3 @@
-import hashlib
-import secrets
 from datetime import UTC, datetime, timedelta
 from typing import Optional
 
@@ -24,14 +22,6 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
         return bcrypt.checkpw(pwd_bytes, hashed_bytes)
     except Exception:
         return False
-
-
-def generate_api_key(prefix: str = "pr_live_") -> str:
-    return f"{prefix}{secrets.token_urlsafe(32)}"
-
-
-def hash_api_key(api_key: str) -> str:
-    return hashlib.sha256(api_key.encode()).hexdigest()
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:

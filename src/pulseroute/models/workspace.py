@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, List
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from pulseroute.core.database import Base
@@ -18,11 +18,6 @@ class Workspace(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     slug: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False)
-
-    # Workspace Monetization / AdSense Configuration
-    adsense_client_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    adsense_slot_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    adsense_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     interstitial_default_delay: Mapped[int] = mapped_column(Integer, default=0)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
