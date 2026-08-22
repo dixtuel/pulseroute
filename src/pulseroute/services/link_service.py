@@ -33,6 +33,18 @@ class LinkService:
             if not safe:
                 raise ValueError(f"URL Safety Violation: {reason}")
 
+        domain = None
+        if data.domain_id:
+            domain = await db.get(CustomDomain, data.domain_id)
+            if not domain or not domain.is_verified or domain.workspace_id != workspace_id:
+                raise ValueError("Invalid or unverified custom domain for this workspace.")
+
+        if settings.REQUIRE_CUSTOM_DOMAIN and domain is None:
+            raise ValueError(
+                "This server requires every link to use a verified custom domain. "
+                "Add and verify your workspace's own domain before creating links."
+            )
+
         slug = data.slug.strip() if data.slug else None
         if slug:
             query = select(ShortLink).where(ShortLink.slug == slug)

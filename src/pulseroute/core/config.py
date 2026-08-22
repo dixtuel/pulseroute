@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     # Custom Domains & TLS
     ALLOW_CUSTOM_DOMAINS: bool = True  # Any logged-in workspace owner/admin can add one by default;
     # set to false to disable custom-domain onboarding entirely on this instance (nobody can add one, logged in or not).
+    REQUIRE_CUSTOM_DOMAIN: bool = False  # Operating mode switch.
+    # False (default): "shared instance" mode -- everyone dispatches links off this instance's own
+    #   PRIMARY_DOMAIN (anonymous 24h-TTL links included); adding a custom domain is optional.
+    # True: "bring your own domain" mode -- link creation on the shared PRIMARY_DOMAIN is disabled
+    #   entirely (including anonymous links); every workspace must add and verify its own custom
+    #   domain before it can create any link at all. Requires ALLOW_CUSTOM_DOMAINS=true to be usable.
     CUSTOM_DOMAIN_CNAME_TARGET: str = "cname.pulseroute.io"
     CADDY_INTERNAL_ASK_SECRET: Optional[str] = None
     ENFORCE_SAFE_BROWSING: bool = True

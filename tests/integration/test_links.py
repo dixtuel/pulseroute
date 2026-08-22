@@ -105,6 +105,64 @@ async def test_duplicate_slug_on_default_domain_is_rejected(client: AsyncClient)
 
 
 @pytest.mark.asyncio
+async def test_cannot_create_link_under_another_workspaces_domain(client: AsyncClient, db_session):
+    from pulseroute.models.domain import CustomDomain
+
+    _headers1, workspace1 = await _register_and_get_workspace(client, "domainowner-a@company.com")
+    headers2, _workspace2 = await _register_and_get_workspace(client, "domainowner-b@company.com")
+
+    domain = CustomDomain(workspace_id=workspace1, domain="a-owns-this.com", verification_code="x", is_verified=True)
+    db_session.add(domain)
+    await db_session.commit()
+    await db_session.refresh(domain)
+
+    res = await client.post("/api/v1/links", json={
+        "destination_url": "https://example.com/hijack",
+        "domain_id": domain.id,
+        "workspace_id": _workspace2,
+    }, headers=headers2)
+    assert res.status_code == 400
+    assert "Invalid or unverified" in res.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_require_custom_domain_mode(client: AsyncClient, db_session):
+    from pulseroute.core.config import settings
+    from pulseroute.models.domain import CustomDomain
+
+    headers, workspace_id = await _register_and_get_workspace(client, "byod-user@company.com")
+
+    domain = CustomDomain(workspace_id=workspace_id, domain="byod-user.com", verification_code="x", is_verified=True)
+    db_session.add(domain)
+    await db_session.commit()
+    await db_session.refresh(domain)
+
+    orig = settings.REQUIRE_CUSTOM_DOMAIN
+    settings.REQUIRE_CUSTOM_DOMAIN = True
+    try:
+        # Anonymous link creation is fully disabled in this mode
+        anon_res = await client.post("/api/v1/links", json={"destination_url": "https://example.com/anon"})
+        assert anon_res.status_code == 400
+
+        # Logged-in creation without a domain_id is also rejected
+        no_domain_res = await client.post("/api/v1/links", json={
+            "destination_url": "https://example.com/no-domain",
+            "workspace_id": workspace_id,
+        }, headers=headers)
+        assert no_domain_res.status_code == 400
+
+        # Creation against the workspace's own verified domain succeeds
+        ok_res = await client.post("/api/v1/links", json={
+            "destination_url": "https://example.com/ok",
+            "domain_id": domain.id,
+            "workspace_id": workspace_id,
+        }, headers=headers)
+        assert ok_res.status_code == 201
+    finally:
+        settings.REQUIRE_CUSTOM_DOMAIN = orig
+
+
+@pytest.mark.asyncio
 async def test_health_check(client: AsyncClient):
     res = await client.get("/healthz")
     assert res.status_code == 200
