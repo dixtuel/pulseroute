@@ -2,32 +2,19 @@
 
 # PulseRoute
 
-**Enterprise-Grade URL Shortener, Custom Domains & Real-Time Analytics Platform**
+**Self-hosted URL shortener with custom domains, click analytics, QR codes and webhooks**
 
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-pulseroute.onrender.com-00B4D8?style=flat&logo=render)](https://pulseroute.onrender.com)
 [![CI Pipeline](https://github.com/dixtuel/pulseroute/actions/workflows/ci.yml/badge.svg)](https://github.com/dixtuel/pulseroute/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
 *Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, and an embedded modern dashboard with rich terminal CLI.*
 
-[🚀 Live Cloud Demo](https://pulseroute.onrender.com) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Production Deploy](#production-deployment-docker-compose)
+[Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Self-Hosted Deploy](#self-hosted-deployment-docker-compose)
 
 ---
 
 </div>
-
-## 🌐 Live Cloud Demo
-
-PulseRoute is running live in production on Render with full Postgres & Redis backing:
-
-👉 **[https://pulseroute.onrender.com](https://pulseroute.onrender.com)**
-
-* **Live Telemetry Dashboard:** [pulseroute.onrender.com/dashboard](https://pulseroute.onrender.com/dashboard)
-* **Interactive OpenAPI & Swagger Docs:** [pulseroute.onrender.com/docs](https://pulseroute.onrender.com/docs)
-* **Health & Edge Diagnostics:** [pulseroute.onrender.com/healthz](https://pulseroute.onrender.com/healthz)
-
----
 
 ## System Architecture
 
@@ -102,30 +89,9 @@ The signing secret is generated server-side and shown exactly once in the creati
 
 ---
 
-## ☁️ Cloud & Self-Hosted Deployment Options
+## Self-Hosted Deployment (Docker Compose)
 
-PulseRoute adapts automatically to your environment — from a zero-config free demo to an enterprise distributed cluster:
-
-### Option 1: 1-Click Free Cloud Deploy (Render Free Web Service)
-PulseRoute includes built-in fallback drivers. When deployed on Render Free Tier without external services, it automatically operates in **Standalone Zero-Config Mode**:
-* **Database:** Embedded SQLite (`sqlite+aiosqlite:///./pulseroute.db`).
-* **Caching & Telemetry:** In-memory rate limiting and direct database click ingestion (no Redis required).
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
-
----
-
-### Option 2: 100% Free Persistent Cloud Setup (Render + Free Serverless DBs)
-To make your Render free deployment completely persistent across container sleep/restarts, attach free cloud databases by adding 2 Environment Variables in your Render Dashboard:
-1. **Free PostgreSQL (0.5 GB Free):** [Neon.tech](https://neon.tech) or [Supabase](https://supabase.com)
-   * Set `DATABASE_URL=postgresql+asyncpg://user:pass@ep-xxx.neon.tech/neondb?ssl=require`
-2. **Free Redis (10,000 commands/day Free):** [Upstash Serverless Redis](https://upstash.com)
-   * Set `REDIS_URL=rediss://default:pass@xxx.upstash.io:6379`
-
----
-
-### Option 3: Production Self-Hosted (Docker Compose)
-Deploy the full enterprise stack (FastAPI + PostgreSQL 16 + Redis 7 + Caddy On-Demand TLS) in one command on your VPS:
+Run the full stack (FastAPI + PostgreSQL 16 + Redis 7 + Caddy On-Demand TLS) with one command on your own server:
 
 ```bash
 git clone https://github.com/dixtuel/pulseroute.git
@@ -133,6 +99,8 @@ cd pulseroute/deploy
 cp .env.example .env
 docker compose up -d
 ```
+
+PulseRoute also ships with fallback drivers for a zero-infra local run: without `DATABASE_URL`/`REDIS_URL` set, it falls back to embedded SQLite and in-memory rate limiting — useful for trying it out, not for production.
 
 ---
 
@@ -142,9 +110,9 @@ Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). T
 
 | Variable | Default | What it does |
 | :--- | :--- | :--- |
-| `DATABASE_URL` | embedded SQLite | Postgres connection string in production (see Option 2/3 below). |
+| `DATABASE_URL` | embedded SQLite | Postgres connection string in production — see Docker Compose above. |
 | `REDIS_URL` | `redis://127.0.0.1:6379/0` | Cache + click-stream backend; omit entirely to run in zero-Redis fallback mode. |
-| `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `yourapp.onrender.com` or `links.example.com`). |
+| `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `links.example.com`). |
 | `ALLOW_CUSTOM_DOMAINS` | `true` | Whether logged-in workspace owners/admins can add a custom domain at all. Set `false` to disable the feature entirely. |
 | `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. |
 | `ENFORCE_SAFE_BROWSING` | `true` | Rejects known-malicious/phishing destination URLs at link-creation time. |

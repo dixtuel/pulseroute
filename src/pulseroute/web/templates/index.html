@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
     <title>PulseRoute — URL Shortener</title>
 
-    <meta name="description" content="Self-hosted, open-source URL shortener with sub-10ms redirects, multi-tenant workspaces, custom domains with automated TLS, and KVKK/GDPR-compliant real-time click analytics.">
+    <meta name="description" content="Self-hosted, open-source URL shortener with custom domains, click analytics, QR codes and webhooks.">
 
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -19,454 +19,460 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Fraunces', 'Georgia', 'serif'],
+                        sans: ['Work Sans', 'sans-serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
                     },
                     colors: {
-                        obsidian: '#07090A',
-                        carbon: '#0E1316',
-                        panel: '#141B1F',
-                        divider: '#202A30',
-                        accent: {
-                            amber: '#F59E0B',
-                            teal: '#06B6D4',
-                            emerald: '#10B981',
-                            rose: '#F43F5E'
-                        }
-                    }
+                        paper: '#F3ECDC',
+                        paperDeep: '#E7DCC0',
+                        card: '#FBF8F0',
+                        ink: '#23222A',
+                        inkSoft: '#6B6659',
+                        line: '#D9CCA8',
+                        rail: '#146D6C',
+                        railDeep: '#0E5150',
+                        railTint: '#DCEAE6',
+                        stamp: '#BD4028',
+                        stampTint: '#F5E1D8',
+                        gold: '#B9861E',
+                        goldTint: '#F3E7C9',
+                    },
+                    borderRadius: {
+                        ticket: '6px',
+                    },
                 }
             }
         }
     </script>
+
     <style>
-        body { background-color: #07090A; color: #E2E8F0; }
-        .grid-bg {
-            background-size: 32px 32px;
-            background-image: 
-                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+        :root { color-scheme: light; }
+        html, body { background-color: #F3ECDC; }
+        body {
+            color: #23222A;
+            font-feature-settings: "ss01";
         }
+        ::selection { background: #146D6C; color: #F3ECDC; }
+
+        /* Faint paper grain so flat kraft doesn't look like a flat CSS fill */
+        .grain {
+            background-image:
+                radial-gradient(rgba(35,34,42,0.035) 1px, transparent 1px),
+                radial-gradient(rgba(35,34,42,0.025) 1px, transparent 1px);
+            background-size: 3px 3px, 7px 7px;
+            background-position: 0 0, 1.5px 3px;
+        }
+
+        /* Perforated ticket edge: a column of punched circles on the left side */
+        .ticket {
+            position: relative;
+            border-radius: 4px 14px 14px 4px;
+        }
+        .ticket::before {
+            content: "";
+            position: absolute;
+            left: 0; top: 0; bottom: 0; width: 16px;
+            background-image: radial-gradient(circle at 0 50%, transparent 7px, inherit 7.5px);
+        }
+        .ticket-onpaper::before { background-image: radial-gradient(circle at 0 50%, transparent 7px, #F3ECDC 7.5px); }
+        .ticket-oncard::before { background-image: radial-gradient(circle at 0 50%, transparent 6px, #FBF8F0 6.5px); }
+
+        /* Route line: origin dot — dashed rail — destination chevron, with a pulse dot that travels once */
+        .route-line {
+            position: relative;
+            height: 2px;
+            background-image: linear-gradient(to right, #B7AA82 0, #B7AA82 6px, transparent 6px, transparent 11px);
+            background-size: 11px 2px;
+            background-repeat: repeat-x;
+        }
+        .route-pulse {
+            position: absolute; top: 50%; left: 0;
+            width: 8px; height: 8px; margin-top: -4px; margin-left: -4px;
+            border-radius: 50%;
+            background: #146D6C;
+            box-shadow: 0 0 0 4px #DCEAE6;
+        }
+        .route-pulse.travel {
+            animation: travel 1.1s ease-in-out 1;
+        }
+        @keyframes travel {
+            0% { left: 0%; opacity: 0; }
+            12% { opacity: 1; }
+            88% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .route-pulse.travel { animation: none; opacity: 1; left: 50%; }
+        }
+
+        .tab-active {
+            background: #23222A;
+            color: #F3ECDC;
+        }
+        .tab-inactive {
+            color: #6B6659;
+        }
+        .tab-inactive:hover { background: #E7DCC0; }
+
+        input:focus, select:focus, textarea:focus, button:focus-visible, a:focus-visible {
+            outline: 2px solid #146D6C;
+            outline-offset: 2px;
+        }
+
+        table { border-collapse: separate; border-spacing: 0; }
+
+        details > summary { list-style: none; }
+        details > summary::-webkit-details-marker { display: none; }
+        details[open] .chevron { transform: rotate(180deg); }
     </style>
 </head>
-<body class="min-h-screen flex flex-col grid-bg text-slate-200 antialiased selection:bg-amber-500 selection:text-black">
-    <!-- Top System Telemetry Ribbon -->
-    <div class="border-b border-divider bg-carbon/90 backdrop-blur-md px-6 py-2 text-[11px] font-mono flex items-center justify-between text-slate-400">
-        <div class="flex items-center space-x-6">
-            <div class="flex items-center space-x-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-slate-300 font-semibold uppercase tracking-wider">Edge Status: Nominal</span>
-            </div>
-        </div>
-        <div class="flex items-center space-x-4">
-            <a href="https://github.com/dixtuel/pulseroute" target="_blank" class="hover:text-white transition flex items-center gap-1">
-                <i class="fa-brands fa-github text-[10px]"></i> GitHub
-            </a>
-        </div>
-    </div>
+<body class="min-h-screen grain flex flex-col text-ink antialiased font-sans">
 
-    <!-- Navigation Header -->
-    <header class="border-b border-divider bg-carbon/50 backdrop-blur-md sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3">
-                <div class="w-9 h-9 rounded-lg bg-panel border border-divider flex items-center justify-center text-amber-400 shadow-inner">
-                    <i class="fa-solid fa-route text-sm"></i>
-                </div>
-                <div>
-                    <div class="flex items-center space-x-2">
-                        <span class="font-display font-bold text-lg tracking-tight text-white">PulseRoute</span>
-                    </div>
-                </div>
+    <!-- Header -->
+    <header class="border-b border-line/80 bg-paper/95 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2.5 shrink-0">
+                <span class="w-8 h-8 rounded-full bg-ink text-paper flex items-center justify-center">
+                    <i class="fa-solid fa-route text-[13px]"></i>
+                </span>
+                <span class="font-display italic font-semibold text-xl tracking-tight">PulseRoute</span>
             </div>
 
-            <!-- Workspace & Auth Indicator -->
-            <div id="authSection" class="flex items-center space-x-3 text-xs font-mono">
-                <!-- Logged Out State -->
-                <div id="loggedOutButtons" class="flex items-center space-x-2">
-                    <button onclick="openModal('loginModal')" class="px-3.5 py-1.5 rounded-lg bg-panel hover:bg-divider text-slate-200 transition border border-divider">
-                        <i class="fa-solid fa-arrow-right-to-bracket mr-1.5 text-amber-500"></i> Login
-                    </button>
-                    <button onclick="openModal('registerModal')" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-semibold transition">
-                        Register
-                    </button>
+            <nav class="hidden md:flex items-center gap-1 text-sm font-medium">
+                <button onclick="switchTab('links')" id="tabBtn-links" class="tab-active px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-link text-[11px]"></i> Links
+                </button>
+                <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="tab-inactive px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-chart-simple text-[11px]"></i> Board
+                </button>
+                <button onclick="switchTab('domains')" id="tabBtn-domains" class="tab-inactive px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-signs-post text-[11px]"></i> Routes
+                </button>
+                <button onclick="switchTab('settings')" id="tabBtn-settings" class="tab-inactive px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-sliders text-[11px]"></i> Settings
+                </button>
+            </nav>
+
+            <div id="authSection" class="flex items-center gap-2 text-sm shrink-0">
+                <div id="loggedOutButtons" class="flex items-center gap-2">
+                    <button onclick="openModal('loginModal')" class="px-3.5 py-1.5 rounded-full hover:bg-paperDeep transition font-medium">Log in</button>
+                    <button onclick="openModal('registerModal')" class="px-3.5 py-1.5 rounded-full bg-rail hover:bg-railDeep text-paper transition font-medium">Sign up</button>
                 </div>
 
-                <!-- Logged In State (Hidden by default) -->
-                <div id="loggedInControls" class="hidden flex items-center space-x-3">
-                    <!-- Workspace Dropdown -->
-                    <div class="relative">
-                        <select id="workspaceSelect" onchange="onWorkspaceChange()" class="px-3 py-1.5 rounded-lg bg-panel border border-divider text-slate-200 outline-none focus:border-amber-500 text-xs font-mono cursor-pointer pr-8">
-                            <option value="">Default Workspace</option>
-                        </select>
-                    </div>
-                    <button onclick="openModal('newWorkspaceModal')" class="p-1.5 text-slate-400 hover:text-amber-400 transition" title="Create Workspace">
-                        <i class="fa-solid fa-plus-circle text-sm"></i>
+                <div id="loggedInControls" class="hidden flex items-center gap-2">
+                    <select id="workspaceSelect" onchange="onWorkspaceChange()" title="Switch workspace"
+                        class="hidden sm:block px-2.5 py-1.5 rounded-full bg-card border border-line text-ink text-xs font-medium outline-none cursor-pointer max-w-[9rem]">
+                        <option value="">Workspace</option>
+                    </select>
+                    <button onclick="openModal('newWorkspaceModal')" class="p-2 text-inkSoft hover:text-ink transition" title="New workspace">
+                        <i class="fa-solid fa-plus text-xs"></i>
                     </button>
-                    <span id="userEmailBadge" class="text-slate-400 font-mono hidden md:inline px-2 py-1 bg-panel rounded border border-divider/60"></span>
-                    <button onclick="signOut()" class="p-1.5 text-slate-400 hover:text-rose-400 transition" title="Sign Out">
-                        <i class="fa-solid fa-power-off text-xs"></i>
+                    <span id="userEmailBadge" class="hidden lg:inline text-xs text-inkSoft px-2 py-1 bg-card rounded-full border border-line"></span>
+                    <button onclick="signOut()" class="p-2 text-inkSoft hover:text-stamp transition" title="Sign out">
+                        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
                     </button>
                 </div>
             </div>
         </div>
+        <!-- Mobile tab bar -->
+        <nav class="md:hidden flex items-center gap-1 px-5 pb-2.5 text-sm font-medium overflow-x-auto">
+            <button onclick="switchTab('links')" id="tabBtn-links-m" class="tab-active px-3 py-1.5 rounded-full transition whitespace-nowrap">Links</button>
+            <button onclick="switchTab('analytics')" id="tabBtn-analytics-m" class="tab-inactive px-3 py-1.5 rounded-full transition whitespace-nowrap">Board</button>
+            <button onclick="switchTab('domains')" id="tabBtn-domains-m" class="tab-inactive px-3 py-1.5 rounded-full transition whitespace-nowrap">Routes</button>
+            <button onclick="switchTab('settings')" id="tabBtn-settings-m" class="tab-inactive px-3 py-1.5 rounded-full transition whitespace-nowrap">Settings</button>
+        </nav>
     </header>
 
-    <!-- Dub.co Grade Primary Tab Navigation Bar -->
-    <nav class="border-b border-divider bg-carbon/40 backdrop-blur sticky top-16 z-30">
-        <div class="max-w-7xl mx-auto px-6 flex items-center space-x-8 text-xs font-mono">
-            <button onclick="switchTab('links')" id="tabBtn-links" class="py-3.5 px-1 border-b-2 border-amber-500 text-amber-400 font-bold flex items-center gap-2 transition">
-                <i class="fa-solid fa-link text-xs"></i> Links
-            </button>
-            <button onclick="switchTab('analytics')" id="tabBtn-analytics" class="py-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 transition">
-                <i class="fa-solid fa-chart-pie text-xs"></i> Analytics
-            </button>
-            <button onclick="switchTab('domains')" id="tabBtn-domains" class="py-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 transition">
-                <i class="fa-solid fa-globe text-xs"></i> Custom Domains
-            </button>
-            <button onclick="switchTab('settings')" id="tabBtn-settings" class="py-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 transition">
-                <i class="fa-solid fa-sliders text-xs"></i> Settings
-            </button>
-        </div>
-    </nav>
+    <main class="max-w-5xl mx-auto px-5 py-10 space-y-10 flex-1 w-full">
 
-    <main class="max-w-7xl mx-auto px-6 py-8 space-y-8 flex-1 w-full">
-        <!-- Anonymous Mode Expiration Banner -->
-        <div id="anonymousNotice" class="rounded-xl p-4 bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+        <!-- Anonymous 24h notice -->
+        <div id="anonymousNotice" class="hidden rounded-ticket p-4 bg-goldTint border border-gold/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-clock-rotate-left text-amber-400 text-base"></i>
-                <div>
-                    <span class="text-white font-bold">Anonymous Link Dispatch Active (24-Hour TTL)</span>
-                    <p class="text-slate-400 text-[11px] mt-0.5">Links created without an account expire automatically after 24 hours. Sign in to keep permanent links and custom domains.</p>
-                </div>
+                <i class="fa-solid fa-clock text-gold text-base"></i>
+                <p class="text-ink"><span class="font-semibold">Links made without an account disappear after 24 hours.</span> Create a free account to keep them.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="openModal('loginModal')" class="px-3 py-1.5 rounded bg-panel hover:bg-divider border border-divider text-slate-200 transition">Login</button>
-                <button onclick="openModal('registerModal')" class="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold transition">Create Free Account</button>
+                <button onclick="openModal('loginModal')" class="px-3 py-1.5 rounded-full bg-card hover:bg-paperDeep border border-line transition">Log in</button>
+                <button onclick="openModal('registerModal')" class="px-3 py-1.5 rounded-full bg-ink hover:bg-black text-paper font-medium transition">Create account</button>
             </div>
         </div>
 
-        <!-- Login-Required Notice (shown instead of the notice above when this server requires a verified custom domain for every link) -->
-        <div id="loginRequiredNotice" class="hidden rounded-xl p-4 bg-rose-500/10 border border-rose-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-mono">
+        <!-- Login-required notice (REQUIRE_CUSTOM_DOMAIN mode) -->
+        <div id="loginRequiredNotice" class="hidden rounded-ticket p-4 bg-stampTint border border-stamp/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-sm">
             <div class="flex items-center gap-3">
-                <i class="fa-solid fa-lock text-rose-400 text-base"></i>
-                <div>
-                    <span class="text-white font-bold">Sign In Required</span>
-                    <p class="text-slate-400 text-[11px] mt-0.5">This server requires every link to use your own verified custom domain. Sign in and add a domain to start creating links.</p>
-                </div>
+                <i class="fa-solid fa-lock text-stamp text-base"></i>
+                <p class="text-ink"><span class="font-semibold">This server only accepts links on your own verified domain.</span> Sign in and add a domain to continue.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button onclick="openModal('loginModal')" class="px-3 py-1.5 rounded bg-panel hover:bg-divider border border-divider text-slate-200 transition">Login</button>
-                <button onclick="openModal('registerModal')" class="px-3 py-1.5 rounded bg-amber-500 hover:bg-amber-400 text-black font-semibold transition">Create Free Account</button>
+                <button onclick="openModal('loginModal')" class="px-3 py-1.5 rounded-full bg-card hover:bg-paperDeep border border-line transition">Log in</button>
+                <button onclick="openModal('registerModal')" class="px-3 py-1.5 rounded-full bg-ink hover:bg-black text-paper font-medium transition">Create account</button>
             </div>
         </div>
 
         <!-- ==================== TAB 1: LINKS ==================== -->
-        <div id="tabContent-links" class="space-y-8">
-            <!-- Live Dispatch Console (Hero Builder) -->
-            <section id="shortenSection" class="rounded-xl bg-carbon border border-divider p-6 shadow-2xl relative overflow-hidden">
-                <div class="flex items-center justify-between pb-4 mb-4 border-b border-divider">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-link text-amber-400 text-xs"></i>
-                        <h2 class="font-display font-bold text-base text-white tracking-tight">Shorten a Link</h2>
-                    </div>
-                </div>
+        <div id="tabContent-links" class="space-y-10">
 
-                <form id="shortenForm" class="space-y-4">
-                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                        <div class="lg:col-span-8 relative">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
-                                DEST:
-                            </div>
-                            <input type="url" id="destUrl" required placeholder="https://domain.com/target-endpoint-path" 
-                                class="w-full pl-16 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-white text-xs font-mono transition">
-                        </div>
-                        <div class="lg:col-span-4 relative">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
-                                SLUG:
-                            </div>
-                            <input type="text" id="customSlug" placeholder="custom-slug" 
-                                class="w-full pl-16 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none text-white text-xs font-mono transition">
-                        </div>
-                    </div>
+            <!-- Shorten form: the ticket counter -->
+            <section id="shortenSection">
+                <h1 class="font-display text-3xl sm:text-4xl font-semibold tracking-tight mb-5">Where should this link go?</h1>
 
-                    <div id="linkDomainWrap" class="hidden">
-                        <label class="block text-[10px] uppercase text-slate-500 mb-1">Domain</label>
-                        <select id="linkDomainSelect" class="w-full px-3 py-2 rounded-lg bg-panel border border-divider focus:border-amber-500 outline-none text-white text-xs font-mono cursor-pointer">
-                            <option value="">Default Domain (this instance)</option>
-                        </select>
-                    </div>
-
-                    <!-- Advanced Routing Configuration Accordion -->
-                    <details class="text-xs font-mono border border-divider/60 rounded-lg bg-panel/40 p-3 text-slate-400">
-                        <summary class="cursor-pointer font-medium select-none text-slate-300 hover:text-amber-400 transition flex items-center justify-between">
-                            <span><i class="fa-solid fa-sliders mr-2 text-amber-500"></i> Advanced Options</span>
-                            <span class="text-[10px] text-slate-500">EXPAND</span>
-                        </summary>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 pt-4 border-t border-divider/60 mt-3">
-                            <div>
-                                <label class="block text-[10px] uppercase text-slate-500 mb-1">iOS Device Target</label>
-                                <input type="url" id="iosUrl" placeholder="https://apps.apple.com/..." class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                <div class="bg-card border border-line rounded-2xl p-5 sm:p-6 shadow-[0_1px_0_#fff_inset,0_10px_24px_-16px_rgba(35,34,42,0.35)]">
+                    <form id="shortenForm" class="space-y-4">
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3">
+                            <div class="lg:col-span-8">
+                                <label for="destUrl" class="block text-xs font-medium text-inkSoft mb-1">Destination URL</label>
+                                <input type="url" id="destUrl" required placeholder="https://example.com/a-very-long-page"
+                                    class="w-full px-3.5 py-2.5 rounded-lg bg-paper border border-line focus:border-rail outline-none text-ink text-sm">
                             </div>
-                            <div>
-                                <label class="block text-[10px] uppercase text-slate-500 mb-1">Android Device Target</label>
-                                <input type="url" id="androidUrl" placeholder="https://play.google.com/..." class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] uppercase text-slate-500 mb-1">Tags (Comma-Separated)</label>
-                                <input type="text" id="linkTags" placeholder="campaign, social, sms" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
+                            <div class="lg:col-span-4">
+                                <label for="customSlug" class="block text-xs font-medium text-inkSoft mb-1">Custom slug <span class="font-normal text-inkSoft/70">(optional)</span></label>
+                                <input type="text" id="customSlug" placeholder="my-link"
+                                    class="w-full px-3.5 py-2.5 rounded-lg bg-paper border border-line focus:border-rail outline-none text-ink text-sm font-mono">
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 pt-3">
-                            <div>
-                                <label class="block text-[10px] uppercase text-slate-500 mb-1">Interstitial Countdown Delay (Seconds)</label>
-                                <input type="number" id="interstitialDelay" min="0" max="30" value="3" placeholder="3 = 3s Countdown (0 for instant 307)" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
-                            </div>
-                            <div>
-                                <label class="block text-[10px] uppercase text-slate-500 mb-1">Expired Fallback URL (Optional)</label>
-                                <input type="url" id="expiredUrl" placeholder="https://domain.com/campaign-ended" class="w-full px-3 py-2 rounded bg-carbon border border-divider text-xs text-slate-200">
-                            </div>
+                        <div id="linkDomainWrap" class="hidden">
+                            <label for="linkDomainSelect" class="block text-xs font-medium text-inkSoft mb-1">Domain</label>
+                            <select id="linkDomainSelect" class="w-full px-3.5 py-2.5 rounded-lg bg-paper border border-line focus:border-rail outline-none text-ink text-sm cursor-pointer">
+                                <option value="">This server's domain</option>
+                            </select>
                         </div>
-                    </details>
 
-                    <div class="flex items-center justify-between pt-2">
-                        <div class="text-[11px] font-mono text-slate-500 flex items-center gap-2">
-                            <i class="fa-solid fa-shield-halved text-emerald-500"></i>
-                            <span>KVKK/GDPR Masking Enabled</span>
-                        </div>
-                        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider transition flex items-center gap-2 shadow-lg shadow-amber-500/10">
-                            <span>Dispatch Short Link</span>
-                            <i class="fa-solid fa-arrow-right text-[10px]"></i>
-                        </button>
-                    </div>
-                </form>
+                        <details class="text-sm border border-line rounded-lg bg-paper/60">
+                            <summary class="cursor-pointer select-none px-3.5 py-2.5 flex items-center justify-between text-inkSoft hover:text-ink transition">
+                                <span><i class="fa-solid fa-sliders mr-2 text-rail"></i> More options</span>
+                                <i class="fa-solid fa-chevron-down text-[10px] chevron transition-transform"></i>
+                            </summary>
 
-                <!-- Dispatch Success Output -->
-                <div id="resultBox" class="hidden mt-4 p-4 rounded-lg bg-emerald-500/5 border border-emerald-500/30 font-mono text-xs">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-                            <span class="text-slate-400">LINK ACTIVE:</span>
-                            <a id="resultLink" href="#" target="_blank" class="text-white font-bold hover:text-emerald-400 underline"></a>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <button onclick="toggleQr()" class="px-3 py-1 rounded bg-panel hover:bg-divider border border-divider text-slate-300 transition text-[11px]">
-                                <i class="fa-solid fa-qrcode mr-1"></i> QR
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 px-3.5 pt-1 pb-3.5">
+                                <div>
+                                    <label for="iosUrl" class="block text-[11px] text-inkSoft mb-1">Send iPhone visitors to</label>
+                                    <input type="url" id="iosUrl" placeholder="https://apps.apple.com/…" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
+                                </div>
+                                <div>
+                                    <label for="androidUrl" class="block text-[11px] text-inkSoft mb-1">Send Android visitors to</label>
+                                    <input type="url" id="androidUrl" placeholder="https://play.google.com/…" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
+                                </div>
+                                <div>
+                                    <label for="linkTags" class="block text-[11px] text-inkSoft mb-1">Tags</label>
+                                    <input type="text" id="linkTags" placeholder="campaign, social" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-3.5 pb-3.5">
+                                <div>
+                                    <label for="interstitialDelay" class="block text-[11px] text-inkSoft mb-1">Show a countdown page first, for</label>
+                                    <input type="number" id="interstitialDelay" min="0" max="30" value="0" placeholder="0 = go straight there" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
+                                    <span class="text-[10px] text-inkSoft">seconds (0 disables it)</span>
+                                </div>
+                                <div>
+                                    <label for="expiredUrl" class="block text-[11px] text-inkSoft mb-1">Send visitors here once this link expires</label>
+                                    <input type="url" id="expiredUrl" placeholder="https://example.com/campaign-ended" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
+                                </div>
+                            </div>
+                        </details>
+
+                        <div class="flex items-center justify-between pt-1">
+                            <span class="text-xs text-inkSoft flex items-center gap-1.5">
+                                <i class="fa-solid fa-shield-halved text-rail"></i> Visitor IPs are anonymized (KVKK/GDPR)
+                            </span>
+                            <button type="submit" class="px-5 py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium text-sm transition flex items-center gap-2">
+                                Shorten link <i class="fa-solid fa-arrow-right text-[11px]"></i>
                             </button>
-                            <button onclick="copyResultLink()" class="px-3 py-1 rounded bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 transition text-[11px]">
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Result ticket -->
+            <section id="resultBox" class="hidden">
+                <div class="ticket ticket-onpaper bg-card border border-line pl-8 pr-5 py-5 shadow-[0_10px_24px_-16px_rgba(35,34,42,0.35)]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="min-w-0">
+                            <p class="text-[11px] uppercase tracking-wider text-inkSoft font-medium mb-1.5">Your link is ready</p>
+                            <div class="flex items-center gap-3 text-xs text-inkSoft mb-2">
+                                <span id="resultOrigin" class="truncate max-w-[10rem]">destination</span>
+                                <span class="route-line flex-1 min-w-[3rem] max-w-[6rem]"><span id="resultPulse" class="route-pulse"></span></span>
+                                <i class="fa-solid fa-chevron-right text-[9px]"></i>
+                                <span class="font-mono text-ink">short link</span>
+                            </div>
+                            <a id="resultLink" href="#" target="_blank" class="font-mono text-lg sm:text-xl font-medium text-ink hover:text-rail underline decoration-line underline-offset-4 break-all"></a>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button onclick="toggleQr()" class="px-3.5 py-2 rounded-full bg-paper hover:bg-paperDeep border border-line transition text-xs font-medium">
+                                <i class="fa-solid fa-qrcode mr-1"></i> QR code
+                            </button>
+                            <button onclick="copyResultLink()" class="px-3.5 py-2 rounded-full bg-rail hover:bg-railDeep text-paper transition text-xs font-medium">
                                 <i class="fa-regular fa-copy mr-1"></i> Copy
                             </button>
                         </div>
                     </div>
-                    <img id="resultQrImg" class="hidden mt-3 rounded border border-divider bg-white p-1" style="width:120px;height:120px;">
+                    <img id="resultQrImg" class="hidden mt-4 rounded-lg border border-line bg-white p-1.5" style="width:132px;height:132px;">
                 </div>
             </section>
 
-            <!-- Anonymous Mode: aggregate-only 24h counter (no cross-user link listing) -->
-            <section id="anonCountCard" class="hidden rounded-xl p-8 bg-carbon border border-divider text-center space-y-2">
-                <p class="text-[11px] font-mono uppercase tracking-wider text-slate-500">Son 24 Saatte Oluşturulan Anonim Link</p>
-                <p id="anonCountValue" class="font-display font-bold text-4xl text-amber-400">—</p>
-                <p class="text-[11px] font-mono text-slate-500">Gizlilik nedeniyle bireysel anonim linkler burada listelenmez.</p>
+            <!-- Anonymous mode: aggregate-only counter -->
+            <section id="anonCountCard" class="hidden rounded-2xl p-8 bg-card border border-line text-center space-y-1.5">
+                <p class="text-xs uppercase tracking-wider text-inkSoft font-medium">Anonymous links created in the last 24h</p>
+                <p id="anonCountValue" class="font-display font-semibold text-4xl">—</p>
+                <p class="text-xs text-inkSoft">Individual anonymous links aren't listed here, for privacy.</p>
             </section>
 
-            <!-- Links Matrix Table -->
-            <section id="linksTableContainer" class="space-y-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-2">
-                        <i class="fa-solid fa-table-list text-slate-500 text-xs"></i>
-                        <h3 id="tableTitle" class="font-display font-bold text-sm text-white uppercase tracking-wider">Active Routing Matrix</h3>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <input type="text" id="searchInput" oninput="filterLinks()" placeholder="Filter slugs / urls..."
-                            class="px-3 py-1.5 rounded-lg bg-carbon border border-divider text-xs font-mono text-white outline-none focus:border-amber-500 w-48">
-                        <button onclick="loadLinks()" class="p-1.5 text-slate-400 hover:text-white transition">
+            <!-- Links list -->
+            <section id="linksTableContainer" class="space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 id="tableTitle" class="font-display text-lg font-semibold">Your links</h2>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="searchInput" oninput="filterLinks()" placeholder="Search…"
+                            class="px-3 py-1.5 rounded-full bg-card border border-line text-xs outline-none focus:border-rail w-36 sm:w-48">
+                        <button onclick="loadLinks()" class="p-2 text-inkSoft hover:text-ink transition" title="Refresh">
                             <i class="fa-solid fa-arrows-rotate text-xs"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="bg-carbon border border-divider rounded-xl overflow-hidden shadow-xl">
-                    <table class="w-full text-left text-xs font-mono">
-                        <thead class="bg-panel border-b border-divider text-slate-400 text-[10px] uppercase">
-                            <tr>
-                                <th class="py-3 px-4">Slug / Short Path</th>
-                                <th class="py-3 px-4">Destination Target</th>
-                                <th class="py-3 px-4 text-center">TTL / Status</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="linksTableBody" class="divide-y divide-divider/60">
-                            <tr>
-                                <td colspan="4" class="py-12 text-center text-slate-500">Querying telemetry stream...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <div id="linksTableBody" class="space-y-2">
+                    <div class="py-10 text-center text-inkSoft text-sm bg-card border border-dashed border-line rounded-xl">Loading…</div>
                 </div>
             </section>
         </div>
 
-        <!-- ==================== TAB 2: ANALYTICS ==================== -->
+        <!-- ==================== TAB 2: ANALYTICS (Board) ==================== -->
         <div id="tabContent-analytics" class="hidden space-y-8">
-            <!-- Auth Lock Screen for Analytics -->
-            <div id="analyticsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
-                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
-                    <i class="fa-solid fa-chart-pie text-lg"></i>
+            <div id="analyticsAuthGate" class="hidden p-12 text-center bg-card border border-line rounded-2xl space-y-4 max-w-lg mx-auto">
+                <div class="w-11 h-11 rounded-full bg-goldTint border border-gold/30 flex items-center justify-center mx-auto text-gold">
+                    <i class="fa-solid fa-chart-simple"></i>
                 </div>
-                <h3 class="font-display font-bold text-lg text-white">Workspace Analytics Locked</h3>
-                <p class="text-xs font-mono text-slate-400">Real-time click streams, device breakdown, and geo-spatial telemetry require an active workspace account.</p>
-                <div class="flex justify-center gap-3 pt-2">
-                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
-                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
+                <h3 class="font-display font-semibold text-lg">See how your links are doing</h3>
+                <p class="text-sm text-inkSoft">Sign in to see click activity for your links.</p>
+                <div class="flex justify-center gap-3 pt-1">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-full bg-paper hover:bg-paperDeep text-sm border border-line">Log in</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-full bg-ink text-paper text-sm font-medium">Create account</button>
                 </div>
             </div>
 
             <div id="analyticsMainContent" class="space-y-8">
-                <div class="flex items-center justify-between border-b border-divider pb-4">
+                <div class="flex items-center justify-between border-b border-line pb-4">
                     <div>
-                        <h2 class="font-display font-bold text-lg text-white">Live Telemetry & Traffic Ingestion</h2>
-                        <p class="text-xs font-mono text-slate-400 mt-0.5">Non-blocking Redis Stream aggregation with GDPR/KVKK pseudonymization.</p>
+                        <h2 class="font-display text-lg font-semibold">Board</h2>
+                        <p class="text-sm text-inkSoft mt-0.5">Click activity across every link in this workspace.</p>
                     </div>
-                    <button onclick="loadAnalytics()" class="px-3 py-1.5 rounded-lg bg-panel hover:bg-divider border border-divider text-xs font-mono text-slate-300">
-                        <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Refresh Stream
+                    <button onclick="loadAnalytics()" class="px-3 py-1.5 rounded-full bg-card hover:bg-paperDeep border border-line text-xs font-medium">
+                        <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Refresh
                     </button>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <!-- Device Breakdown Doughnut -->
-                    <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                            <span>Device Architecture</span>
-                            <span class="text-amber-400">Hardware Profile</span>
-                        </div>
+                <!-- Headline numbers, departures-board style -->
+                <div class="grid grid-cols-3 gap-3 sm:gap-4">
+                    <div class="bg-card border border-line rounded-2xl p-4 sm:p-5 text-center">
+                        <p id="statTotalClicks" class="font-display font-semibold text-3xl sm:text-4xl tabular-nums">0</p>
+                        <p class="text-[11px] sm:text-xs text-inkSoft uppercase tracking-wide mt-1">Total clicks</p>
+                    </div>
+                    <div class="bg-card border border-line rounded-2xl p-4 sm:p-5 text-center">
+                        <p id="statUniqueVisitors" class="font-display font-semibold text-3xl sm:text-4xl tabular-nums">0</p>
+                        <p class="text-[11px] sm:text-xs text-inkSoft uppercase tracking-wide mt-1">Unique visitors</p>
+                    </div>
+                    <div class="bg-card border border-line rounded-2xl p-4 sm:p-5 text-center">
+                        <p id="statBotClicks" class="font-display font-semibold text-3xl sm:text-4xl tabular-nums text-inkSoft">0</p>
+                        <p class="text-[11px] sm:text-xs text-inkSoft uppercase tracking-wide mt-1">Filtered as bots</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 bg-card border border-line rounded-2xl p-6 space-y-4">
+                        <p class="text-xs uppercase tracking-wide text-inkSoft font-medium">By device</p>
                         <canvas id="deviceChart" height="200"></canvas>
                     </div>
-
-                    <!-- Geographic Ingestion -->
-                    <div class="lg:col-span-6 bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                        <div class="text-xs font-mono text-slate-400 uppercase tracking-wider flex items-center justify-between">
-                            <span>Geographic Telemetry</span>
-                            <span class="text-cyan-400">Country Breakdown</span>
-                        </div>
-                        <div id="countriesBreakdown" class="space-y-2 font-mono text-xs pt-2">
-                            <div class="text-slate-600 text-xs">No geo telemetry captured yet</div>
+                    <div class="lg:col-span-7 bg-card border border-line rounded-2xl p-6 space-y-3">
+                        <p class="text-xs uppercase tracking-wide text-inkSoft font-medium">By country</p>
+                        <div id="countriesBreakdown" class="space-y-2 text-sm pt-1">
+                            <p class="text-inkSoft text-sm">No location data yet.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== TAB 3: CUSTOM DOMAINS ==================== -->
+        <!-- ==================== TAB 3: DOMAINS (Routes) ==================== -->
         <div id="tabContent-domains" class="hidden space-y-8">
-            <!-- Auth Lock Screen for Domains -->
-            <div id="domainsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
-                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
-                    <i class="fa-solid fa-globe text-lg"></i>
+            <div id="domainsAuthGate" class="hidden p-12 text-center bg-card border border-line rounded-2xl space-y-4 max-w-lg mx-auto">
+                <div class="w-11 h-11 rounded-full bg-goldTint border border-gold/30 flex items-center justify-center mx-auto text-gold">
+                    <i class="fa-solid fa-signs-post"></i>
                 </div>
-                <h3 class="font-display font-bold text-lg text-white">Custom Domains Locked</h3>
-                <p class="text-xs font-mono text-slate-400">Connect branded domains with automatic Caddy On-Demand TLS by signing into your workspace.</p>
-                <div class="flex justify-center gap-3 pt-2">
-                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
-                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
+                <h3 class="font-display font-semibold text-lg">Use your own domain</h3>
+                <p class="text-sm text-inkSoft">Sign in to connect a domain — links will read as yours, with automatic HTTPS.</p>
+                <div class="flex justify-center gap-3 pt-1">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-full bg-paper hover:bg-paperDeep text-sm border border-line">Log in</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-full bg-ink text-paper text-sm font-medium">Create account</button>
                 </div>
             </div>
 
             <div id="domainsMainContent" class="space-y-8">
-                <div class="flex items-center justify-between border-b border-divider pb-4">
-                    <div>
-                        <h2 class="font-display font-bold text-lg text-white">Branded Custom Domains</h2>
-                        <p class="text-xs font-mono text-slate-400 mt-0.5">Automated Caddy On-Demand TLS with automated DNS challenge verification.</p>
-                    </div>
+                <div class="border-b border-line pb-4">
+                    <h2 class="font-display text-lg font-semibold">Routes</h2>
+                    <p class="text-sm text-inkSoft mt-0.5">Connect a domain you own so links read as yours. HTTPS is set up automatically.</p>
                 </div>
 
-                <!-- Add Domain Card -->
-                <section class="rounded-xl bg-carbon border border-divider p-6 space-y-4">
-                    <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider">Connect New Domain</h3>
+                <section class="bg-card border border-line rounded-2xl p-6 space-y-4">
+                    <h3 class="font-medium text-sm">Connect a domain</h3>
                     <form id="addDomainForm" class="flex flex-col sm:flex-row gap-3">
-                        <div class="relative flex-1">
-                            <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
-                                DOMAIN:
-                            </div>
-                            <input type="text" id="newDomainInput" required placeholder="links.mybrand.com or go.domain.xyz" 
-                                class="w-full pl-20 pr-4 py-2.5 rounded-lg bg-panel border border-divider focus:border-amber-500 outline-none text-white text-xs font-mono">
-                        </div>
-                        <button type="submit" class="px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-display font-bold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
-                            <span>Add Domain</span>
-                            <i class="fa-solid fa-plus text-xs"></i>
+                        <input type="text" id="newDomainInput" required placeholder="links.mybrand.com"
+                            class="flex-1 px-3.5 py-2.5 rounded-lg bg-paper border border-line focus:border-rail outline-none text-sm font-mono">
+                        <button type="submit" class="px-5 py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium text-sm transition flex items-center justify-center gap-2">
+                            Connect <i class="fa-solid fa-plus text-[11px]"></i>
                         </button>
                     </form>
 
-                    <!-- DNS Instructions Output -->
-                    <div id="dnsInstructionBox" class="hidden p-4 rounded-lg bg-panel border border-amber-500/30 space-y-2 font-mono text-xs">
-                        <div class="text-amber-400 font-bold flex items-center gap-2">
-                            <i class="fa-solid fa-circle-info"></i> DNS Configuration Required:
+                    <div id="dnsInstructionBox" class="hidden p-4 rounded-lg bg-goldTint border border-gold/30 space-y-1.5 text-sm">
+                        <div class="text-ink font-medium flex items-center gap-2">
+                            <i class="fa-solid fa-circle-info text-gold"></i> Point your DNS here to finish
                         </div>
-                        <div id="dnsDetails" class="text-slate-300 text-[11px] leading-relaxed"></div>
+                        <div id="dnsDetails" class="text-inkSoft text-xs leading-relaxed"></div>
                     </div>
                 </section>
 
-                <!-- Domain Matrix Table -->
-                <section class="bg-carbon border border-divider rounded-xl overflow-hidden">
-                    <table class="w-full text-left text-xs font-mono">
-                        <thead class="bg-panel border-b border-divider text-slate-400 text-[10px] uppercase">
-                            <tr>
-                                <th class="py-3 px-4">Domain</th>
-                                <th class="py-3 px-4 text-center">Status</th>
-                                <th class="py-3 px-4 text-center">SSL / TLS</th>
-                                <th class="py-3 px-4 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="domainsTableBody" class="divide-y divide-divider/60">
-                            <tr>
-                                <td colspan="4" class="py-8 text-center text-slate-500">Loading custom domains...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                <section id="domainsList" class="space-y-2">
+                    <div class="py-8 text-center text-inkSoft text-sm bg-card border border-dashed border-line rounded-xl">Loading…</div>
                 </section>
             </div>
         </div>
 
         <!-- ==================== TAB 4: SETTINGS ==================== -->
         <div id="tabContent-settings" class="hidden space-y-8">
-            <!-- Auth Lock Screen for Settings -->
-            <div id="settingsAuthGate" class="hidden p-12 text-center bg-carbon border border-divider rounded-xl space-y-4 max-w-lg mx-auto shadow-2xl">
-                <div class="w-12 h-12 rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mx-auto text-amber-400">
-                    <i class="fa-solid fa-sliders text-lg"></i>
+            <div id="settingsAuthGate" class="hidden p-12 text-center bg-card border border-line rounded-2xl space-y-4 max-w-lg mx-auto">
+                <div class="w-11 h-11 rounded-full bg-goldTint border border-gold/30 flex items-center justify-center mx-auto text-gold">
+                    <i class="fa-solid fa-sliders"></i>
                 </div>
-                <h3 class="font-display font-bold text-lg text-white">Settings Locked</h3>
-                <p class="text-xs font-mono text-slate-400">Sign in to configure workspace identity and preferences.</p>
-                <div class="flex justify-center gap-3 pt-2">
-                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-lg bg-panel hover:bg-divider text-white text-xs font-mono border border-divider">Sign In</button>
-                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-black text-xs font-mono font-bold">Register Free</button>
+                <h3 class="font-display font-semibold text-lg">Settings</h3>
+                <p class="text-sm text-inkSoft">Sign in to manage your workspace.</p>
+                <div class="flex justify-center gap-3 pt-1">
+                    <button onclick="openModal('loginModal')" class="px-4 py-2 rounded-full bg-paper hover:bg-paperDeep text-sm border border-line">Log in</button>
+                    <button onclick="openModal('registerModal')" class="px-4 py-2 rounded-full bg-ink text-paper text-sm font-medium">Create account</button>
                 </div>
             </div>
 
             <div id="settingsMainContent" class="space-y-8">
-                <div class="border-b border-divider pb-4">
-                    <h2 class="font-display font-bold text-lg text-white">Workspace Configuration</h2>
-                    <p class="text-xs font-mono text-slate-400 mt-0.5">Manage workspace identity. Display-ad monetization is a platform-wide, administrator-only setting (Google AdSense requires per-site ownership verification, so per-user accounts aren't offered here).</p>
+                <div class="border-b border-line pb-4">
+                    <h2 class="font-display text-lg font-semibold">Workspace</h2>
+                    <p class="text-sm text-inkSoft mt-0.5">Your workspace's identity. More preferences are on the way.</p>
                 </div>
 
-                <!-- Workspace Details -->
-                <section class="bg-carbon border border-divider rounded-xl p-6 space-y-4">
-                    <h3 class="font-display font-bold text-sm text-white uppercase tracking-wider flex items-center gap-2">
-                        <i class="fa-solid fa-id-card text-amber-500"></i> General Settings
-                    </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                <section class="bg-card border border-line rounded-2xl p-6 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                         <div>
-                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Name</label>
-                            <input type="text" id="settingsWsName" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
+                            <label class="block text-inkSoft mb-1 text-xs font-medium">Workspace name</label>
+                            <input type="text" id="settingsWsName" class="w-full px-3 py-2 rounded-lg bg-paper border border-line" readonly>
                         </div>
                         <div>
-                            <label class="block text-slate-500 mb-1 text-[10px] uppercase">Workspace Slug</label>
-                            <input type="text" id="settingsWsSlug" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white" readonly>
+                            <label class="block text-inkSoft mb-1 text-xs font-medium">Workspace slug</label>
+                            <input type="text" id="settingsWsSlug" class="w-full px-3 py-2 rounded-lg bg-paper border border-line font-mono" readonly>
                         </div>
                     </div>
                 </section>
@@ -475,90 +481,88 @@
     </main>
 
     <!-- Modals -->
-    <!-- Login Modal -->
-    <div id="loginModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center pb-2 border-b border-divider">
-                <h3 class="font-display font-bold text-sm text-white">Login to PulseRoute</h3>
-                <button onclick="closeModal('loginModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div id="loginModal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-card border border-line rounded-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-line">
+                <h3 class="font-display font-semibold text-lg">Log in</h3>
+                <button onclick="closeModal('loginModal')" class="text-inkSoft hover:text-ink"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="loginForm" class="space-y-3 font-mono text-xs">
+            <form id="loginForm" class="space-y-3 text-sm">
                 <div>
-                    <label class="block text-slate-400 mb-1">EMAIL</label>
-                    <input type="email" id="loginEmail" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Email</label>
+                    <input type="email" id="loginEmail" required class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">PASSWORD</label>
-                    <input type="password" id="loginPassword" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Password</label>
+                    <input type="password" id="loginPassword" required class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
-                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
-                    Sign In
+                <button type="submit" class="w-full py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium transition">
+                    Log in
                 </button>
             </form>
-            <div class="text-center text-[11px] text-slate-500">
-                Don't have an account? <button onclick="closeModal('loginModal'); openModal('registerModal')" class="text-amber-400 hover:underline">Register</button>
-            </div>
+            <p class="text-center text-xs text-inkSoft">
+                No account yet? <button onclick="closeModal('loginModal'); openModal('registerModal')" class="text-rail font-medium hover:underline">Sign up</button>
+            </p>
         </div>
     </div>
 
-    <!-- Register Modal -->
-    <div id="registerModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center pb-2 border-b border-divider">
-                <h3 class="font-display font-bold text-sm text-white">Create PulseRoute Account</h3>
-                <button onclick="closeModal('registerModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div id="registerModal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-card border border-line rounded-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-line">
+                <h3 class="font-display font-semibold text-lg">Create your account</h3>
+                <button onclick="closeModal('registerModal')" class="text-inkSoft hover:text-ink"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="registerForm" class="space-y-3 font-mono text-xs">
+            <form id="registerForm" class="space-y-3 text-sm">
                 <div>
-                    <label class="block text-slate-400 mb-1">FULL NAME</label>
-                    <input type="text" id="regName" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Name</label>
+                    <input type="text" id="regName" required class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">EMAIL</label>
-                    <input type="email" id="regEmail" required class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Email</label>
+                    <input type="email" id="regEmail" required class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">PASSWORD (Min 8 chars)</label>
-                    <input type="password" id="regPassword" required minlength="8" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Password <span class="font-normal">(min. 8 characters)</span></label>
+                    <input type="password" id="regPassword" required minlength="8" class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
-                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
-                    Create Account
+                <button type="submit" class="w-full py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium transition">
+                    Create account
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- Create Workspace Modal -->
-    <div id="newWorkspaceModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-        <div class="bg-carbon border border-divider rounded-xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex justify-between items-center pb-2 border-b border-divider">
-                <h3 class="font-display font-bold text-sm text-white">New Workspace</h3>
-                <button onclick="closeModal('newWorkspaceModal')" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+    <div id="newWorkspaceModal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-card border border-line rounded-2xl max-w-sm w-full p-6 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-line">
+                <h3 class="font-display font-semibold text-lg">New workspace</h3>
+                <button onclick="closeModal('newWorkspaceModal')" class="text-inkSoft hover:text-ink"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <form id="newWorkspaceForm" class="space-y-3 font-mono text-xs">
+            <form id="newWorkspaceForm" class="space-y-3 text-sm">
                 <div>
-                    <label class="block text-slate-400 mb-1">WORKSPACE NAME</label>
-                    <input type="text" id="wsName" required placeholder="Growth Team" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Name</label>
+                    <input type="text" id="wsName" required placeholder="Growth Team" class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail">
                 </div>
                 <div>
-                    <label class="block text-slate-400 mb-1">SLUG</label>
-                    <input type="text" id="wsSlug" required placeholder="growth-team" class="w-full px-3 py-2 rounded bg-panel border border-divider text-white outline-none focus:border-amber-500">
+                    <label class="block text-inkSoft mb-1 text-xs font-medium">Slug</label>
+                    <input type="text" id="wsSlug" required placeholder="growth-team" class="w-full px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail font-mono">
                 </div>
-                <button type="submit" class="w-full py-2 rounded bg-amber-500 hover:bg-amber-400 text-black font-display font-bold uppercase transition">
-                    Provision Workspace
+                <button type="submit" class="w-full py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium transition">
+                    Create workspace
                 </button>
             </form>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="border-t border-divider bg-carbon py-6 text-center text-[11px] font-mono text-slate-500">
-        <div class="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-2">
+    <footer class="border-t border-line py-6 text-center text-xs text-inkSoft">
+        <div class="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-2">
             <span>PulseRoute • Open-source URL shortener</span>
-            <div class="flex items-center space-x-4">
-                <a href="/privacy" class="hover:text-slate-300 transition">Privacy & KVKK</a>
-                <a href="/terms" class="hover:text-slate-300 transition">Terms</a>
-                <a href="/healthz" target="_blank" class="hover:text-slate-300 transition">Health Diagnostics</a>
+            <div class="flex items-center gap-4">
+                <a href="https://github.com/dixtuel/pulseroute" target="_blank" class="hover:text-ink transition"><i class="fa-brands fa-github mr-1"></i>GitHub</a>
+                <a href="/privacy" class="hover:text-ink transition">Privacy</a>
+                <a href="/terms" class="hover:text-ink transition">Terms</a>
+                <a href="/healthz" target="_blank" class="hover:text-ink transition">Status</a>
             </div>
         </div>
     </footer>
@@ -576,17 +580,15 @@
 
             tabs.forEach(t => {
                 const content = document.getElementById(`tabContent-${t}`);
-                const btn = document.getElementById(`tabBtn-${t}`);
-                if (t === tabId) {
-                    content.classList.remove('hidden');
-                    btn.className = 'py-3.5 px-1 border-b-2 border-amber-500 text-amber-400 font-bold flex items-center gap-2 transition';
-                } else {
-                    content.classList.add('hidden');
-                    btn.className = 'py-3.5 px-1 border-b-2 border-transparent text-slate-400 hover:text-slate-200 font-medium flex items-center gap-2 transition';
-                }
+                content.classList.toggle('hidden', t !== tabId);
+                ['', '-m'].forEach(suffix => {
+                    const btn = document.getElementById(`tabBtn-${t}${suffix}`);
+                    if (!btn) return;
+                    btn.classList.toggle('tab-active', t === tabId);
+                    btn.classList.toggle('tab-inactive', t !== tabId);
+                });
             });
 
-            // Handle Auth Gates
             if (!token) {
                 if (tabId === 'analytics') {
                     document.getElementById('analyticsAuthGate').classList.remove('hidden');
@@ -619,31 +621,20 @@
         function getAuthHeaders() {
             const token = getToken();
             const headers = { 'Content-Type': 'application/json' };
-            if (token) {
-                headers['Authorization'] = `Bearer ${token}`;
-            }
-            if (currentWorkspaceId) {
-                headers['X-Workspace-Id'] = currentWorkspaceId;
-            }
+            if (token) headers['Authorization'] = `Bearer ${token}`;
+            if (currentWorkspaceId) headers['X-Workspace-Id'] = currentWorkspaceId;
             return headers;
         }
 
-        function openModal(id) {
-            document.getElementById(id).classList.remove('hidden');
-        }
-
-        function closeModal(id) {
-            document.getElementById(id).classList.add('hidden');
-        }
+        function openModal(id) { document.getElementById(id).classList.remove('hidden'); }
+        function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 
         async function loadAnonymousCount() {
             try {
                 const res = await fetch('/api/v1/links/stats/anonymous-count');
                 const data = await res.json();
                 document.getElementById('anonCountValue').innerText = (data.count ?? 0).toLocaleString();
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function initAuth() {
@@ -654,8 +645,8 @@
                 document.getElementById('linksTableContainer').classList.add('hidden');
 
                 if (REQUIRE_CUSTOM_DOMAIN) {
-                    // This instance requires a verified custom domain for every link, which anonymous
-                    // visitors can never have — so block the shorten form instead of letting it 400.
+                    // Anonymous visitors can never own a verified domain, and this server requires
+                    // one for every link — block the form instead of letting it fail with a 400.
                     document.getElementById('anonymousNotice').classList.add('hidden');
                     document.getElementById('anonCountCard').classList.add('hidden');
                     document.getElementById('loginRequiredNotice').classList.remove('hidden');
@@ -682,15 +673,13 @@
                     document.getElementById('anonymousNotice').classList.add('hidden');
                     document.getElementById('anonCountCard').classList.add('hidden');
                     document.getElementById('linksTableContainer').classList.remove('hidden');
-                    document.getElementById('tableTitle').innerText = 'Your Links';
+                    document.getElementById('tableTitle').innerText = 'Your links';
                     document.getElementById('userEmailBadge').innerText = user.email;
                     loadWorkspaces();
                 } else {
                     signOut();
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         async function loadWorkspaces() {
@@ -711,9 +700,7 @@
                     loadLinks();
                     refreshWorkspaceDomains();
                 }
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function onWorkspaceChange() {
@@ -739,12 +726,10 @@
             window.location.reload();
         }
 
-        // Login Handler
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-
             try {
                 const res = await fetch('/api/v1/auth/login', {
                     method: 'POST',
@@ -757,20 +742,16 @@
                     closeModal('loginModal');
                     window.location.reload();
                 } else {
-                    alert(data.detail || 'Login failed');
+                    alert(data.detail || "That email and password don't match.");
                 }
-            } catch (e) {
-                alert('Connection error during login');
-            }
+            } catch (e) { alert('Could not reach the server. Try again.'); }
         });
 
-        // Register Handler
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const fullName = document.getElementById('regName').value;
             const email = document.getElementById('regEmail').value;
             const password = document.getElementById('regPassword').value;
-
             try {
                 const res = await fetch('/api/v1/auth/register', {
                     method: 'POST',
@@ -789,19 +770,15 @@
                     window.location.reload();
                 } else {
                     const data = await res.json();
-                    alert(data.detail || 'Registration failed');
+                    alert(data.detail || "Couldn't create that account.");
                 }
-            } catch (e) {
-                alert('Connection error during registration');
-            }
+            } catch (e) { alert('Could not reach the server. Try again.'); }
         });
 
-        // Create Workspace Handler
         document.getElementById('newWorkspaceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('wsName').value;
             const slug = document.getElementById('wsSlug').value;
-
             try {
                 const res = await fetch('/api/v1/workspaces', {
                     method: 'POST',
@@ -817,11 +794,9 @@
                     loadLinks();
                 } else {
                     const data = await res.json();
-                    alert(data.detail || 'Failed to create workspace');
+                    alert(data.detail || "Couldn't create that workspace.");
                 }
-            } catch (e) {
-                alert('Connection error');
-            }
+            } catch (e) { alert('Could not reach the server. Try again.'); }
         });
 
         async function loadLinks() {
@@ -830,64 +805,64 @@
                 const res = await fetch(`/api/v1/links?workspace_id=${currentWorkspaceId}`, { headers: getAuthHeaders() });
                 allLinks = await res.json();
                 renderLinksTable(Array.isArray(allLinks) ? allLinks : []);
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         function renderLinksTable(links) {
-            const tbody = document.getElementById('linksTableBody');
+            const container = document.getElementById('linksTableBody');
             const token = getToken();
 
             if (!links.length) {
-                tbody.innerHTML = `<tr><td colspan="4" class="py-12 text-center text-slate-500 font-mono">${token ? 'Zero links in workspace. Dispatch your first link above.' : 'No active temporary links. Dispatch an anonymous link above (24h TTL).'}</td></tr>`;
+                const msg = token
+                    ? 'No links yet. Paste a URL above to create your first one.'
+                    : "No temporary links yet — create one above. It'll last 24 hours.";
+                container.innerHTML = `<div class="py-10 text-center text-inkSoft text-sm bg-card border border-dashed border-line rounded-xl">${msg}</div>`;
                 return;
             }
 
-            tbody.innerHTML = '';
-            links.forEach(link => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-panel/50 transition group';
-                
-                // Expiration & TTL status
-                let statusBadge = '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">PERMANENT</span>';
-                if (link.expires_at) {
-                    statusBadge = '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"><i class="fa-solid fa-hourglass-half mr-1"></i> 24h TTL</span>';
-                }
+            container.innerHTML = links.map(link => {
+                const statusBadge = link.expires_at
+                    ? `<span class="px-2 py-0.5 rounded-full bg-goldTint text-gold text-[11px] font-medium whitespace-nowrap"><i class="fa-solid fa-hourglass-half mr-1"></i>Expires</span>`
+                    : `<span class="px-2 py-0.5 rounded-full bg-railTint text-railDeep text-[11px] font-medium whitespace-nowrap">Permanent</span>`;
 
-                tr.innerHTML = `
-                    <td class="py-3 px-4 font-mono font-semibold text-amber-400">
-                        <div class="flex items-center space-x-2">
-                            <a href="/${link.slug}" target="_blank" class="hover:underline">/${link.slug}</a>
-                            ${token ? `<a href="/${link.slug}+" target="_blank" class="text-[10px] text-slate-600 hover:text-cyan-400" title="Inspect Public Stats (slug+)"><i class="fa-solid fa-plus"></i></a>` : ''}
+                return `
+                <div class="ticket ticket-onpaper bg-card border border-line pl-7 pr-4 py-3 flex items-center gap-4">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <a href="/${link.slug}" target="_blank" class="font-mono font-semibold text-ink hover:text-rail hover:underline">/${link.slug}</a>
+                            ${token ? `<a href="/${link.slug}+" target="_blank" class="text-inkSoft hover:text-rail text-[11px]" title="View public stats"><i class="fa-solid fa-chart-line"></i></a>` : ''}
+                            ${link.tags ? `<span class="text-[10px] text-inkSoft bg-paper px-1.5 py-0.5 rounded-full border border-line">${link.tags}</span>` : ''}
                         </div>
-                        ${link.tags ? `<span class="text-[9px] font-normal text-slate-500 bg-panel px-1.5 py-0.5 rounded border border-divider mt-0.5 inline-block">${link.tags}</span>` : ''}
-                    </td>
-                    <td class="py-3 px-4 max-w-xs truncate text-slate-400 text-[11px]" title="${link.destination_url}">
-                        ${link.destination_url}
-                    </td>
-                    <td class="py-3 px-4 text-center">
-                        ${statusBadge}
-                    </td>
-                    <td class="py-3 px-4 text-right space-x-2">
-                        <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-slate-500 hover:text-amber-400 p-1 transition" title="SVG QR">
+                        <p class="text-xs text-inkSoft truncate mt-0.5" title="${link.destination_url}">${link.destination_url}</p>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-2 shrink-0 text-xs text-inkSoft">
+                        <i class="fa-solid fa-arrow-pointer text-[10px]"></i> ${link.total_clicks ?? 0}
+                    </div>
+                    ${statusBadge}
+                    <div class="flex items-center gap-1 shrink-0">
+                        <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-inkSoft hover:text-rail p-1.5 transition" title="QR code">
                             <i class="fa-solid fa-qrcode"></i>
                         </a>
-                        ${token ? `<button onclick="deleteLink(${link.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Purge Link"><i class="fa-solid fa-trash"></i></button>` : ''}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
+                        ${token ? `<button onclick="deleteLink(${link.id})" class="text-inkSoft hover:text-stamp p-1.5 transition" title="Delete link"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
+                </div>`;
+            }).join('');
         }
 
         function filterLinks() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            const filtered = allLinks.filter(l => 
-                l.slug.toLowerCase().includes(query) || 
+            const filtered = allLinks.filter(l =>
+                l.slug.toLowerCase().includes(query) ||
                 l.destination_url.toLowerCase().includes(query) ||
                 (l.tags && l.tags.toLowerCase().includes(query))
             );
             renderLinksTable(filtered);
+        }
+
+        async function deleteLink(id) {
+            if (!confirm('Delete this link?')) return;
+            await fetch(`/api/v1/links/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
+            loadLinks();
         }
 
         async function loadAnalytics() {
@@ -897,21 +872,23 @@
             try {
                 const res = await fetch(`/api/v1/analytics?workspace_id=${currentWorkspaceId}`, { headers: getAuthHeaders() });
                 const data = await res.json();
-                
-                // Render Countries Breakdown
+
+                document.getElementById('statTotalClicks').innerText = (data.total_clicks ?? 0).toLocaleString();
+                document.getElementById('statUniqueVisitors').innerText = (data.unique_visitors ?? 0).toLocaleString();
+                document.getElementById('statBotClicks').innerText = (data.bot_clicks ?? 0).toLocaleString();
+
                 const countryContainer = document.getElementById('countriesBreakdown');
                 if (data.countries && data.countries.length) {
                     countryContainer.innerHTML = data.countries.map(c => `
-                        <div class="flex justify-between items-center py-1 border-b border-divider/40">
-                            <span class="text-slate-300 font-mono">${c.name}</span>
-                            <span class="text-amber-400 font-bold font-mono">${c.count} (${c.percentage}%)</span>
+                        <div class="flex justify-between items-center py-1.5 border-b border-line/60 last:border-0">
+                            <span class="text-ink">${c.name}</span>
+                            <span class="text-inkSoft font-mono text-xs">${c.count} · ${c.percentage}%</span>
                         </div>
                     `).join('');
                 } else {
-                    countryContainer.innerHTML = '<div class="text-slate-600 text-[11px]">No geo telemetry captured yet</div>';
+                    countryContainer.innerHTML = '<p class="text-inkSoft text-sm">No location data yet.</p>';
                 }
 
-                // Render Technical Telemetry Doughnut Chart
                 const ctx = document.getElementById('deviceChart').getContext('2d');
                 const labels = data.devices && data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
                 const counts = data.devices && data.devices.length ? data.devices.map(d => d.count) : [0, 0, 0];
@@ -920,27 +897,22 @@
                 deviceChart = new Chart(ctx, {
                     type: 'doughnut',
                     data: {
-                        labels: labels,
+                        labels,
                         datasets: [{
-                            data: counts.every(c => c === 0) ? [1, 1, 1] : counts,
-                            backgroundColor: ['#F59E0B', '#06B6D4', '#10B981'],
-                            borderColor: '#0E1316',
-                            borderWidth: 2,
+                            data: counts,
+                            backgroundColor: ['#146D6C', '#B9861E', '#BD4028', '#8A8365'],
+                            borderColor: '#FBF8F0',
+                            borderWidth: 3,
                         }]
                     },
                     options: {
-                        responsive: true,
                         plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { color: '#94A3B8', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10 }
-                            }
-                        }
+                            legend: { position: 'bottom', labels: { color: '#6B6659', font: { family: 'Work Sans' }, boxWidth: 10, padding: 14 } }
+                        },
+                        cutout: '68%',
                     }
                 });
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         let workspaceDomains = [];
@@ -955,12 +927,10 @@
             try {
                 const res = await fetch(`/api/v1/domains?workspace_id=${currentWorkspaceId}`, { headers: getAuthHeaders() });
                 workspaceDomains = res.ok ? await res.json() : [];
-            } catch (e) {
-                workspaceDomains = [];
-            }
+            } catch (e) { workspaceDomains = []; }
             domainWrap.classList.remove('hidden');
             renderDomainSelector();
-            renderDomainsTable();
+            renderDomainsList();
         }
 
         function renderDomainSelector() {
@@ -968,67 +938,62 @@
             const verified = workspaceDomains.filter(d => d.is_verified);
             const options = [];
             if (!REQUIRE_CUSTOM_DOMAIN) {
-                options.push('<option value="">Default Domain (this instance)</option>');
+                options.push("<option value=\"\">This server's domain</option>");
             }
             options.push(...verified.map(d => `<option value="${d.id}">${d.domain}</option>`));
             if (!options.length) {
-                options.push('<option value="" disabled selected>No verified domain yet — add one in Custom Domains</option>');
+                options.push('<option value="" disabled selected>No verified domain yet — add one in Routes</option>');
             }
             select.innerHTML = options.join('');
             select.disabled = REQUIRE_CUSTOM_DOMAIN && verified.length === 0;
         }
 
-        function renderDomainsTable() {
-            const tbody = document.getElementById('domainsTableBody');
+        function renderDomainsList() {
+            const list = document.getElementById('domainsList');
             const rows = [`
-                <tr>
-                    <td class="py-3 px-4 font-mono font-semibold text-white">Default Routing Host</td>
-                    <td class="py-3 px-4 text-center"><span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">ACTIVE</span></td>
-                    <td class="py-3 px-4 text-center"><span class="text-emerald-400"><i class="fa-solid fa-lock"></i> Automatic</span></td>
-                    <td class="py-3 px-4 text-right text-slate-500">System Root</td>
-                </tr>
+                <div class="ticket ticket-onpaper bg-card border border-line pl-7 pr-4 py-3.5 flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <span class="font-mono font-medium text-ink truncate">This server's own domain</span>
+                        <span class="px-2 py-0.5 rounded-full bg-railTint text-railDeep text-[11px] font-medium shrink-0">Always on</span>
+                    </div>
+                    <span class="text-inkSoft text-xs shrink-0">Built in</span>
+                </div>
             `];
             workspaceDomains.forEach(d => {
                 const statusBadge = d.is_verified
-                    ? '<span class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]">VERIFIED</span>'
-                    : '<span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]">PENDING DNS</span>';
+                    ? '<span class="px-2 py-0.5 rounded-full bg-railTint text-railDeep text-[11px] font-medium shrink-0">Verified</span>'
+                    : '<span class="px-2 py-0.5 rounded-full bg-goldTint text-gold text-[11px] font-medium shrink-0">Awaiting DNS</span>';
                 rows.push(`
-                    <tr>
-                        <td class="py-3 px-4 font-mono font-semibold text-white">${d.domain}</td>
-                        <td class="py-3 px-4 text-center">${statusBadge}</td>
-                        <td class="py-3 px-4 text-center">${d.is_verified ? '<span class="text-emerald-400"><i class="fa-solid fa-lock"></i> Automatic</span>' : '<span class="text-slate-500">Pending</span>'}</td>
-                        <td class="py-3 px-4 text-right space-x-2">
-                            ${!d.is_verified ? `<button onclick="verifyDomainRow(${d.id})" class="text-slate-400 hover:text-amber-400 text-[11px]" title="Re-check DNS">Verify</button>` : ''}
-                            <button onclick="deleteDomainRow(${d.id})" class="text-slate-500 hover:text-rose-400 p-1 transition" title="Remove Domain"><i class="fa-solid fa-trash"></i></button>
-                        </td>
-                    </tr>
+                    <div class="ticket ticket-onpaper bg-card border border-line pl-7 pr-4 py-3.5 flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="font-mono font-medium text-ink truncate">${d.domain}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            ${!d.is_verified ? `<button onclick="verifyDomainRow(${d.id})" class="text-inkSoft hover:text-rail text-xs px-2 py-1" title="Re-check DNS">Check again</button>` : ''}
+                            <button onclick="deleteDomainRow(${d.id})" class="text-inkSoft hover:text-stamp p-1.5 transition" title="Remove domain"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
                 `);
             });
-            tbody.innerHTML = rows.join('');
+            list.innerHTML = rows.join('');
         }
 
         async function verifyDomainRow(id) {
             try {
                 await fetch(`/api/v1/domains/${id}/verify`, { method: 'POST', headers: getAuthHeaders() });
-            } finally {
-                refreshWorkspaceDomains();
-            }
+            } finally { refreshWorkspaceDomains(); }
         }
 
         async function deleteDomainRow(id) {
-            if (!confirm('Remove this custom domain?')) return;
+            if (!confirm('Remove this domain?')) return;
             try {
                 await fetch(`/api/v1/domains/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
-            } finally {
-                refreshWorkspaceDomains();
-            }
+            } finally { refreshWorkspaceDomains(); }
         }
 
-        function loadDomains() {
-            refreshWorkspaceDomains();
-        }
+        function loadDomains() { refreshWorkspaceDomains(); }
 
-        // Add Custom Domain Handler
         document.getElementById('addDomainForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const dom = document.getElementById('newDomainInput').value;
@@ -1040,33 +1005,27 @@
                 });
                 const data = await res.json();
                 if (res.ok) {
+                    const dns = data.dns_instructions || {};
                     document.getElementById('dnsDetails').innerHTML = `
-                        1. Point <b>CNAME</b> <code>${data.domain}</code> to <code>pulseroute.onrender.com</code> (or server IP).<br>
-                        2. Add <b>TXT</b> challenge <code>_pulseroute-challenge.${data.domain}</code> with value: <code>${data.verification_code}</code>
+                        1. Add a <b>${dns.type || 'CNAME'}</b> record${dns.name ? ` named <code>${dns.name}</code>` : ''} pointing to <code>${dns.value || ''}</code>.<br>
+                        2. Add a <b>TXT</b> record at <code>_pulseroute-challenge.${data.domain}</code> with the value: <code>${data.verification_code}</code>
                     `;
                     document.getElementById('dnsInstructionBox').classList.remove('hidden');
                     document.getElementById('newDomainInput').value = '';
                     refreshWorkspaceDomains();
                 } else {
-                    alert(data.detail || 'Failed to register domain');
+                    alert(data.detail || "Couldn't add that domain.");
                 }
-            } catch (err) {
-                alert('Connection error');
-            }
+            } catch (err) { alert('Could not reach the server. Try again.'); }
         });
-
-        async function deleteLink(id) {
-            if (!confirm('Delete this short link?')) return;
-            await fetch(`/api/v1/links/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
-            loadLinks();
-        }
 
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const delayVal = parseInt(document.getElementById('interstitialDelay').value) || 0;
             const domainVal = document.getElementById('linkDomainSelect').value;
+            const destUrl = document.getElementById('destUrl').value;
             const payload = {
-                destination_url: document.getElementById('destUrl').value,
+                destination_url: destUrl,
                 slug: document.getElementById('customSlug').value || null,
                 ios_destination: document.getElementById('iosUrl').value || null,
                 android_destination: document.getElementById('androidUrl').value || null,
@@ -1087,23 +1046,30 @@
                 if (res.ok) {
                     const resultBox = document.getElementById('resultBox');
                     const resultLink = document.getElementById('resultLink');
+                    const resultQrImg = document.getElementById('resultQrImg');
                     resultLink.href = data.short_url;
                     resultLink.innerText = data.short_url;
+                    try { document.getElementById('resultOrigin').innerText = new URL(destUrl).hostname; } catch (_) {}
+                    resultQrImg.classList.add('hidden');
                     resultBox.classList.remove('hidden');
+                    resultBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                    const pulse = document.getElementById('resultPulse');
+                    pulse.classList.remove('travel');
+                    void pulse.offsetWidth;
+                    pulse.classList.add('travel');
+
                     document.getElementById('shortenForm').reset();
                     loadLinks();
                 } else {
-                    alert(data.detail || 'Failed to dispatch link');
+                    alert(data.detail || "Couldn't create that link.");
                 }
-            } catch (err) {
-                alert('Network connection error');
-            }
+            } catch (err) { alert('Could not reach the server. Try again.'); }
         });
 
         function copyResultLink() {
             const link = document.getElementById('resultLink').innerText;
             navigator.clipboard.writeText(link);
-            alert('Short URL copied to clipboard');
         }
 
         function toggleQr() {
@@ -1117,7 +1083,6 @@
             }
         }
 
-        // Init Lifecycle
         initAuth();
     </script>
 </body>

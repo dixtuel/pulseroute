@@ -165,7 +165,7 @@ class RedirectService:
             except Exception:
                 pass
         else:
-            # Standalone / Zero-Redis Fallback (Render Free Tier, Local Testing, Demo Instances)
+            # Standalone / Zero-Redis Fallback (no Redis configured: local testing, demo instances)
             try:
                 from pulseroute.models.click import ClickEvent
                 click_rec = ClickEvent(
