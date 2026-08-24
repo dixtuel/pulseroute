@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Enterprise-Grade URL Shortener, Custom Domains & Real-Time Analytics Platform"
 readme = "README.md"
 authors = [
-    { name = "dixtuel", email = "asrin@mikoshi.dev" }
+    { name = "dixtuel", email = "asrinklcc@dixtuel.tr" }
 ]
 license = { text = "MIT" }
 keywords = ["url-shortener", "fastapi", "analytics", "custom-domain", "caddy", "redis", "self-hosted", "dub", "bitly"]
