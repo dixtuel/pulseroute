@@ -12,6 +12,7 @@ from pulseroute.core.security import hash_password
 from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
 from pulseroute.schemas.link import LinkCreate, LinkUpdate
+from pulseroute.services.webhook_service import WebhookService
 
 
 class LinkService:
@@ -115,6 +116,13 @@ class LinkService:
                 await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
             except Exception:
                 pass
+
+        if workspace_id:
+            await WebhookService.notify_workspace(db, workspace_id, "link.created", {
+                "link_id": link.id,
+                "slug": link.slug,
+                "destination_url": link.destination_url,
+            })
 
         return link
 

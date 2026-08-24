@@ -2,12 +2,13 @@ import asyncio
 from datetime import UTC, datetime
 
 import structlog
-from sqlalchemy import func, update
+from sqlalchemy import func, select, update
 
 from pulseroute.core.database import async_session_maker
 from pulseroute.core.redis import get_redis
 from pulseroute.models.click import ClickEvent
 from pulseroute.models.link import ShortLink
+from pulseroute.services.webhook_service import WebhookService
 
 logger = structlog.get_logger()
 
@@ -84,6 +85,19 @@ async def run_analytics_batch_worker(batch_size: int = 100, interval_seconds: fl
                             update(ShortLink).where(ShortLink.id == l_id).values(total_clicks=func.coalesce(ShortLink.total_clicks, 0) + count)
                         )
                     await db.commit()
+
+                    # Notify workspace-owned links' webhook subscribers (fire-and-forget)
+                    owners = await db.execute(
+                        select(ShortLink.id, ShortLink.workspace_id, ShortLink.slug)
+                        .where(ShortLink.id.in_(link_click_counts.keys()))
+                    )
+                    for link_id, workspace_id, slug in owners.all():
+                        if workspace_id:
+                            await WebhookService.notify_workspace(db, workspace_id, "link.clicked", {
+                                "link_id": link_id,
+                                "slug": slug,
+                                "clicks": link_click_counts[link_id],
+                            })
 
             # Acknowledge messages
             if msg_ids_to_ack:

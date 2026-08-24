@@ -57,10 +57,10 @@ graph TD
 ## Security and Privacy
 
 - **SQL Injection Prevention:** 100% parameterized queries via SQLAlchemy Async ORM.
-- **Multi-Tenant Workspace Isolation:** Every account gets its own workspace (`owner` role) on signup — there is no shared workspace. All link, analytics, and custom-domain endpoints require authentication and verify workspace membership before returning or mutating anything; anonymous links (24h TTL) have no owner and can't be managed via the API at all, only viewed in aggregate (`GET /api/v1/links/stats/anonymous-count`).
+- **Multi-Tenant Workspace Isolation:** Every account gets its own workspace (`owner` role) on signup — there is no shared workspace. All link, analytics, custom-domain, and webhook endpoints require authentication and verify workspace membership before returning or mutating anything; anonymous links (24h TTL) have no owner and can't be managed via the API at all, only viewed in aggregate (`GET /api/v1/links/stats/anonymous-count`). In `REQUIRE_CUSTOM_DOMAIN=true` mode, anonymous link creation is rejected outright (server-side, and the dashboard now shows a "sign in required" state instead of the anonymous-link form) since anonymous visitors can never own a verified domain.
 - **Brute-Force Protection:** Automated rate limiting and 10-minute IP jailing after 10 consecutive failed authentication attempts.
 - **GDPR / KVKK Compliance:** Raw visitor IP addresses are never saved to disk. IPs are masked (`192.168.1.0/24`) prior to database persistence.
-- **Data Encryption at Rest:** Sensitive tokens and webhook secrets are encrypted with AES-256-GCM.
+- **Data Encryption at Rest:** Webhook secrets are encrypted before being stored (Fernet: AES-128-CBC + HMAC-SHA256, keyed from `SECRET_KEY`) — never persisted or returned in plaintext after creation.
 - **Custom Error Handling:** Branded 404/410/500 pages with support for custom fallback URLs per domain.
 - **Single Platform AdSense Account:** Display-ad monetization is a single, server-administrator-configured account (`GLOBAL_ADSENSE_CLIENT_ID`/`GLOBAL_ADSENSE_SLOT_ID`) — Google AdSense requires per-site ownership verification, so per-user/per-workspace monetization isn't offered.
 
@@ -87,6 +87,18 @@ pulseroute domain verify links.mybrand.com
 # Inspect global analytics
 pulseroute analytics summary --days 7
 ```
+
+---
+
+## Webhooks
+
+Subscribe a workspace to `link.created` and/or `link.clicked` events (`POST /api/v1/webhooks`, workspace-scoped, auth required). Each event is delivered as a signed `POST`:
+
+```
+X-PulseRoute-Signature: <hmac-sha256(secret_key, body)>
+```
+
+The signing secret is generated server-side and shown exactly once in the creation response — verify the signature on your receiving endpoint before trusting the payload. This is API-only by design (no dashboard UI) to keep the web dashboard focused on the core shorten-a-link flow.
 
 ---
 
@@ -147,7 +159,7 @@ Note: there is no per-user API key feature — JWT (`Authorization: Bearer <toke
 
 ## Testing & Quality Assurance
 
-Run the comprehensive unit and integration test suite (32 passing tests):
+Run the comprehensive unit and integration test suite (34 passing tests):
 
 ```bash
 # Run tests with coverage
