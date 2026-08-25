@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
+    <title>Accessibility Statement | PulseRoute</title>
+    <meta name="description" content="Digital accessibility statement, WCAG 2.1 compliance, and keyboard navigation support for PulseRoute.">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#07090A',
+                        carbon: '#0E1316',
+                        panel: '#141B1F',
+                        divider: '#202A30',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #07090A; color: #E2E8F0; }
+        .grid-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
+    <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
+        <div class="border-b border-divider pb-4">
+            <h1 class="text-xl font-display font-bold text-white tracking-tight">Accessibility Statement</h1>
+            <p class="text-xs text-slate-500 font-mono mt-1">LAST REVIEWED • AUGUST 2026</p>
+        </div>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">1. Commitment to Accessibility</h2>
+            <p>PulseRoute is committed to ensuring digital accessibility for individuals with disabilities. We continually refine our user interface to ensure that our link management, analytics boards, and redirection flows are accessible, intuitive, and efficient for everyone.</p>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">2. Conformance Standards</h2>
+            <p>Our platform is built and maintained to conform with the Web Content Accessibility Guidelines (<strong>WCAG 2.1 Level AA</strong>) standards.</p>
+        </section>
+
+        <section class="space-y-3 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">3. Key Accessibility Features</h2>
+            <ul class="list-disc pl-5 space-y-1.5 text-slate-300">
+                <li><strong class="text-white">Semantic HTML5:</strong> Structured with native landmarks (<code>&lt;header&gt;</code>, <code>&lt;main&gt;</code>, <code>&lt;footer&gt;</code>, <code>&lt;nav&gt;</code>) and hierarchical headings for screen reader efficiency.</li>
+                <li><strong class="text-white">Keyboard Navigation:</strong> Full keyboard operation for URL shortening forms, domain management, modal dialogs, and analytics views (Tab, Shift+Tab, Enter, Space, Escape).</li>
+                <li><strong class="text-white">High Contrast &amp; Typography:</strong> High-contrast color palette paired with clear font families (Space Grotesk, Inter, JetBrains Mono) ensuring readability across displays.</li>
+                <li><strong class="text-white">Screen Reader &amp; ARIA Support:</strong> Explicit labels for interactive controls, action buttons (Copy link, Generate QR), and live status messages.</li>
+                <li><strong class="text-white">Reduced Motion Support:</strong> Respects the operating system’s <code>prefers-reduced-motion</code> setting by disabling animated pulse indicators and non-essential transitions.</li>
+                <li><strong class="text-white">Responsive &amp; Zoom Resilient:</strong> Seamlessly adapts to desktop, tablet, and mobile screens, supporting up to 200% text zoom without breaking navigation or layout.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">4. Feedback &amp; Contact</h2>
+            <p>If you experience any accessibility barriers while using PulseRoute or have suggestions for improvement, please contact the instance administrator.</p>
+            {% if operator_contact_user and operator_contact_domain %}
+            <p class="font-mono text-slate-400">
+                Contact: <span id="contact-email"></span>
+            </p>
+            <script>
+                (function() {
+                    var u = "{{ operator_contact_user }}";
+                    var d = "{{ operator_contact_domain }}";
+                    var el = document.getElementById("contact-email");
+                    if (el && u && d) {
+                        el.innerHTML = '<a href="mailto:' + u + '@' + d + '" class="text-amber-400 hover:underline">' + u + '@' + d + '</a>';
+                    }
+                })();
+            </script>
+            {% endif %}
+        </section>
+
+        <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
+            <div class="flex items-center gap-3">
+                <a href="/terms" class="hover:text-amber-400 transition">Terms</a>
+                <span>•</span>
+                <a href="/privacy" class="hover:text-amber-400 transition">Privacy</a>
+            </div>
+            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
+        </div>
+    </div>
+</body>
+</html>

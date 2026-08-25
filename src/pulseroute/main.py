@@ -227,6 +227,17 @@ async def render_terms(request: Request):
     return templates.TemplateResponse(request=request, name="terms.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
 
 
+@app.get("/accessibility", response_class=HTMLResponse, tags=["Legal"])
+async def render_accessibility(request: Request):
+    contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
+    return templates.TemplateResponse(request=request, name="accessibility.html", context={
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "operator_contact_user": contact_user or None,
+        "operator_contact_domain": contact_domain or None,
+        "primary_domain": settings.PRIMARY_DOMAIN,
+    })
+
+
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={
