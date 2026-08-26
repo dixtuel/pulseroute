@@ -28,3 +28,10 @@ htmlcov/
 *.db
 *.sqlite3
 .venv/
+
+# AI Assistant configs and memory
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.agents/
+.claude/
