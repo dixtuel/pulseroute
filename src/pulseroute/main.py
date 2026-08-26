@@ -196,11 +196,58 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
 async def get_ads_txt():
     """Serves Google AdSense publisher verification ads.txt dynamically from env."""
     if settings.ADS_TXT_CONTENT:
-        return PlainTextResponse(content=settings.ADS_TXT_CONTENT.strip(), media_type="text/plain")
+        return PlainTextResponse(content=settings.ADS_TXT_CONTENT.strip() + "\n", media_type="text/plain")
     if settings.GLOBAL_ADSENSE_CLIENT_ID:
         pub_id = settings.GLOBAL_ADSENSE_CLIENT_ID.replace("ca-pub-", "pub-")
         return PlainTextResponse(content=f"google.com, {pub_id}, DIRECT, f08c47fec0942fa0\n", media_type="text/plain")
     raise HTTPException(status_code=404, detail="ads.txt is not configured on this instance.")
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse, tags=["SEO"])
+async def get_robots_txt():
+    """Serves robots.txt dynamically with primary domain sitemap."""
+    domain = settings.PRIMARY_DOMAIN or "ps.sely.tr"
+    sitemap_url = f"https://{domain}/sitemap.xml"
+    return PlainTextResponse(content=f"User-agent: *\nAllow: /\n\nSitemap: {sitemap_url}\n", media_type="text/plain")
+
+
+@app.get("/sitemap.xml", tags=["SEO"])
+async def get_sitemap_xml():
+    """Serves sitemap.xml dynamically with primary domain URLs."""
+    domain = settings.PRIMARY_DOMAIN or "ps.sely.tr"
+    xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://{domain}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://{domain}/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://{domain}/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://{domain}/accessibility</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>"""
+    return HTMLResponse(content=xml_content, media_type="application/xml")
+
+
+@app.get("/google{token}.html", response_class=PlainTextResponse, tags=["SEO"])
+async def google_verification(token: str):
+    """Serves Google Search Console HTML verification dynamically from env."""
+    if settings.GOOGLE_SITE_VERIFICATION and settings.GOOGLE_SITE_VERIFICATION == token:
+        return PlainTextResponse(content=f"google-site-verification: google{token}.html\n", media_type="text/html")
+    raise HTTPException(status_code=404, detail="Not Found")
+
+
+@app.get("/BingSiteAuth.xml", tags=["SEO"])
+async def bing_verification():
+    """Serves Bing Webmaster Tools XML verification dynamically from env."""
+    if settings.BING_SITE_VERIFICATION:
+        xml_content = f"""<?xml version="1.0"?>\n<users>\n\t<user>{settings.BING_SITE_VERIFICATION}</user>\n</users>\n"""
+        return HTMLResponse(content=xml_content, media_type="application/xml")
+    raise HTTPException(status_code=404, detail="Not Found")
+
+
+@app.get("/yandex_{token}.html", response_class=HTMLResponse, tags=["SEO"])
+async def yandex_verification(token: str):
+    """Serves Yandex Webmaster HTML verification dynamically from env."""
+    if settings.YANDEX_SITE_VERIFICATION and settings.YANDEX_SITE_VERIFICATION == token:
+        return HTMLResponse(content=f"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>Verification: {token}</body></html>\n")
+    raise HTTPException(status_code=404, detail="Not Found")
 
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])

@@ -28,7 +28,11 @@ async def redirect_short_url(
     db: AsyncSession = Depends(get_db),
     redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
 ):
-    if slug in ("favicon.ico", "robots.txt", "docs", "redoc", "openapi.json", "dashboard", "api", "privacy", "terms", "healthz"):
+    if (
+        slug in ("favicon.ico", "robots.txt", "sitemap.xml", "BingSiteAuth.xml", "ads.txt", "docs", "redoc", "openapi.json", "dashboard", "api", "privacy", "terms", "accessibility", "healthz")
+        or slug.startswith("google")
+        or slug.startswith("yandex_")
+    ):
         raise HTTPException(status_code=404, detail="Not Found")
 
     # Dub.co / Bitly Public Stats pattern: slug ends with '+'
