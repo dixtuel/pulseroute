@@ -44,7 +44,9 @@ class Settings(BaseSettings):
     # AdSense requires per-site ownership verification so per-user/per-workspace accounts are not offered)
     DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled via env (e.g. 5)
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
-    GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner Ad unit slot ID (e.g. XXXXXXXXXX)
+    GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner fallback Ad unit slot ID
+    GLOBAL_ADSENSE_DASHBOARD_SLOT_ID: Optional[str] = None  # Platform owner Dashboard Ad unit slot ID (e.g. 1098158898)
+    GLOBAL_ADSENSE_REDIRECT_SLOT_ID: Optional[str] = None   # Platform owner Redirect/Interstitial Ad unit slot ID (e.g. 4170667493)
     ADS_TXT_CONTENT: Optional[str] = None           # Platform owner ads.txt raw content
 
     # Redirect & Tracking Defaults

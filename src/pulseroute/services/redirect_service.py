@@ -194,7 +194,7 @@ class RedirectService:
         link_delay = link_data.get("interstitial_delay", 0)
         effective_delay = link_delay if link_delay > 0 else settings.DEFAULT_INTERSTITIAL_DELAY
         adsense_client = link_data.get("adsense_client_id") or settings.GLOBAL_ADSENSE_CLIENT_ID
-        adsense_slot = link_data.get("adsense_slot_id") or settings.GLOBAL_ADSENSE_SLOT_ID
+        adsense_slot = link_data.get("adsense_slot_id") or settings.GLOBAL_ADSENSE_REDIRECT_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID
 
         if (effective_delay > 0 or adsense_client) and not is_bot:
             interstitial_data = {
