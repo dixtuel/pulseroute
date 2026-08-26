@@ -1,6 +1,6 @@
 
-import structlog
 import redis.asyncio as aioredis
+import structlog
 
 from pulseroute.core.config import settings
 
