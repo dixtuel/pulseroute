@@ -255,6 +255,7 @@ async def yandex_verification(token: str):
 async def render_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "adsense_slot_id": settings.GLOBAL_ADSENSE_SLOT_ID,
         "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
         "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
         "bing_site_verification": settings.BING_SITE_VERIFICATION,
@@ -293,6 +294,7 @@ async def render_accessibility(request: Request):
 async def root(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "adsense_slot_id": settings.GLOBAL_ADSENSE_SLOT_ID,
         "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
         "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
         "bing_site_verification": settings.BING_SITE_VERIFICATION,
