@@ -223,66 +223,82 @@
 
     <!-- Interactive Script -->
     <script>
-        const initialDelay = parseInt("{{ delay }}") || 5;
-        let timeLeft = initialDelay;
-        const targetUrl = "{{ target_url | safe }}";
+        (function() {
+            var initialDelay = parseInt("{{ delay }}", 10) || 5;
+            var timeLeft = initialDelay;
+            var targetUrl = "{{ target_url | safe }}";
 
-        const countdownNumber = document.getElementById("countdownNumber");
-        const timerUnit = document.getElementById("timerUnit");
-        const timerPath = document.getElementById("timerPath");
-        const statusTitle = document.getElementById("statusTitle");
-        const statusSubtitle = document.getElementById("statusSubtitle");
-        const proceedButton = document.getElementById("proceedButton");
-        const buttonText = document.getElementById("buttonText");
-        const buttonIcon = document.getElementById("buttonIcon");
+            var countdownNumber = document.getElementById("countdownNumber");
+            var timerUnit = document.getElementById("timerUnit");
+            var timerPath = document.getElementById("timerPath");
+            var statusTitle = document.getElementById("statusTitle");
+            var statusSubtitle = document.getElementById("statusSubtitle");
+            var proceedButton = document.getElementById("proceedButton");
+            var buttonText = document.getElementById("buttonText");
+            var buttonIcon = document.getElementById("buttonIcon");
 
-        const circumference = 283; // 2 * pi * 45
+            var circumference = 283; // 2 * pi * 45
 
-        function updateProgress(remaining) {
-            const fraction = (initialDelay - remaining) / initialDelay;
-            const offset = circumference * fraction;
-            timerPath.style.strokeDashoffset = offset;
-        }
+            function updateProgress(remaining) {
+                if (!timerPath) return;
+                var fraction = (initialDelay - remaining) / initialDelay;
+                var offset = circumference * fraction;
+                timerPath.style.strokeDashoffset = offset;
+            }
 
-        function activateProceedButton() {
-            proceedButton.href = targetUrl;
-            proceedButton.removeAttribute("aria-disabled");
-            proceedButton.classList.remove(
-                "bg-paperDeep", "text-inkSoft/70", "cursor-not-allowed", "border-line"
-            );
-            proceedButton.classList.add(
-                "bg-rail", "hover:bg-railDeep", "active:scale-[0.98]", "text-card", "shadow-md", "ready-btn-active", "border-rail"
-            );
-            
-            buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-right text-xs"></i>';
-            buttonText.innerText = "Tıkla ve İlerle";
-            
-            statusTitle.innerText = "Bağlantınız Hazır!";
-            statusSubtitle.innerText = "Hedef sayfaya geçmek için aşağıdaki butona tıklayın.";
-            
-            countdownNumber.innerHTML = '<i class="fa-solid fa-check text-2xl text-rail"></i>';
-            timerUnit.innerText = "HAZIR";
-            timerPath.style.stroke = "#146D6C";
-            timerPath.style.strokeDashoffset = circumference;
-        }
-
-        if (timeLeft <= 0) {
-            activateProceedButton();
-        } else {
-            updateProgress(timeLeft);
-            const interval = setInterval(() => {
-                timeLeft--;
-                if (timeLeft > 0) {
-                    countdownNumber.innerText = timeLeft;
-                    buttonText.innerText = ;
-                    updateProgress(timeLeft);
-                } else {
-                    clearInterval(interval);
-                    updateProgress(0);
-                    activateProceedButton();
+            function activateProceedButton() {
+                if (!proceedButton) return;
+                proceedButton.href = targetUrl;
+                proceedButton.removeAttribute("aria-disabled");
+                proceedButton.classList.remove(
+                    "bg-paperDeep", "text-inkSoft/70", "cursor-not-allowed", "border-line"
+                );
+                proceedButton.classList.add(
+                    "bg-rail", "hover:bg-railDeep", "active:scale-[0.98]", "text-card", "shadow-md", "ready-btn-active", "border-rail"
+                );
+                
+                if (buttonIcon) {
+                    buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-right text-xs"></i>';
                 }
-            }, 1000);
-        }
+                if (buttonText) {
+                    buttonText.innerText = "Tıkla ve İlerle";
+                }
+                if (statusTitle) {
+                    statusTitle.innerText = "Bağlantınız Hazır!";
+                }
+                if (statusSubtitle) {
+                    statusSubtitle.innerText = "Hedef sayfaya geçmek için aşağıdaki butona tıklayın.";
+                }
+                if (countdownNumber) {
+                    countdownNumber.innerHTML = '<i class="fa-solid fa-check text-2xl text-rail"></i>';
+                }
+                if (timerUnit) {
+                    timerUnit.innerText = "HAZIR";
+                }
+                if (timerPath) {
+                    timerPath.style.stroke = "#146D6C";
+                    timerPath.style.strokeDashoffset = circumference;
+                }
+            }
+
+            if (timeLeft <= 0) {
+                activateProceedButton();
+            } else {
+                updateProgress(timeLeft);
+                var interval = setInterval(function() {
+                    timeLeft--;
+                    if (timeLeft > 0) {
+                        if (countdownNumber) countdownNumber.innerText = timeLeft;
+                        if (buttonText) buttonText.innerText = "Lütfen Bekleyin (" + timeLeft + "s)";
+                        updateProgress(timeLeft);
+                    } else {
+                        clearInterval(interval);
+                        updateProgress(0);
+                        activateProceedButton();
+                    }
+                }, 1000);
+            }
+        })();
     </script>
 </body>
 </html>
