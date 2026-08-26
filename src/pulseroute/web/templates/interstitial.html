@@ -1,89 +1,175 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="tr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title or "Redirecting..." }} | PulseRoute</title>
+    <title>{{ title or "Hedef Sayfaya Yönlendiriliyorsunuz" }} — PulseRoute</title>
+    
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
     <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
+                        display: ['Fraunces', 'Georgia', 'serif'],
+                        sans: ['Work Sans', 'sans-serif'],
+                        mono: ['IBM Plex Mono', 'monospace'],
                     },
                     colors: {
-                        obsidian: '#07090A',
-                        carbon: '#0E1316',
-                        panel: '#141B1F',
-                        divider: '#202A30',
+                        paper: '#F3ECDC',
+                        paperDeep: '#E7DCC0',
+                        card: '#FBF8F0',
+                        ink: '#23222A',
+                        inkSoft: '#6B6659',
+                        line: '#D9CCA8',
+                        rail: '#146D6C',
+                        railDeep: '#0E5150',
+                        railTint: '#DCEAE6',
+                        stamp: '#BD4028',
+                        stampTint: '#F5E1D8',
+                        gold: '#B9861E',
+                        goldTint: '#F3E7C9',
+                    },
+                    borderRadius: {
+                        ticket: '8px',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { background-color: #07090A; color: #E2E8F0; }
-        .grid-bg {
-            background-size: 32px 32px;
+        :root { color-scheme: light; }
+        body {
+            background-color: #F3ECDC;
             background-image: 
-                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+                radial-gradient(circle at 1px 1px, rgba(35,34,42,0.06) 1px, transparent 0);
+            background-size: 24px 24px;
+            color: #23222A;
+        }
+        .ticket-card {
+            background-color: #FBF8F0;
+            border: 1px solid #D9CCA8;
+            box-shadow: 0 10px 30px -5px rgba(35, 34, 42, 0.1), 0 1px 3px rgba(35, 34, 42, 0.05);
+        }
+        .circle-timer {
+            transform: rotate(-90deg);
+        }
+        .circle-timer-bg {
+            stroke: #E7DCC0;
+        }
+        .circle-timer-path {
+            stroke: #146D6C;
+            stroke-linecap: round;
+            stroke-dasharray: 283;
+            stroke-dashoffset: 0;
+            transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+        }
+        .circle-timer-path.finished {
+            stroke: #146D6C;
+            stroke-dashoffset: 283;
+        }
+        @keyframes pulse-gentle {
+            0%, 100% { transform: scale(1); box-shadow: 0 4px 14px rgba(20, 109, 108, 0.25); }
+            50% { transform: scale(1.02); box-shadow: 0 6px 22px rgba(20, 109, 108, 0.4); }
+        }
+        .ready-btn-active {
+            animation: pulse-gentle 2s infinite ease-in-out;
+        }
+        .ads-container {
+            background-color: #F3ECDC;
+            border: 1px dashed #D9CCA8;
         }
     </style>
     {% if adsense_client_id %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
     {% endif %}
 </head>
-<body class="min-h-screen flex flex-col justify-between p-6 grid-bg antialiased text-slate-200">
-    <!-- Header -->
-    <header class="max-w-3xl mx-auto w-full flex items-center justify-between py-4 border-b border-divider">
-        <div class="flex items-center space-x-3">
-            <div class="w-8 h-8 rounded-lg bg-panel border border-divider flex items-center justify-center text-amber-400">
+<body class="min-h-screen flex flex-col justify-between p-4 sm:p-6 antialiased font-sans">
+
+    <!-- Header Navigation -->
+    <header class="max-w-xl mx-auto w-full flex items-center justify-between py-3 px-1">
+        <a href="/" class="flex items-center gap-2.5 group transition">
+            <div class="w-8 h-8 rounded-md bg-rail flex items-center justify-center text-card shadow-sm group-hover:bg-railDeep transition">
                 <i class="fa-solid fa-route text-xs"></i>
             </div>
-            <span class="font-display font-bold text-sm tracking-tight text-white">PulseRoute Telemetry Gateway</span>
-        </div>
-        <div class="text-xs text-slate-500 font-mono">
-            Directing to target
+            <div class="flex flex-col">
+                <span class="font-display font-bold text-sm text-ink tracking-tight">PulseRoute</span>
+                <span class="text-[10px] text-inkSoft font-mono uppercase tracking-wider">Transit Gate</span>
+            </div>
+        </a>
+        <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-paperDeep/60 border border-line text-[11px] font-mono text-inkSoft">
+            <span class="w-2 h-2 rounded-full bg-rail animate-pulse"></span>
+            <span>Aktarım İstasyonu</span>
         </div>
     </header>
 
-    <!-- Main Container -->
-    <main class="max-w-lg mx-auto w-full my-auto space-y-6 text-center">
-        <!-- Countdown Card -->
-        <div class="p-8 rounded-xl bg-carbon border border-divider shadow-2xl space-y-6 relative overflow-hidden">
-            <!-- Circular / Number Countdown -->
-            <div class="space-y-3">
-                <div class="w-16 h-16 rounded-xl bg-panel border border-amber-500/40 text-amber-400 flex items-center justify-center mx-auto text-2xl font-black font-mono shadow-lg shadow-amber-500/10" id="countdownCircle">
-                    <span id="countdown">{{ delay }}</span>
+    <!-- Main Content Container -->
+    <main class="max-w-xl mx-auto w-full my-auto py-4">
+        <div class="ticket-card rounded-ticket p-6 sm:p-8 space-y-6 relative">
+            
+            <!-- Top Status & Counter -->
+            <div class="flex flex-col items-center text-center space-y-4">
+                
+                <!-- Circular Countdown Dial -->
+                <div class="relative w-24 h-24 flex items-center justify-center">
+                    <svg class="circle-timer w-24 h-24" viewBox="0 0 100 100">
+                        <circle class="circle-timer-bg" cx="50" cy="50" r="45" stroke-width="6" fill="none"></circle>
+                        <circle id="timerPath" class="circle-timer-path" cx="50" cy="50" r="45" stroke-width="6" fill="none"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span id="countdownNumber" class="text-3xl font-display font-bold text-ink transition-transform duration-200">
+                            {{ delay or 5 }}
+                        </span>
+                        <span class="text-[9px] uppercase font-mono tracking-widest text-inkSoft" id="timerUnit">SANİYE</span>
+                    </div>
                 </div>
-                <h1 class="text-xl font-display font-bold text-white tracking-tight">{{ title or "Transferring to Target URL" }}</h1>
-                <p class="text-slate-400 text-xs truncate max-w-sm mx-auto font-mono" title="{{ target_url }}">
-                    DEST: <span class="text-amber-400">{{ target_url }}</span>
-                </p>
+
+                <!-- Status Heading -->
+                <div class="space-y-1">
+                    <h1 id="statusTitle" class="text-lg sm:text-xl font-display font-bold text-ink">
+                        Hedef Sayfa Hazırlanıyor...
+                    </h1>
+                    <p id="statusSubtitle" class="text-xs text-inkSoft">
+                        Güvenli bağlantı kontrol ediliyor, lütfen birkaç saniye bekleyin.
+                    </p>
+                </div>
+
+                <!-- Destination Link Badge -->
+                <div class="w-full bg-paperDeep/50 border border-line rounded-md px-3 py-2 flex items-center justify-between gap-2 text-xs">
+                    <div class="flex items-center gap-2 min-w-0 text-left">
+                        <i class="fa-solid fa-lock text-[11px] text-rail"></i>
+                        <span class="text-inkSoft font-mono text-[11px] shrink-0">HEDEF:</span>
+                        <span class="font-mono text-ink text-[11px] truncate" title="{{ target_url }}">{{ target_url }}</span>
+                    </div>
+                    <span class="shrink-0 text-[10px] font-mono text-rail bg-railTint/70 px-2 py-0.5 rounded border border-rail/20">
+                        Doğrulandı
+                    </span>
+                </div>
             </div>
 
-            <!-- Ad / Sponsor Slot Container -->
-            <div class="p-4 rounded-lg bg-panel border border-divider text-left space-y-2">
-                <div class="flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-wider font-mono">
-                    <span>Sponsored Unit / Notice</span>
-                    <span class="text-amber-500/60">AD</span>
+            <!-- AdSense / Sponsor Banner Slot -->
+            <div class="space-y-2">
+                <div class="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-inkSoft px-1">
+                    <span class="flex items-center gap-1.5">
+                        <i class="fa-solid fa-rectangle-ad text-inkSoft/80"></i>
+                        <span>Sponsorlu Alan</span>
+                    </span>
+                    <span class="text-[9px] bg-paperDeep px-1.5 py-0.5 rounded text-inkSoft border border-line">REKLAM</span>
                 </div>
-                <div id="adSlot" class="text-xs text-slate-300 min-h-[80px] flex items-center justify-center text-center font-mono">
+
+                <div id="adSlotWrapper" class="ads-container rounded-md p-4 min-h-[160px] flex items-center justify-center text-center overflow-hidden">
                     {% if adsense_client_id and adsense_slot_id %}
-                        <!-- Google AdSense Unit -->
+                        <!-- Google AdSense Responsive Unit -->
                         <ins class="adsbygoogle"
-                             style="display:block; width:100%; min-height:80px;"
+                             style="display:block; width:100%; min-height:140px;"
                              data-ad-client="{{ adsense_client_id }}"
                              data-ad-slot="{{ adsense_slot_id }}"
                              data-ad-format="auto"
@@ -92,59 +178,108 @@
                              (adsbygoogle = window.adsbygoogle || []).push({});
                         </script>
                     {% elif ad_html %}
-                        {{ ad_html | safe }}
+                        <div class="w-full text-center">
+                            {{ ad_html | safe }}
+                        </div>
                     {% else %}
-                        <div class="space-y-1">
-                            <p class="font-medium text-slate-200">PulseRoute High-Frequency Edge Router</p>
-                            <p class="text-[11px] text-slate-500">Sub-10ms redirects, custom domains & privacy-first analytics.</p>
+                        <!-- Clean Fallback Banner -->
+                        <div class="space-y-2 max-w-sm mx-auto py-2">
+                            <div class="w-9 h-9 mx-auto rounded-full bg-railTint flex items-center justify-center text-rail">
+                                <i class="fa-solid fa-bolt text-sm"></i>
+                            </div>
+                            <p class="font-display font-semibold text-sm text-ink">PulseRoute Yüksek Hızlı Yönlendirme</p>
+                            <p class="text-xs text-inkSoft leading-relaxed">
+                                Özel alan adları, gerçek zamanlı tıklama analitiği ve gizlilik odaklı bağlantı altyapısı.
+                            </p>
                         </div>
                     {% endif %}
                 </div>
             </div>
 
-            <!-- Manual Proceed Button (disabled until countdown ends) -->
-            <div class="pt-1">
-                <a id="proceedBtn" href="javascript:void(0)" aria-disabled="true" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-panel border border-divider text-slate-500 font-display font-bold text-xs uppercase tracking-wider transition shadow-lg w-full cursor-not-allowed select-none">
-                    <span id="proceedBtnLabel">Please Wait ({{ delay }}s)</span>
-                    <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            <!-- Action Button ("Tıkla ve İlerle") -->
+            <div class="pt-2">
+                <a id="proceedButton"
+                   href="javascript:void(0)"
+                   aria-disabled="true"
+                   class="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-md bg-paperDeep text-inkSoft/70 font-semibold text-sm border border-line cursor-not-allowed transition-all duration-200 select-none shadow-sm">
+                    <span id="buttonIcon"><i class="fa-solid fa-hourglass-half text-xs"></i></span>
+                    <span id="buttonText">Lütfen Bekleyin ({{ delay or 5 }}s)</span>
                 </a>
             </div>
+
         </div>
     </main>
 
     <!-- Footer -->
-    <footer class="max-w-3xl mx-auto w-full text-center text-[11px] font-mono text-slate-600 py-4 border-t border-divider">
-        Secured by PulseRoute • Cookieless & KVKK/GDPR Masked Edge Routing
+    <footer class="max-w-xl mx-auto w-full text-center py-3 text-[11px] font-mono text-inkSoft/80">
+        <div class="flex items-center justify-center gap-3">
+            <span>Güvenli İletim</span>
+            <span>•</span>
+            <span>KVKK/GDPR Uyumlu Maskeleme</span>
+            <span>•</span>
+            <span>PulseRoute Telemetry</span>
+        </div>
     </footer>
 
+    <!-- Interactive Script -->
     <script>
-        let seconds = parseInt("{{ delay }}") || 5;
-        const countdownEl = document.getElementById('countdown');
+        const initialDelay = parseInt("{{ delay }}") || 5;
+        let timeLeft = initialDelay;
         const targetUrl = "{{ target_url | safe }}";
-        const proceedBtn = document.getElementById('proceedBtn');
-        const proceedBtnLabel = document.getElementById('proceedBtnLabel');
 
-        function enableProceedButton() {
-            proceedBtn.href = targetUrl;
-            proceedBtn.removeAttribute('aria-disabled');
-            proceedBtn.classList.remove('bg-panel', 'border', 'border-divider', 'text-slate-500', 'cursor-not-allowed');
-            proceedBtn.classList.add('bg-amber-500', 'hover:bg-amber-400', 'text-black', 'shadow-amber-500/10');
-            proceedBtnLabel.innerText = 'Continue to Destination';
+        const countdownNumber = document.getElementById("countdownNumber");
+        const timerUnit = document.getElementById("timerUnit");
+        const timerPath = document.getElementById("timerPath");
+        const statusTitle = document.getElementById("statusTitle");
+        const statusSubtitle = document.getElementById("statusSubtitle");
+        const proceedButton = document.getElementById("proceedButton");
+        const buttonText = document.getElementById("buttonText");
+        const buttonIcon = document.getElementById("buttonIcon");
+
+        const circumference = 283; // 2 * pi * 45
+
+        function updateProgress(remaining) {
+            const fraction = (initialDelay - remaining) / initialDelay;
+            const offset = circumference * fraction;
+            timerPath.style.strokeDashoffset = offset;
         }
 
-        if (seconds <= 0) {
-            countdownEl.innerText = "0";
-            enableProceedButton();
+        function activateProceedButton() {
+            proceedButton.href = targetUrl;
+            proceedButton.removeAttribute("aria-disabled");
+            proceedButton.classList.remove(
+                "bg-paperDeep", "text-inkSoft/70", "cursor-not-allowed", "border-line"
+            );
+            proceedButton.classList.add(
+                "bg-rail", "hover:bg-railDeep", "active:scale-[0.98]", "text-card", "shadow-md", "ready-btn-active", "border-rail"
+            );
+            
+            buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-right text-xs"></i>';
+            buttonText.innerText = "Tıkla ve İlerle";
+            
+            statusTitle.innerText = "Bağlantınız Hazır!";
+            statusSubtitle.innerText = "Hedef sayfaya geçmek için aşağıdaki butona tıklayın.";
+            
+            countdownNumber.innerHTML = '<i class="fa-solid fa-check text-2xl text-rail"></i>';
+            timerUnit.innerText = "HAZIR";
+            timerPath.style.stroke = "#146D6C";
+            timerPath.style.strokeDashoffset = circumference;
+        }
+
+        if (timeLeft <= 0) {
+            activateProceedButton();
         } else {
-            const timer = setInterval(() => {
-                seconds--;
-                if (seconds > 0) {
-                    countdownEl.innerText = seconds;
-                    proceedBtnLabel.innerText = `Please Wait (${seconds}s)`;
+            updateProgress(timeLeft);
+            const interval = setInterval(() => {
+                timeLeft--;
+                if (timeLeft > 0) {
+                    countdownNumber.innerText = timeLeft;
+                    buttonText.innerText = ;
+                    updateProgress(timeLeft);
                 } else {
-                    countdownEl.innerText = "0";
-                    clearInterval(timer);
-                    enableProceedButton();
+                    clearInterval(interval);
+                    updateProgress(0);
+                    activateProceedButton();
                 }
             }, 1000);
         }

@@ -42,7 +42,7 @@ class Settings(BaseSettings):
 
     # Monetization & AdSense Control (Platform Admin Policy -- single verified publisher account only,
     # AdSense requires per-site ownership verification so per-user/per-workspace accounts are not offered)
-    DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled globally (e.g. 3 or 5)
+    DEFAULT_INTERSTITIAL_DELAY: int = 5    # Default delay seconds (e.g. 5)
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
     GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner Ad unit slot ID (e.g. XXXXXXXXXX)
     ADS_TXT_CONTENT: Optional[str] = None           # Platform owner ads.txt raw content

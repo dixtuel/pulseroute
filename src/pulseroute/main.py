@@ -206,21 +206,22 @@ async def get_ads_txt():
 @app.get("/robots.txt", response_class=PlainTextResponse, tags=["SEO"])
 async def get_robots_txt():
     """Serves robots.txt dynamically with primary domain sitemap."""
-    domain = settings.PRIMARY_DOMAIN or "ps.sely.tr"
-    sitemap_url = f"https://{domain}/sitemap.xml"
+    domain = settings.PRIMARY_DOMAIN
+    sitemap_url = f"https://{domain}/sitemap.xml" if domain else "/sitemap.xml"
     return PlainTextResponse(content=f"User-agent: *\nAllow: /\n\nSitemap: {sitemap_url}\n", media_type="text/plain")
 
 
 @app.get("/sitemap.xml", tags=["SEO"])
 async def get_sitemap_xml():
     """Serves sitemap.xml dynamically with primary domain URLs."""
-    domain = settings.PRIMARY_DOMAIN or "ps.sely.tr"
+    domain = settings.PRIMARY_DOMAIN
+    base_url = f"https://{domain}" if domain else ""
     xml_content = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://{domain}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
-  <url><loc>https://{domain}/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://{domain}/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
-  <url><loc>https://{domain}/accessibility</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>{base_url}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>{base_url}/privacy</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>{base_url}/terms</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>{base_url}/accessibility</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
 </urlset>"""
     return HTMLResponse(content=xml_content, media_type="application/xml")
 

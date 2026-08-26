@@ -198,7 +198,7 @@ class RedirectService:
 
         if (effective_delay > 0 or adsense_client) and not is_bot:
             interstitial_data = {
-                "delay": effective_delay if effective_delay > 0 else 3,
+                "delay": effective_delay if effective_delay > 0 else 5,
                 "target_url": target_url,
                 "ad_html": link_data.get("interstitial_ad_html"),
                 "title": link_data.get("interstitial_title") or link_data.get("title"),
