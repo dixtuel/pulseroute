@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
+    {% if google_site_verification %}<meta name="google-site-verification" content="{{ google_site_verification }}">{% endif %}
+    {% if bing_site_verification %}<meta name="msvalidate.01" content="{{ bing_site_verification }}">{% endif %}
+    {% if yandex_site_verification %}<meta name="yandex-verification" content="{{ yandex_site_verification }}">{% endif %}
     <title>PulseRoute — URL Shortener</title>
 
     <meta name="description" content="Self-hosted, open-source URL shortener with custom domains, click analytics, QR codes and webhooks.">

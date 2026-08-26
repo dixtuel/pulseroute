@@ -10,7 +10,7 @@
 
 *Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, and an embedded modern dashboard with rich terminal CLI.*
 
-[Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Self-Hosted Deploy](#self-hosted-deployment-docker-compose)
+[Live Demo](https://ps.sely.tr) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Cloud Deploy](#cloud-deployment-render--neon--upstash) • [Self-Hosted Deploy](#self-hosted-deployment-docker-compose)
 
 ---
 
@@ -86,6 +86,18 @@ X-PulseRoute-Signature: <hmac-sha256(secret_key, body)>
 ```
 
 The signing secret is generated server-side and shown exactly once in the creation response — verify the signature on your receiving endpoint before trusting the payload. This is API-only by design (no dashboard UI) to keep the web dashboard focused on the core shorten-a-link flow.
+
+---
+
+## Cloud Deployment (Render + Neon + Upstash)
+
+The live instance at **[ps.sely.tr](https://ps.sely.tr)** runs this way — no server to manage, no card required on any of the three services:
+
+1. **Web service:** deploy this repo to [Render](https://render.com) as a Python web service (`pip install -e .` / `pulseroute serve --host 0.0.0.0 --port $PORT`). Render's free plan needs no credit card; the default `*.onrender.com` subdomain can be disabled once your own custom domain is verified (Render dashboard → service → Settings → Custom Domains).
+2. **Postgres:** create a free project on [Neon](https://neon.tech) (no card, no expiry) and set `DATABASE_URL` to its connection string — the app auto-normalizes `postgresql://...` to the `asyncpg` driver and strips query params `asyncpg` doesn't accept.
+3. **Redis:** create a free database on [Upstash](https://upstash.com) (no card) and set `REDIS_URL` — the app auto-upgrades `redis://` to `rediss://` (TLS) for any `upstash.io` host.
+
+That's the entire persistent, zero-cost stack; no Docker, no Caddy. Custom-domain TLS provisioning for *your own users'* domains (the `ALLOW_CUSTOM_DOMAINS` feature) still relies on Caddy's On-Demand TLS `ask` endpoint (see below) and isn't automatic on this cloud path — domains added there verify in the database, but a platform admin currently has to also add them as a Render custom domain by hand for traffic/TLS to actually route.
 
 ---
 

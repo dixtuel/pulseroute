@@ -208,6 +208,9 @@ async def render_dashboard(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
         "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+        "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+        "bing_site_verification": settings.BING_SITE_VERIFICATION,
+        "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
     })
 
 
@@ -243,6 +246,9 @@ async def root(request: Request):
     return templates.TemplateResponse(request=request, name="index.html", context={
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
         "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+        "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+        "bing_site_verification": settings.BING_SITE_VERIFICATION,
+        "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
     })
 
 

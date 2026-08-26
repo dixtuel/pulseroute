@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="pulseroute-super-secure-change-in-production-secret-key-32b")
     PRIMARY_DOMAIN: str = "localhost:8000"
     OPERATOR_CONTACT_EMAIL: Optional[str] = None  # Shown on /privacy as the data-controller contact for this instance.
+    GOOGLE_SITE_VERIFICATION: Optional[str] = None  # Google Search Console meta tag content (per-domain, from search.google.com/search-console)
+    BING_SITE_VERIFICATION: Optional[str] = None    # Bing Webmaster Tools meta tag content
+    YANDEX_SITE_VERIFICATION: Optional[str] = None  # Yandex Webmaster meta tag content
     ENFORCE_EMAIL_DOMAIN_CHECK: bool = True  # Reject registration if the email's domain has no MX/A record at all.
 
     # Database & Cache
