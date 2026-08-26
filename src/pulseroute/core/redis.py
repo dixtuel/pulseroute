@@ -1,7 +1,10 @@
 
+import structlog
 import redis.asyncio as aioredis
 
 from pulseroute.core.config import settings
+
+logger = structlog.get_logger()
 
 redis_client: aioredis.Redis | None = None
 
@@ -28,7 +31,8 @@ async def get_redis() -> aioredis.Redis | None:
                 retry_on_timeout=True,
             )
             await redis_client.ping()
-        except Exception:
+        except Exception as e:
+            logger.warning("redis_connect_failed", error=repr(e))
             redis_client = None
     return redis_client
 
