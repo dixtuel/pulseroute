@@ -173,10 +173,8 @@
                              data-ad-client="{{ adsense_client_id }}"
                              data-ad-slot="{{ adsense_slot_id }}"
                              data-ad-format="auto"
-                             data-full-width-responsive="true"></ins>
-                        <script>
-                             (adsbygoogle = window.adsbygoogle || []).push({});
-                        </script>
+                             data-full-width-responsive="true"
+                             data-consent-pending="true"></ins>
                     {% elif ad_html %}
                         <div class="w-full text-center">
                             {{ ad_html | safe }}
@@ -300,5 +298,6 @@
             }
         })();
     </script>
+    {% include "_cookie_banner.html" %}
 </body>
 </html>
