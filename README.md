@@ -149,6 +149,10 @@ pytest --cov=pulseroute -v
 ruff check src/ tests/
 ```
 
+## Open Source Attribution
+
+For detailed information about external open-source libraries, web servers, CLI engines, and cryptographic dependencies used in this project, see [ATTRIBUTION.md](ATTRIBUTION.md).
+
 ---
 
 ## License
