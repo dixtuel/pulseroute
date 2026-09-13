@@ -273,14 +273,14 @@ async def render_dashboard(request: Request):
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
-    contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
+    contact_email = settings.OPERATOR_CONTACT_EMAIL or "asrinklcc@dixtuel.tr"
+    contact_codes = [ord(c) for c in contact_email] if contact_email else None
     return templates.TemplateResponse(
         request=request,
         name="privacy.html",
         context={
             "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-            "operator_contact_user": contact_user or None,
-            "operator_contact_domain": contact_domain or None,
+            "operator_contact_codes": contact_codes,
             "primary_domain": settings.PRIMARY_DOMAIN,
         },
     )
@@ -295,14 +295,14 @@ async def render_terms(request: Request):
 
 @app.get("/accessibility", response_class=HTMLResponse, tags=["Legal"])
 async def render_accessibility(request: Request):
-    contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
+    contact_email = settings.OPERATOR_CONTACT_EMAIL or "asrinklcc@dixtuel.tr"
+    contact_codes = [ord(c) for c in contact_email] if contact_email else None
     return templates.TemplateResponse(
         request=request,
         name="accessibility.html",
         context={
             "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-            "operator_contact_user": contact_user or None,
-            "operator_contact_domain": contact_domain or None,
+            "operator_contact_codes": contact_codes,
             "primary_domain": settings.PRIMARY_DOMAIN,
         },
     )

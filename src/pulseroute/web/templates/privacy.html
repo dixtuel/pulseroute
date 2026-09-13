@@ -39,6 +39,20 @@
                 linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
                 linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
         }
+        .protected-contact-link {
+            color: #fbbf24;
+            text-decoration: underline;
+            cursor: pointer;
+            word-break: break-all;
+        }
+        .bot-decoy {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            position: absolute !important;
+            left: -9999px !important;
+        }
     </style>
 </head>
 <body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
@@ -51,10 +65,10 @@
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
             <h2 class="text-sm font-display font-bold text-white">1. Scope & Data Controller</h2>
             <p>PulseRoute is self-hosted, open-source software (MIT License). This notice describes how the PulseRoute application itself handles data at the code level; the operator running this specific instance
-                {% if operator_contact_user and operator_contact_domain %}
-                — reachable at <code class="text-amber-400" id="opContact" data-u="{{ operator_contact_user }}" data-d="{{ operator_contact_domain }}">contact address</code><script>(function(){var e=document.getElementById('opContact');e.textContent=e.dataset.u+String.fromCharCode(64)+e.dataset.d;})();</script>
+                {% if operator_contact_codes %}
+                — reachable at <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
                 {% else %}
-                (contact the operator directly if you know how to reach them)
+                — reachable at <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
                 {% endif %}
                 — is the data controller for any personal data processed here, not the PulseRoute project.</p>
         </section>
@@ -98,5 +112,6 @@
             <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
         </div>
     </div>
+    <script src="/static/js/identity-guard.js"></script>
 </body>
 </html>
