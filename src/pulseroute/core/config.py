@@ -16,8 +16,10 @@ class Settings(BaseSettings):
     SECRET_KEY: str = Field(default="pulseroute-super-secure-change-in-production-secret-key-32b")
     PRIMARY_DOMAIN: str = "localhost:8000"
     OPERATOR_CONTACT_EMAIL: Optional[str] = None  # Shown on /privacy as the data-controller contact for this instance.
-    GOOGLE_SITE_VERIFICATION: Optional[str] = None  # Google Search Console meta tag content (per-domain, from search.google.com/search-console)
-    BING_SITE_VERIFICATION: Optional[str] = None    # Bing Webmaster Tools meta tag content
+    GOOGLE_SITE_VERIFICATION: Optional[str] = (
+        None  # Google Search Console meta tag content (per-domain, from search.google.com/search-console)
+    )
+    BING_SITE_VERIFICATION: Optional[str] = None  # Bing Webmaster Tools meta tag content
     YANDEX_SITE_VERIFICATION: Optional[str] = None  # Yandex Webmaster meta tag content
     ENFORCE_EMAIL_DOMAIN_CHECK: bool = True  # Reject registration if the email's domain has no MX/A record at all.
 
@@ -25,7 +27,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite+aiosqlite:///./pulseroute.db"
     REDIS_URL: Optional[str] = "redis://127.0.0.1:6379/0"
     CACHE_DEFAULT_TTL: int = 86400  # 24 hours
-    NEGATIVE_CACHE_TTL: int = 60    # 60s for non-existent slugs
+    NEGATIVE_CACHE_TTL: int = 60  # 60s for non-existent slugs
 
     # Custom Domains & TLS
     ALLOW_CUSTOM_DOMAINS: bool = True  # Any logged-in workspace owner/admin can add one by default;
@@ -42,12 +44,14 @@ class Settings(BaseSettings):
 
     # Monetization & AdSense Control (Platform Admin Policy -- single verified publisher account only,
     # AdSense requires per-site ownership verification so per-user/per-workspace accounts are not offered)
-    DEFAULT_INTERSTITIAL_DELAY: int = 0    # Default delay seconds if enabled via env (e.g. 5)
+    DEFAULT_INTERSTITIAL_DELAY: int = 0  # Default delay seconds if enabled via env (e.g. 5)
     GLOBAL_ADSENSE_CLIENT_ID: Optional[str] = None  # Platform owner publisher ID (e.g. ca-pub-XXXXXXXXXXXXXXXX)
-    GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None    # Platform owner fallback Ad unit slot ID
+    GLOBAL_ADSENSE_SLOT_ID: Optional[str] = None  # Platform owner fallback Ad unit slot ID
     GLOBAL_ADSENSE_DASHBOARD_SLOT_ID: Optional[str] = None  # Platform owner Dashboard Ad unit slot ID (e.g. 1098158898)
-    GLOBAL_ADSENSE_REDIRECT_SLOT_ID: Optional[str] = None   # Platform owner Redirect/Interstitial Ad unit slot ID (e.g. 4170667493)
-    ADS_TXT_CONTENT: Optional[str] = None           # Platform owner ads.txt raw content
+    GLOBAL_ADSENSE_REDIRECT_SLOT_ID: Optional[str] = (
+        None  # Platform owner Redirect/Interstitial Ad unit slot ID (e.g. 4170667493)
+    )
+    ADS_TXT_CONTENT: Optional[str] = None  # Platform owner ads.txt raw content
 
     # Redirect & Tracking Defaults
     DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect

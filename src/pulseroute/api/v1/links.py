@@ -26,7 +26,9 @@ def build_short_url(request: Optional[Request], slug: str, custom_domain: Option
     if not request:
         return f"/{slug}"
     host = request.headers.get("host") or settings.PRIMARY_DOMAIN
-    proto = request.headers.get("x-forwarded-proto") or ("http" if (host.startswith("localhost") or host.startswith("127.0.0.1")) else "https")
+    proto = request.headers.get("x-forwarded-proto") or (
+        "http" if (host.startswith("localhost") or host.startswith("127.0.0.1")) else "https"
+    )
     return f"{proto}://{host}/{slug}"
 
 
@@ -97,7 +99,7 @@ async def create_short_link(
     if not allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded. Please wait before creating more links."
+            detail="Rate limit exceeded. Please wait before creating more links.",
         )
     response.headers["X-RateLimit-Remaining"] = str(remaining)
 

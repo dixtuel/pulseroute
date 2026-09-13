@@ -20,5 +20,5 @@ __all__ = [
     "UserCreate",
     "UserResponse",
     "WorkspaceCreate",
-    "WorkspaceResponse"
+    "WorkspaceResponse",
 ]

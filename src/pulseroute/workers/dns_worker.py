@@ -15,9 +15,7 @@ async def run_dns_verification_worker(interval_seconds: int = 300):
     while True:
         try:
             async with async_session_maker() as db:
-                unverified_domains = await db.execute(
-                    select(CustomDomain).where(CustomDomain.is_verified.is_(False))
-                )
+                unverified_domains = await db.execute(select(CustomDomain).where(CustomDomain.is_verified.is_(False)))
                 for domain in unverified_domains.scalars().all():
                     success, msg = await DomainService.verify_domain_dns(db, domain.id)
                     if success:

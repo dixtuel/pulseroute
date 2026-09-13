@@ -7,8 +7,7 @@ console = Console()
 
 def print_banner():
     banner = Text(
-        "PulseRoute CLI — Enterprise URL Shortener & Analytics\n"
-        "Modern, Ultra-Fast & Self-Hosted Link Infrastructure",
+        "PulseRoute CLI — Enterprise URL Shortener & Analytics\nModern, Ultra-Fast & Self-Hosted Link Infrastructure",
         style="bold white",
     )
     console.print(Panel(banner, border_style="cyan"))

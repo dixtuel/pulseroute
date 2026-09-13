@@ -41,7 +41,7 @@ async def require_authenticated_user(
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required. Please provide a valid Bearer token or API key."
+            detail="Authentication required. Please provide a valid Bearer token or API key.",
         )
     return current_user
 
@@ -57,9 +57,7 @@ async def verify_workspace_access(
         select(Workspace)
         .join(WorkspaceMember, Workspace.id == WorkspaceMember.workspace_id)
         .where(
-            Workspace.id == workspace_id,
-            WorkspaceMember.user_id == user.id,
-            WorkspaceMember.role.in_(required_roles)
+            Workspace.id == workspace_id, WorkspaceMember.user_id == user.id, WorkspaceMember.role.in_(required_roles)
         )
     )
     result = await db.execute(query)
@@ -68,7 +66,7 @@ async def verify_workspace_access(
     if not workspace and not user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access Denied: You do not have permission to access or modify this workspace."
+            detail="Access Denied: You do not have permission to access or modify this workspace.",
         )
 
     return workspace

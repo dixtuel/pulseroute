@@ -15,7 +15,9 @@ class CustomDomain(Base):
     __tablename__ = "custom_domains"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    workspace_id: Mapped[int | None] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True)
+    workspace_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+    )
     domain: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     verification_code: Mapped[str] = mapped_column(String(64), nullable=False)
     is_verified: Mapped[bool] = mapped_column(Boolean, default=False)

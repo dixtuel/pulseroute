@@ -118,11 +118,16 @@ class LinkService:
                 pass
 
         if workspace_id:
-            await WebhookService.notify_workspace(db, workspace_id, "link.created", {
-                "link_id": link.id,
-                "slug": link.slug,
-                "destination_url": link.destination_url,
-            })
+            await WebhookService.notify_workspace(
+                db,
+                workspace_id,
+                "link.created",
+                {
+                    "link_id": link.id,
+                    "slug": link.slug,
+                    "destination_url": link.destination_url,
+                },
+            )
 
         return link
 
@@ -194,7 +199,7 @@ class LinkService:
         tag: Optional[str] = None,
         is_active: Optional[bool] = None,
         limit: int = 50,
-        offset: int = 0
+        offset: int = 0,
     ) -> List[ShortLink]:
         query = select(ShortLink).order_by(ShortLink.created_at.desc())
 
@@ -209,7 +214,7 @@ class LinkService:
                 or_(
                     ShortLink.slug.ilike(f"%{search}%"),
                     ShortLink.title.ilike(f"%{search}%"),
-                    ShortLink.destination_url.ilike(f"%{search}%")
+                    ShortLink.destination_url.ilike(f"%{search}%"),
                 )
             )
 
@@ -218,11 +223,7 @@ class LinkService:
         return list(result.scalars().all())
 
     @staticmethod
-    async def delete_link(
-        db: AsyncSession,
-        redis_cli: Optional[aioredis.Redis],
-        link_id: int
-    ) -> bool:
+    async def delete_link(db: AsyncSession, redis_cli: Optional[aioredis.Redis], link_id: int) -> bool:
         link = await LinkService.get_link_by_id(db, link_id)
         if not link:
             return False

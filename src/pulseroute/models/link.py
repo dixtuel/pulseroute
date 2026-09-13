@@ -14,13 +14,15 @@ if TYPE_CHECKING:
 
 class ShortLink(Base):
     __tablename__ = "short_links"
-    __table_args__ = (
-        Index("ix_domain_slug", "domain_id", "slug", unique=True),
-    )
+    __table_args__ = (Index("ix_domain_slug", "domain_id", "slug", unique=True),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    workspace_id: Mapped[int | None] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True)
-    domain_id: Mapped[int | None] = mapped_column(ForeignKey("custom_domains.id", ondelete="SET NULL"), nullable=True, index=True)
+    workspace_id: Mapped[int | None] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=True, index=True
+    )
+    domain_id: Mapped[int | None] = mapped_column(
+        ForeignKey("custom_domains.id", ondelete="SET NULL"), nullable=True, index=True
+    )
 
     slug: Mapped[str] = mapped_column(String(100), index=True, nullable=False)
     destination_url: Mapped[str] = mapped_column(String(2048), nullable=False)

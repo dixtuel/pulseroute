@@ -34,6 +34,7 @@ def clean_referrer_name(referrer: Optional[str]) -> str:
     # Strip protocol and path
     try:
         from urllib.parse import urlparse
+
         parsed = urlparse(referrer)
         return parsed.hostname or referrer[:30]
     except Exception:
@@ -66,9 +67,7 @@ class AnalyticsService:
             return query
 
         # 1. Total clicks
-        total_clicks_query = scoped(
-            select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time)
-        )
+        total_clicks_query = scoped(select(func.count(ClickEvent.id)).where(ClickEvent.clicked_at >= since_time))
         total_clicks_res = await db.execute(total_clicks_query)
         total_clicks = total_clicks_res.scalar() or 0
 
@@ -105,16 +104,14 @@ class AnalyticsService:
 
         # 3. Real Timeseries Aggregation by Day
         timeseries_map: dict[str, int] = {
-            (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d"): 0
-            for i in range(days - 1, -1, -1)
+            (datetime.now(UTC) - timedelta(days=i)).strftime("%Y-%m-%d"): 0 for i in range(days - 1, -1, -1)
         }
 
         # Fetch actual clicks per day
         ts_query = scoped(
-            select(
-                func.date(ClickEvent.clicked_at).label("day"),
-                func.count(ClickEvent.id).label("cnt")
-            ).where(ClickEvent.clicked_at >= since_time)
+            select(func.date(ClickEvent.clicked_at).label("day"), func.count(ClickEvent.id).label("cnt")).where(
+                ClickEvent.clicked_at >= since_time
+            )
         )
         ts_query = ts_query.group_by(func.date(ClickEvent.clicked_at))
 
@@ -123,10 +120,7 @@ class AnalyticsService:
             if str(day_str) in timeseries_map:
                 timeseries_map[str(day_str)] = count
 
-        timeseries = [
-            TimeSeriesPoint(timestamp=dt, clicks=cnt)
-            for dt, cnt in sorted(timeseries_map.items())
-        ]
+        timeseries = [TimeSeriesPoint(timestamp=dt, clicks=cnt) for dt, cnt in sorted(timeseries_map.items())]
 
         slug_val = None
         if link_id:

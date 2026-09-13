@@ -29,7 +29,23 @@ async def redirect_short_url(
     redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
 ):
     if (
-        slug in ("favicon.ico", "robots.txt", "sitemap.xml", "BingSiteAuth.xml", "ads.txt", "docs", "redoc", "openapi.json", "dashboard", "api", "privacy", "terms", "accessibility", "healthz")
+        slug
+        in (
+            "favicon.ico",
+            "robots.txt",
+            "sitemap.xml",
+            "BingSiteAuth.xml",
+            "ads.txt",
+            "docs",
+            "redoc",
+            "openapi.json",
+            "dashboard",
+            "api",
+            "privacy",
+            "terms",
+            "accessibility",
+            "healthz",
+        )
         or slug.startswith("google")
         or slug.startswith("yandex_")
     ):
@@ -84,7 +100,7 @@ async def redirect_short_url(
                 "title": interstitial.get("title"),
                 "adsense_client_id": interstitial.get("adsense_client_id"),
                 "adsense_slot_id": interstitial.get("adsense_slot_id"),
-            }
+            },
         )
 
     response = RedirectResponse(url=target_url, status_code=status_code)

@@ -3,11 +3,14 @@ from httpx import AsyncClient
 
 
 async def _register_and_get_workspace(client: AsyncClient, email: str) -> tuple[dict, int]:
-    await client.post("/api/v1/auth/register", json={
-        "email": email,
-        "password": "SecurePassword123!",
-        "full_name": "Test User",
-    })
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": email,
+            "password": "SecurePassword123!",
+            "full_name": "Test User",
+        },
+    )
     login = await client.post("/api/v1/auth/login", json={"email": email, "password": "SecurePassword123!"})
     token = login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -55,10 +58,9 @@ async def test_create_and_get_link(client: AsyncClient):
 
     # Update link (PATCH)
     link_id = data["id"]
-    patch_res = await client.patch(f"/api/v1/links/{link_id}", json={
-        "title": "Updated Title",
-        "tags": "updated,tag"
-    }, headers=headers)
+    patch_res = await client.patch(
+        f"/api/v1/links/{link_id}", json={"title": "Updated Title", "tags": "updated,tag"}, headers=headers
+    )
     assert patch_res.status_code == 200
     patched_data = patch_res.json()
     assert patched_data["title"] == "Updated Title"
@@ -88,18 +90,26 @@ async def test_duplicate_slug_on_default_domain_is_rejected(client: AsyncClient)
     headers1, workspace1 = await _register_and_get_workspace(client, "slugowner1@company.com")
     headers2, workspace2 = await _register_and_get_workspace(client, "slugowner2@company.com")
 
-    first = await client.post("/api/v1/links", json={
-        "destination_url": "https://a.example.com",
-        "slug": "shared-slug",
-        "workspace_id": workspace1,
-    }, headers=headers1)
+    first = await client.post(
+        "/api/v1/links",
+        json={
+            "destination_url": "https://a.example.com",
+            "slug": "shared-slug",
+            "workspace_id": workspace1,
+        },
+        headers=headers1,
+    )
     assert first.status_code == 201
 
-    second = await client.post("/api/v1/links", json={
-        "destination_url": "https://b.example.com",
-        "slug": "shared-slug",
-        "workspace_id": workspace2,
-    }, headers=headers2)
+    second = await client.post(
+        "/api/v1/links",
+        json={
+            "destination_url": "https://b.example.com",
+            "slug": "shared-slug",
+            "workspace_id": workspace2,
+        },
+        headers=headers2,
+    )
     assert second.status_code == 400
     assert "already taken" in second.json()["detail"]
 
@@ -116,11 +126,15 @@ async def test_cannot_create_link_under_another_workspaces_domain(client: AsyncC
     await db_session.commit()
     await db_session.refresh(domain)
 
-    res = await client.post("/api/v1/links", json={
-        "destination_url": "https://example.com/hijack",
-        "domain_id": domain.id,
-        "workspace_id": _workspace2,
-    }, headers=headers2)
+    res = await client.post(
+        "/api/v1/links",
+        json={
+            "destination_url": "https://example.com/hijack",
+            "domain_id": domain.id,
+            "workspace_id": _workspace2,
+        },
+        headers=headers2,
+    )
     assert res.status_code == 400
     assert "Invalid or unverified" in res.json()["detail"]
 
@@ -145,18 +159,26 @@ async def test_require_custom_domain_mode(client: AsyncClient, db_session):
         assert anon_res.status_code == 400
 
         # Logged-in creation without a domain_id is also rejected
-        no_domain_res = await client.post("/api/v1/links", json={
-            "destination_url": "https://example.com/no-domain",
-            "workspace_id": workspace_id,
-        }, headers=headers)
+        no_domain_res = await client.post(
+            "/api/v1/links",
+            json={
+                "destination_url": "https://example.com/no-domain",
+                "workspace_id": workspace_id,
+            },
+            headers=headers,
+        )
         assert no_domain_res.status_code == 400
 
         # Creation against the workspace's own verified domain succeeds
-        ok_res = await client.post("/api/v1/links", json={
-            "destination_url": "https://example.com/ok",
-            "domain_id": domain.id,
-            "workspace_id": workspace_id,
-        }, headers=headers)
+        ok_res = await client.post(
+            "/api/v1/links",
+            json={
+                "destination_url": "https://example.com/ok",
+                "domain_id": domain.id,
+                "workspace_id": workspace_id,
+            },
+            headers=headers,
+        )
         assert ok_res.status_code == 201
     finally:
         settings.REQUIRE_CUSTOM_DOMAIN = orig
@@ -174,11 +196,15 @@ async def test_link_short_url_uses_its_own_custom_domain(client: AsyncClient, db
     await db_session.commit()
     await db_session.refresh(domain)
 
-    res = await client.post("/api/v1/links", json={
-        "destination_url": "https://example.com/target",
-        "domain_id": domain.id,
-        "workspace_id": workspace_id,
-    }, headers=headers)
+    res = await client.post(
+        "/api/v1/links",
+        json={
+            "destination_url": "https://example.com/target",
+            "domain_id": domain.id,
+            "workspace_id": workspace_id,
+        },
+        headers=headers,
+    )
     assert res.status_code == 201
     assert res.json()["short_url"].startswith("https://branded.example/")
 

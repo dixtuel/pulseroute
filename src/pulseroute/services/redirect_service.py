@@ -168,6 +168,7 @@ class RedirectService:
             # Standalone / Zero-Redis Fallback (no Redis configured: local testing, demo instances)
             try:
                 from pulseroute.models.click import ClickEvent
+
                 click_rec = ClickEvent(
                     link_id=link_data["id"],
                     country_code=country_code,
@@ -180,6 +181,7 @@ class RedirectService:
                 )
                 db.add(click_rec)
                 from sqlalchemy import func, update
+
                 await db.execute(
                     update(ShortLink)
                     .where(ShortLink.id == link_data["id"])
@@ -194,7 +196,11 @@ class RedirectService:
         link_delay = link_data.get("interstitial_delay", 0)
         effective_delay = link_delay if link_delay > 0 else settings.DEFAULT_INTERSTITIAL_DELAY
         adsense_client = link_data.get("adsense_client_id") or settings.GLOBAL_ADSENSE_CLIENT_ID
-        adsense_slot = link_data.get("adsense_slot_id") or settings.GLOBAL_ADSENSE_REDIRECT_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID
+        adsense_slot = (
+            link_data.get("adsense_slot_id")
+            or settings.GLOBAL_ADSENSE_REDIRECT_SLOT_ID
+            or settings.GLOBAL_ADSENSE_SLOT_ID
+        )
 
         if (effective_delay > 0 or adsense_client) and not is_bot:
             interstitial_data = {

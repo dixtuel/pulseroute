@@ -176,7 +176,7 @@ async def health_check():
             "database": "connected" if db_ok else "disconnected",
             "redis": "connected" if redis_ok else "disabled_or_unavailable",
             "latency_ms": elapsed_ms,
-        }
+        },
     )
 
 
@@ -238,7 +238,9 @@ async def google_verification(token: str):
 async def bing_verification():
     """Serves Bing Webmaster Tools XML verification dynamically from env."""
     if settings.BING_SITE_VERIFICATION:
-        xml_content = f"""<?xml version="1.0"?>\n<users>\n\t<user>{settings.BING_SITE_VERIFICATION}</user>\n</users>\n"""
+        xml_content = (
+            f"""<?xml version="1.0"?>\n<users>\n\t<user>{settings.BING_SITE_VERIFICATION}</user>\n</users>\n"""
+        )
         return HTMLResponse(content=xml_content, media_type="application/xml")
     raise HTTPException(status_code=404, detail="Not Found")
 
@@ -247,59 +249,79 @@ async def bing_verification():
 async def yandex_verification(token: str):
     """Serves Yandex Webmaster HTML verification dynamically from env."""
     if settings.YANDEX_SITE_VERIFICATION and settings.YANDEX_SITE_VERIFICATION == token:
-        return HTMLResponse(content=f"<html><head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\"></head><body>Verification: {token}</body></html>\n")
+        return HTMLResponse(
+            content=f'<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"></head><body>Verification: {token}</body></html>\n'
+        )
     raise HTTPException(status_code=404, detail="Not Found")
 
 
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-        "adsense_slot_id": settings.GLOBAL_ADSENSE_DASHBOARD_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID,
-        "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
-        "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
-        "bing_site_verification": settings.BING_SITE_VERIFICATION,
-        "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+            "adsense_slot_id": settings.GLOBAL_ADSENSE_DASHBOARD_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID,
+            "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+            "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+            "bing_site_verification": settings.BING_SITE_VERIFICATION,
+            "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
+        },
+    )
 
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
     contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
-    return templates.TemplateResponse(request=request, name="privacy.html", context={
-        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-        "operator_contact_user": contact_user or None,
-        "operator_contact_domain": contact_domain or None,
-        "primary_domain": settings.PRIMARY_DOMAIN,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="privacy.html",
+        context={
+            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+            "operator_contact_user": contact_user or None,
+            "operator_contact_domain": contact_domain or None,
+            "primary_domain": settings.PRIMARY_DOMAIN,
+        },
+    )
 
 
 @app.get("/terms", response_class=HTMLResponse, tags=["Legal"])
 async def render_terms(request: Request):
-    return templates.TemplateResponse(request=request, name="terms.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID})
+    return templates.TemplateResponse(
+        request=request, name="terms.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID}
+    )
 
 
 @app.get("/accessibility", response_class=HTMLResponse, tags=["Legal"])
 async def render_accessibility(request: Request):
     contact_user, _, contact_domain = (settings.OPERATOR_CONTACT_EMAIL or "").partition("@")
-    return templates.TemplateResponse(request=request, name="accessibility.html", context={
-        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-        "operator_contact_user": contact_user or None,
-        "operator_contact_domain": contact_domain or None,
-        "primary_domain": settings.PRIMARY_DOMAIN,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="accessibility.html",
+        context={
+            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+            "operator_contact_user": contact_user or None,
+            "operator_contact_domain": contact_domain or None,
+            "primary_domain": settings.PRIMARY_DOMAIN,
+        },
+    )
 
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def root(request: Request):
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-        "adsense_slot_id": settings.GLOBAL_ADSENSE_DASHBOARD_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID,
-        "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
-        "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
-        "bing_site_verification": settings.BING_SITE_VERIFICATION,
-        "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
-    })
+    return templates.TemplateResponse(
+        request=request,
+        name="index.html",
+        context={
+            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+            "adsense_slot_id": settings.GLOBAL_ADSENSE_DASHBOARD_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID,
+            "require_custom_domain": settings.REQUIRE_CUSTOM_DOMAIN,
+            "google_site_verification": settings.GOOGLE_SITE_VERIFICATION,
+            "bing_site_verification": settings.BING_SITE_VERIFICATION,
+            "yandex_site_verification": settings.YANDEX_SITE_VERIFICATION,
+        },
+    )
 
 
 # Mount Routers

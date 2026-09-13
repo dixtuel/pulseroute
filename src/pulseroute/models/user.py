@@ -21,4 +21,6 @@ class User(Base):
     is_superuser: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    workspace_members: Mapped[List["WorkspaceMember"]] = relationship("WorkspaceMember", back_populates="user", cascade="all, delete-orphan")
+    workspace_members: Mapped[List["WorkspaceMember"]] = relationship(
+        "WorkspaceMember", back_populates="user", cascade="all, delete-orphan"
+    )

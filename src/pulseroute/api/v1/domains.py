@@ -41,7 +41,7 @@ async def add_custom_domain(
             db,
             domain_name=domain_in.domain,
             workspace_id=domain_in.workspace_id,
-            custom_not_found_url=domain_in.custom_not_found_url
+            custom_not_found_url=domain_in.custom_not_found_url,
         )
         dns_guide = DomainService.get_dns_instructions(domain.domain, domain.verification_code)
         return {

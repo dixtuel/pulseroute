@@ -12,9 +12,7 @@ if TYPE_CHECKING:
 
 class ClickEvent(Base):
     __tablename__ = "click_events"
-    __table_args__ = (
-        Index("ix_click_link_time", "link_id", "clicked_at"),
-    )
+    __table_args__ = (Index("ix_click_link_time", "link_id", "clicked_at"),)
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     link_id: Mapped[int] = mapped_column(ForeignKey("short_links.id", ondelete="CASCADE"), index=True)

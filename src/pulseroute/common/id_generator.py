@@ -10,6 +10,7 @@ class SnowflakeGenerator:
     - 10 bits: Machine/Node ID (0-1023)
     - 12 bits: Sequence counter (0-4095 per millisecond)
     """
+
     EPOCH = 1704067200000  # 2024-01-01 00:00:00 UTC
 
     def __init__(self, node_id: int = 1):
@@ -36,6 +37,7 @@ snowflake = SnowflakeGenerator(node_id=1)
 
 async def generate_unique_slug(redis_cli: aioredis.Redis | None = None, length: int = 6) -> str:
     from pulseroute.common.base62 import encode_base62
+
     if redis_cli:
         try:
             val = await redis_cli.incr("pulseroute:global:id_counter")

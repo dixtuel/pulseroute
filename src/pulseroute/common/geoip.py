@@ -1,5 +1,3 @@
-
-
 def lookup_ip_location(ip: str) -> tuple[str, str, str]:
     """
     Returns (country_code: str, country_name: str, city: str)

@@ -1,4 +1,3 @@
-
 import redis.asyncio as aioredis
 import structlog
 

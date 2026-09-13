@@ -72,7 +72,7 @@ async def login(
     if await BruteForceGuard.is_ip_jailed(redis_cli, client_ip):
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Too many failed login attempts. IP address temporarily blocked for 10 minutes."
+            detail="Too many failed login attempts. IP address temporarily blocked for 10 minutes.",
         )
 
     result = await db.execute(select(User).where(User.email == login_data.email))

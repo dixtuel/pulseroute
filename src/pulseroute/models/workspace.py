@@ -22,16 +22,24 @@ class Workspace(Base):
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
-    members: Mapped[List["WorkspaceMember"]] = relationship("WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan")
-    links: Mapped[List["ShortLink"]] = relationship("ShortLink", back_populates="workspace", cascade="all, delete-orphan")
-    domains: Mapped[List["CustomDomain"]] = relationship("CustomDomain", back_populates="workspace", cascade="all, delete-orphan")
+    members: Mapped[List["WorkspaceMember"]] = relationship(
+        "WorkspaceMember", back_populates="workspace", cascade="all, delete-orphan"
+    )
+    links: Mapped[List["ShortLink"]] = relationship(
+        "ShortLink", back_populates="workspace", cascade="all, delete-orphan"
+    )
+    domains: Mapped[List["CustomDomain"]] = relationship(
+        "CustomDomain", back_populates="workspace", cascade="all, delete-orphan"
+    )
 
 
 class WorkspaceMember(Base):
     __tablename__ = "workspace_members"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    workspace_id: Mapped[int] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True)
+    workspace_id: Mapped[int] = mapped_column(
+        ForeignKey("workspaces.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     role: Mapped[str] = mapped_column(String(20), default="member")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))

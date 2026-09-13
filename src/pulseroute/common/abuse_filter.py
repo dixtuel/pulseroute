@@ -7,9 +7,7 @@ BLOCKED_DOMAINS = {
     "login-verify-account-fake.com",
 }
 
-BLOCKED_EXTENSIONS = {
-    ".exe", ".bat", ".cmd", ".sh", ".scr", ".msi", ".apk", ".dmg", ".vbs"
-}
+BLOCKED_EXTENSIONS = {".exe", ".bat", ".cmd", ".sh", ".scr", ".msi", ".apk", ".dmg", ".vbs"}
 
 
 def is_url_safe(url: str) -> tuple[bool, str]:

@@ -4,14 +4,17 @@ from httpx import AsyncClient
 
 @pytest.mark.asyncio
 async def test_webhook_lifecycle(client: AsyncClient):
-    await client.post("/api/v1/auth/register", json={
-        "email": "webhookowner@company.com",
-        "password": "SecurePassword123!",
-        "full_name": "Webhook Owner",
-    })
-    login = await client.post("/api/v1/auth/login", json={
-        "email": "webhookowner@company.com", "password": "SecurePassword123!"
-    })
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "webhookowner@company.com",
+            "password": "SecurePassword123!",
+            "full_name": "Webhook Owner",
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": "webhookowner@company.com", "password": "SecurePassword123!"}
+    )
     token = login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -19,17 +22,21 @@ async def test_webhook_lifecycle(client: AsyncClient):
     workspace_id = ws_res.json()[0]["id"]
 
     # Unauthenticated webhook creation is rejected
-    anon_res = await client.post("/api/v1/webhooks", json={
-        "workspace_id": workspace_id, "url": "https://example.com/hook"
-    })
+    anon_res = await client.post(
+        "/api/v1/webhooks", json={"workspace_id": workspace_id, "url": "https://example.com/hook"}
+    )
     assert anon_res.status_code == 401
 
     # 1. Create webhook — secret is only ever returned here
-    res = await client.post("/api/v1/webhooks", json={
-        "workspace_id": workspace_id,
-        "url": "https://example.com/hook",
-        "events": "link.created,link.clicked",
-    }, headers=headers)
+    res = await client.post(
+        "/api/v1/webhooks",
+        json={
+            "workspace_id": workspace_id,
+            "url": "https://example.com/hook",
+            "events": "link.created,link.clicked",
+        },
+        headers=headers,
+    )
     assert res.status_code == 201
     data = res.json()
     assert data["url"] == "https://example.com/hook"
@@ -60,31 +67,42 @@ async def test_link_creation_dispatches_webhook(client: AsyncClient, monkeypatch
         return True
 
     from pulseroute.services import webhook_service
+
     monkeypatch.setattr(webhook_service.WebhookService, "dispatch_event", staticmethod(fake_dispatch_event))
 
-    await client.post("/api/v1/auth/register", json={
-        "email": "webhookfire@company.com",
-        "password": "SecurePassword123!",
-        "full_name": "Webhook Fire",
-    })
-    login = await client.post("/api/v1/auth/login", json={
-        "email": "webhookfire@company.com", "password": "SecurePassword123!"
-    })
+    await client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "webhookfire@company.com",
+            "password": "SecurePassword123!",
+            "full_name": "Webhook Fire",
+        },
+    )
+    login = await client.post(
+        "/api/v1/auth/login", json={"email": "webhookfire@company.com", "password": "SecurePassword123!"}
+    )
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     ws_res = await client.get("/api/v1/workspaces", headers=headers)
     workspace_id = ws_res.json()[0]["id"]
 
-    await client.post("/api/v1/webhooks", json={
-        "workspace_id": workspace_id, "url": "https://example.com/hook", "events": "link.created"
-    }, headers=headers)
+    await client.post(
+        "/api/v1/webhooks",
+        json={"workspace_id": workspace_id, "url": "https://example.com/hook", "events": "link.created"},
+        headers=headers,
+    )
 
-    res = await client.post("/api/v1/links", json={
-        "destination_url": "https://example.com/target",
-        "workspace_id": workspace_id,
-    }, headers=headers)
+    res = await client.post(
+        "/api/v1/links",
+        json={
+            "destination_url": "https://example.com/target",
+            "workspace_id": workspace_id,
+        },
+        headers=headers,
+    )
     assert res.status_code == 201
 
     import asyncio
+
     await asyncio.sleep(0.05)  # let the fire-and-forget task run
 
     assert len(dispatched) == 1

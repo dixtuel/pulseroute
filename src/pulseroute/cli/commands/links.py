@@ -20,6 +20,7 @@ def create(
     qr: bool = typer.Option(False, "--qr", help="Print ASCII QR Code to terminal"),
 ):
     """Create a new short link."""
+
     async def _run():
         await init_db()
         async with async_session_maker() as db:
@@ -43,6 +44,7 @@ def create(
 @links_app.command("list")
 def list_links(limit: int = typer.Option(20, "--limit", "-l")):
     """List short links."""
+
     async def _run():
         await init_db()
         async with async_session_maker() as db:

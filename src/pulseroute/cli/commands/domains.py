@@ -14,6 +14,7 @@ domains_app = typer.Typer(help="Manage and verify custom domains")
 @domains_app.command("add")
 def add_domain(domain: str = typer.Argument(..., help="Domain name e.g. links.mybrand.com")):
     """Add a custom domain."""
+
     async def _run():
         await init_db()
         async with async_session_maker() as db:
@@ -21,7 +22,9 @@ def add_domain(domain: str = typer.Argument(..., help="Domain name e.g. links.my
                 dom = await DomainService.add_custom_domain(db, domain)
                 console.print("[bold green]✔ Custom domain added![/bold green]")
                 console.print(f"Domain: [cyan]{dom.domain}[/cyan]")
-                console.print(f"DNS Challenge: [yellow]_pulseroute-challenge.{dom.domain} -> TXT '{dom.verification_code}'[/yellow]")
+                console.print(
+                    f"DNS Challenge: [yellow]_pulseroute-challenge.{dom.domain} -> TXT '{dom.verification_code}'[/yellow]"
+                )
             except Exception as e:
                 console.print(f"[bold red]Error:[/bold red] {e!s}")
 
@@ -31,6 +34,7 @@ def add_domain(domain: str = typer.Argument(..., help="Domain name e.g. links.my
 @domains_app.command("verify")
 def verify_domain(domain: str = typer.Argument(..., help="Domain name to verify")):
     """Run DNS verification check for a custom domain."""
+
     async def _run():
         await init_db()
         async with async_session_maker() as db:

@@ -13,6 +13,7 @@ analytics_app = typer.Typer(help="View visitor analytics")
 @analytics_app.command("summary")
 def summary(days: int = typer.Option(7, "--days", "-d")):
     """Show global traffic overview."""
+
     async def _run():
         await init_db()
         async with async_session_maker() as db:
