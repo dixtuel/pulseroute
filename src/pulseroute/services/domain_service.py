@@ -70,6 +70,14 @@ class DomainService:
         db.add(domain_obj)
         await db.commit()
         await db.refresh(domain_obj)
+
+        try:
+            from pulseroute.workers.dns_worker import notify_unverified_domains_changed
+
+            notify_unverified_domains_changed()
+        except Exception:
+            pass
+
         return domain_obj
 
     @staticmethod

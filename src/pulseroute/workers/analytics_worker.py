@@ -12,10 +12,25 @@ from pulseroute.services.webhook_service import WebhookService
 
 logger = structlog.get_logger()
 
+# Event triggered when a click event is published to Redis stream
+_new_click_event = asyncio.Event()
 
-async def run_analytics_batch_worker(batch_size: int = 100, interval_seconds: float = 2.0):
+
+def notify_click_event_published():
+    """Signals the analytics worker that a new click event was pushed to Redis."""
+    _new_click_event.set()
+
+
+async def run_analytics_batch_worker(
+    batch_size: int = 100,
+    interval_seconds: float = 2.0,
+    max_idle_seconds: float = 30.0,
+):
     """
     Consumes click events in batches from Redis Stream and persists them to Database.
+    Optimized for serverless Redis (Upstash request limits):
+    - Uses adaptive backoff when idle to avoid burning API requests/quotas.
+    - Wakes up immediately when notify_click_event_published() is called on incoming clicks.
     """
     redis_cli = await get_redis()
     if not redis_cli:
@@ -33,6 +48,8 @@ async def run_analytics_batch_worker(batch_size: int = 100, interval_seconds: fl
 
     logger.info("analytics_batch_worker_started", stream=stream_name)
 
+    current_idle = interval_seconds
+
     while True:
         try:
             entries = await redis_cli.xreadgroup(
@@ -44,8 +61,16 @@ async def run_analytics_batch_worker(batch_size: int = 100, interval_seconds: fl
             )
 
             if not entries:
-                await asyncio.sleep(interval_seconds)
+                _new_click_event.clear()
+                current_idle = min(current_idle * 2, max_idle_seconds)
+                try:
+                    await asyncio.wait_for(_new_click_event.wait(), timeout=current_idle)
+                except asyncio.TimeoutError:
+                    pass
                 continue
+
+            # Reset idle timeout when active traffic is detected
+            current_idle = interval_seconds
 
             events_to_insert = []
             link_click_counts = {}

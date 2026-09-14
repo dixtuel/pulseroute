@@ -3,6 +3,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy.pool import NullPool
 
 from pulseroute.core.config import settings
 
@@ -39,9 +40,16 @@ db_url = normalize_database_url(settings.DATABASE_URL)
 engine_kwargs = {"echo": settings.DEBUG}
 if db_url.startswith("sqlite"):
     engine_kwargs["connect_args"] = {"check_same_thread": False}
+elif "-pooler." in db_url or "neon.tech" in db_url:
+    # Serverless / Neon pooler: PgBouncer handles connection pooling at the infrastructure layer.
+    # Using NullPool prevents FastAPI from holding idle connections open,
+    # which allows Neon compute to cleanly scale to zero when idle and avoid compute exhaustion.
+    engine_kwargs["poolclass"] = NullPool
 else:
-    engine_kwargs["pool_size"] = 20
+    engine_kwargs["pool_size"] = 5
     engine_kwargs["max_overflow"] = 10
+    engine_kwargs["pool_pre_ping"] = True
+    engine_kwargs["pool_recycle"] = 300
 
 engine = create_async_engine(db_url, **engine_kwargs)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)

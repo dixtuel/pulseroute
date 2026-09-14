@@ -64,8 +64,20 @@ async def _domain_names(db: AsyncSession, domain_ids: set[int]) -> Dict[int, str
 
 
 @router.get("/stats/anonymous-count")
-async def anonymous_links_count(db: AsyncSession = Depends(get_db)):
+async def anonymous_links_count(
+    db: AsyncSession = Depends(get_db),
+    redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
+):
     """Public, aggregate-only stat: how many anonymous links were created in the last 24h."""
+    cache_key = "stats:anonymous_count_24h"
+    if redis_cli:
+        try:
+            cached = await redis_cli.get(cache_key)
+            if cached is not None:
+                return {"count": int(cached)}
+        except Exception:
+            pass
+
     since = datetime.now(UTC) - timedelta(hours=24)
     result = await db.execute(
         select(func.count(ShortLink.id)).where(
@@ -73,7 +85,15 @@ async def anonymous_links_count(db: AsyncSession = Depends(get_db)):
             ShortLink.created_at >= since,
         )
     )
-    return {"count": result.scalar() or 0}
+    count = result.scalar() or 0
+
+    if redis_cli:
+        try:
+            await redis_cli.set(cache_key, str(count), ex=120)
+        except Exception:
+            pass
+
+    return {"count": count}
 
 
 @router.post("", response_model=LinkResponse, status_code=status.HTTP_201_CREATED)
@@ -110,6 +130,11 @@ async def create_short_link(
 
     try:
         link = await LinkService.create_link(db, redis_cli, link_data, workspace_id=workspace_id)
+        if workspace_id is None and redis_cli:
+            try:
+                await redis_cli.delete("stats:anonymous_count_24h")
+            except Exception:
+                pass
         domain_name = await _domain_name(db, link.domain_id)
         return _serialize_link(link, request, domain_name)
     except ValueError as e:

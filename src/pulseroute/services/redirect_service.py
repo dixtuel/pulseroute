@@ -162,6 +162,12 @@ class RedirectService:
                     "timestamp": str(int(time.time())),
                 }
                 await redis_cli.xadd("pulseroute:events:clicks", event_payload, maxlen=100000)
+                try:
+                    from pulseroute.workers.analytics_worker import notify_click_event_published
+
+                    notify_click_event_published()
+                except Exception:
+                    pass
             except Exception:
                 pass
         else:
