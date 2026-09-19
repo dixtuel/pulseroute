@@ -7,6 +7,7 @@ local key = KEYS[1]
 local now = tonumber(ARGV[1])
 local window = tonumber(ARGV[2])
 local limit = tonumber(ARGV[3])
+local member = ARGV[4] or ARGV[1]
 
 -- Remove timestamps older than window
 redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
@@ -15,7 +16,7 @@ redis.call('ZREMRANGEBYSCORE', key, 0, now - window)
 local current_requests = redis.call('ZCARD', key)
 
 if current_requests < limit then
-    redis.call('ZADD', key, now, now)
+    redis.call('ZADD', key, now, member)
     redis.call('EXPIRE', key, window)
     return {1, limit - current_requests - 1}
 else
@@ -41,6 +42,7 @@ class SlidingWindowRateLimiter:
         now = time.time()
         if redis_cli:
             try:
+                unique_member = f"{now}:{time.time_ns() % 1000000}"
                 result = await redis_cli.eval(
                     LUA_SLIDING_WINDOW_RATE_LIMITER,
                     1,
@@ -48,6 +50,7 @@ class SlidingWindowRateLimiter:
                     str(now),
                     str(window_seconds),
                     str(limit),
+                    unique_member,
                 )
                 allowed = bool(result[0] == 1)
                 remaining = int(result[1])

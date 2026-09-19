@@ -89,3 +89,54 @@ async def test_analytics_worker_adaptive_idle_backoff():
             pass
 
     assert mock_redis.xreadgroup.called
+
+
+def test_l1_in_process_cache_and_invalidation():
+    """Test L1 in-process micro-cache hit, negative cache, and invalidation."""
+    from pulseroute.services.redirect_service import (
+        get_l1_cached_link,
+        invalidate_l1_cache,
+        set_l1_cached_link,
+    )
+
+    test_key = "link:default:opt-test-slug"
+    test_data = {"id": 999, "destination_url": "https://example.com"}
+
+    # Initially empty
+    hit, data = get_l1_cached_link(test_key)
+    assert not hit
+
+    # Set data
+    set_l1_cached_link(test_key, test_data, ttl=10.0)
+    hit, data = get_l1_cached_link(test_key)
+    assert hit
+    assert data["destination_url"] == "https://example.com"
+
+    # Invalidate
+    invalidate_l1_cache(None, "opt-test-slug")
+    hit, data = get_l1_cached_link(test_key)
+    assert not hit
+
+
+@pytest.mark.asyncio
+async def test_rate_limiter_unique_member():
+    """Test that rate limiter passes unique member to Lua script to avoid collisions."""
+    from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
+
+    mock_redis = AsyncMock()
+    mock_redis.eval.return_value = [1, 9]
+
+    allowed, remaining = await SlidingWindowRateLimiter.is_allowed(
+        mock_redis,
+        key="test_ip",
+        limit=10,
+        window_seconds=60,
+    )
+
+    assert allowed is True
+    assert remaining == 9
+    assert mock_redis.eval.called
+    # Verify 4th argument (unique member) was passed
+    call_args = mock_redis.eval.call_args[0]
+    assert len(call_args) >= 7  # script, numkeys, key, now, window, limit, unique_member
+

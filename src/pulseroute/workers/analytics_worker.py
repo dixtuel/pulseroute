@@ -24,12 +24,12 @@ def notify_click_event_published():
 async def run_analytics_batch_worker(
     batch_size: int = 100,
     interval_seconds: float = 2.0,
-    max_idle_seconds: float = 30.0,
+    max_idle_seconds: float = 60.0,
 ):
     """
     Consumes click events in batches from Redis Stream and persists them to Database.
     Optimized for serverless Redis (Upstash request limits):
-    - Uses adaptive backoff when idle to avoid burning API requests/quotas.
+    - Uses adaptive backoff up to 60s when idle to avoid burning API requests/quotas.
     - Wakes up immediately when notify_click_event_published() is called on incoming clicks.
     """
     redis_cli = await get_redis()
@@ -52,6 +52,7 @@ async def run_analytics_batch_worker(
 
     while True:
         try:
+            _new_click_event.clear()
             entries = await redis_cli.xreadgroup(
                 groupname=group_name,
                 consumername=consumer_name,
@@ -61,7 +62,6 @@ async def run_analytics_batch_worker(
             )
 
             if not entries:
-                _new_click_event.clear()
                 current_idle = min(current_idle * 2, max_idle_seconds)
                 try:
                     await asyncio.wait_for(_new_click_event.wait(), timeout=current_idle)

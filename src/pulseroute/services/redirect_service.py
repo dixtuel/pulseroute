@@ -22,7 +22,46 @@ def is_primary_domain(host: str) -> bool:
     return clean_host in (primary_host, "localhost", "127.0.0.1", "0.0.0.0", "testserver", "testclient")
 
 
+# L1 in-process micro-cache to eliminate Upstash command burnout during traffic spikes
+_l1_cache: dict[str, tuple[float, Optional[dict]]] = {}
+_L1_TTL = 5.0
+_L1_MAX_SIZE = 2000
+
+
+def get_l1_cached_link(key: str) -> tuple[bool, Optional[dict]]:
+    """Returns (is_cached: bool, link_data: Optional[dict])."""
+    item = _l1_cache.get(key)
+    if item:
+        exp, data = item
+        if time.time() < exp:
+            return True, data
+        _l1_cache.pop(key, None)
+    return False, None
+
+
+def set_l1_cached_link(key: str, data: Optional[dict], ttl: float = _L1_TTL) -> None:
+    if len(_l1_cache) > _L1_MAX_SIZE:
+        now = time.time()
+        expired = [k for k, (exp, _) in _l1_cache.items() if exp <= now]
+        for k in expired:
+            _l1_cache.pop(k, None)
+        if len(_l1_cache) > _L1_MAX_SIZE:
+            to_remove = list(_l1_cache.keys())[: _L1_MAX_SIZE // 5]
+            for k in to_remove:
+                _l1_cache.pop(k, None)
+    _l1_cache[key] = (time.time() + ttl, data)
+
+
+def invalidate_l1_cache(domain_name: Optional[str], slug: str) -> None:
+    key = f"link:{domain_name or 'default'}:{slug}"
+    _l1_cache.pop(key, None)
+
+
 class RedirectService:
+    @staticmethod
+    def invalidate_l1(domain_name: Optional[str], slug: str) -> None:
+        invalidate_l1_cache(domain_name, slug)
+
     @staticmethod
     async def resolve_and_track(
         db: AsyncSession,
@@ -46,18 +85,27 @@ class RedirectService:
         cache_key = f"link:{domain_name or 'default'}:{slug}"
         link_data = None
 
-        # 2. Check Redis Cache (Ultra-Fast Path)
-        if redis_cli:
+        # 2. Check L1 In-Process Micro-Cache First (0ms, 0 Upstash commands)
+        is_hit, l1_data = get_l1_cached_link(cache_key)
+        if is_hit:
+            if l1_data is None:
+                return None, 404, "Link not found", None
+            link_data = l1_data
+
+        # 3. Check Redis Cache (Ultra-Fast Path)
+        if not link_data and redis_cli:
             try:
                 cached_json = await redis_cli.get(cache_key)
                 if cached_json == "NULL":
+                    set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
                     return None, 404, "Link not found", None
                 if cached_json:
                     link_data = json.loads(cached_json)
+                    set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
             except Exception:
                 pass
 
-        # 3. Cache Miss: Fallback to Database
+        # 4. Cache Miss: Fallback to Database
         if not link_data:
             query = select(ShortLink).where(ShortLink.slug == slug)
             custom_domain_obj = None
@@ -77,6 +125,7 @@ class RedirectService:
             link = result.scalar_one_or_none()
 
             if not link:
+                set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
                 if redis_cli:
                     try:
                         await redis_cli.set(cache_key, "NULL", ex=settings.NEGATIVE_CACHE_TTL)
@@ -104,6 +153,7 @@ class RedirectService:
                 "expires_at": link.expires_at.isoformat() if link.expires_at else "",
             }
 
+            set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
             if redis_cli:
                 try:
                     await redis_cli.set(cache_key, json.dumps(link_data), ex=settings.CACHE_DEFAULT_TTL)
@@ -161,7 +211,7 @@ class RedirectService:
                     "is_bot": "1" if is_bot else "0",
                     "timestamp": str(int(time.time())),
                 }
-                await redis_cli.xadd("pulseroute:events:clicks", event_payload, maxlen=100000)
+                await redis_cli.xadd("pulseroute:events:clicks", event_payload, maxlen=2000, approximate=True)
                 try:
                     from pulseroute.workers.analytics_worker import notify_click_event_published
 

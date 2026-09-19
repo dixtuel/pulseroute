@@ -155,6 +155,13 @@ class LinkService:
         await db.refresh(link)
 
         # Invalidate / Refresh Cache
+        try:
+            from pulseroute.services.redirect_service import RedirectService
+
+            RedirectService.invalidate_l1(None, link.slug)
+        except Exception:
+            pass
+
         if redis_cli:
             try:
                 cache_key = LinkService._build_cache_key(None, link.slug)
@@ -227,6 +234,13 @@ class LinkService:
         link = await LinkService.get_link_by_id(db, link_id)
         if not link:
             return False
+
+        try:
+            from pulseroute.services.redirect_service import RedirectService
+
+            RedirectService.invalidate_l1(None, link.slug)
+        except Exception:
+            pass
 
         if redis_cli:
             try:
