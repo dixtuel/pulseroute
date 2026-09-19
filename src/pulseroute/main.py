@@ -9,6 +9,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
+from starlette.middleware.gzip import GZipMiddleware
 
 from pulseroute.api.internal.caddy import router as caddy_router
 from pulseroute.api.redirect import router as redirect_router
@@ -126,9 +127,20 @@ app = FastAPI(
     },
 )
 
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+class CachedStaticFiles(StaticFiles):
+    """StaticFiles with long-term Cache-Control headers for CDN and browser caching."""
 
-# Middleware
+    async def get_response(self, path: str, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=604800, stale-while-revalidate=86400"
+        return response
+
+
+app.mount("/static", CachedStaticFiles(directory=STATIC_DIR), name="static")
+
+# Middleware: GZip compresses responses > 500 bytes (saves Render 5GB free egress bandwidth)
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(
     CORSMiddleware,
@@ -205,10 +217,13 @@ async def get_ads_txt():
 
 @app.get("/robots.txt", response_class=PlainTextResponse, tags=["SEO"])
 async def get_robots_txt():
-    """Serves robots.txt dynamically with primary domain sitemap."""
+    """Serves robots.txt dynamically with primary domain sitemap and API protection."""
     domain = settings.PRIMARY_DOMAIN
     sitemap_url = f"https://{domain}/sitemap.xml" if domain else "/sitemap.xml"
-    return PlainTextResponse(content=f"User-agent: *\nAllow: /\n\nSitemap: {sitemap_url}\n", media_type="text/plain")
+    return PlainTextResponse(
+        content=f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /internal/\n\nSitemap: {sitemap_url}\n",
+        media_type="text/plain",
+    )
 
 
 @app.get("/sitemap.xml", tags=["SEO"])

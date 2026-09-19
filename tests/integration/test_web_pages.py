@@ -29,3 +29,23 @@ async def test_render_custom_404_html(client: AsyncClient):
     res_404 = await client.get("/not-found-xyz-abc", headers={"Accept": "text/html"})
     assert res_404.status_code == 404
     assert "Short Link Not Found" in res_404.text
+
+
+@pytest.mark.asyncio
+async def test_static_cache_control_and_gzip(client: AsyncClient):
+    # Test static asset caching headers
+    res_static = await client.get("/static/favicon.svg")
+    if res_static.status_code == 200:
+        assert "max-age=604800" in res_static.headers.get("cache-control", "")
+
+    # Test robots.txt API disallow
+    res_robots = await client.get("/robots.txt")
+    assert res_robots.status_code == 200
+    assert "Disallow: /api/" in res_robots.text
+    assert "Disallow: /internal/" in res_robots.text
+
+    # Test gzip compression
+    res_gzip = await client.get("/", headers={"Accept-Encoding": "gzip", "Accept": "text/html"})
+    assert res_gzip.status_code == 200
+    assert res_gzip.headers.get("content-encoding") == "gzip"
+
