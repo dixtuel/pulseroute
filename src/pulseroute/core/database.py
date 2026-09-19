@@ -36,21 +36,30 @@ def normalize_database_url(url: str) -> str:
 
 db_url = normalize_database_url(settings.DATABASE_URL)
 
-# Engine configuration
-engine_kwargs = {"echo": settings.DEBUG}
-if db_url.startswith("sqlite"):
-    engine_kwargs["connect_args"] = {"check_same_thread": False}
-elif "-pooler." in db_url or "neon.tech" in db_url:
-    # Serverless / Neon pooler: PgBouncer handles connection pooling at the infrastructure layer.
-    # Using NullPool prevents FastAPI from holding idle connections open,
-    # which allows Neon compute to cleanly scale to zero when idle and avoid compute exhaustion.
-    engine_kwargs["poolclass"] = NullPool
-else:
-    engine_kwargs["pool_size"] = 5
-    engine_kwargs["max_overflow"] = 10
-    engine_kwargs["pool_pre_ping"] = True
-    engine_kwargs["pool_recycle"] = 300
+def get_engine_kwargs(url: str) -> dict:
+    kwargs = {"echo": settings.DEBUG}
+    if url.startswith("sqlite"):
+        kwargs["connect_args"] = {"check_same_thread": False}
+    elif "-pooler." in url or "neon.tech" in url:
+        # Serverless / Neon pooler: PgBouncer handles connection pooling at the infrastructure layer (pool_mode=transaction).
+        # Using NullPool prevents FastAPI from holding idle connections open,
+        # which allows Neon compute to cleanly scale to zero when idle and avoid compute exhaustion.
+        # Prepared statement caching must be disabled (0) for PgBouncer transaction mode compatibility to avoid duplicate statement errors.
+        kwargs["poolclass"] = NullPool
+        kwargs["connect_args"] = {
+            "prepared_statement_cache_size": 0,
+            "statement_cache_size": 0,
+            "command_timeout": 30,
+        }
+    else:
+        kwargs["pool_size"] = 5
+        kwargs["max_overflow"] = 10
+        kwargs["pool_pre_ping"] = True
+        kwargs["pool_recycle"] = 280  # Under Neon 300s scale-to-zero inactivity timeout
+    return kwargs
 
+
+engine_kwargs = get_engine_kwargs(db_url)
 engine = create_async_engine(db_url, **engine_kwargs)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 

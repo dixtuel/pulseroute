@@ -2,7 +2,9 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from sqlalchemy.pool import NullPool
 
+from pulseroute.core.database import get_engine_kwargs
 from pulseroute.workers.analytics_worker import (
     _new_click_event,
     notify_click_event_published,
@@ -16,9 +18,25 @@ from pulseroute.workers.dns_worker import (
 
 
 def test_neon_nullpool_selection():
-    """Verify that Neon/pooler connection strings trigger NullPool for scale-to-zero."""
+    """Verify that Neon/pooler connection strings trigger NullPool and statement cache disabling for scale-to-zero."""
     neon_url = "postgresql+asyncpg://user:pass@ep-misty-forest-pooler.neon.tech/db"
-    assert "-pooler." in neon_url or "neon.tech" in neon_url
+    kwargs = get_engine_kwargs(neon_url)
+    assert kwargs.get("poolclass") is NullPool
+    connect_args = kwargs.get("connect_args", {})
+    assert connect_args.get("prepared_statement_cache_size") == 0
+    assert connect_args.get("statement_cache_size") == 0
+    assert connect_args.get("command_timeout") == 30
+
+    # Test non-pooler standard postgres (scale-to-zero friendly recycling)
+    pg_url = "postgresql+asyncpg://user:pass@pg.example.com/db"
+    pg_kwargs = get_engine_kwargs(pg_url)
+    assert pg_kwargs.get("pool_recycle") == 280
+    assert pg_kwargs.get("pool_pre_ping") is True
+
+    # Test SQLite
+    sqlite_url = "sqlite+aiosqlite:///./data/test.db"
+    sqlite_kwargs = get_engine_kwargs(sqlite_url)
+    assert sqlite_kwargs.get("connect_args") == {"check_same_thread": False}
 
 
 def test_dns_worker_event_notification():
