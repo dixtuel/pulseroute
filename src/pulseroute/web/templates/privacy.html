@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
-    <title>Privacy Policy & KVKK / GDPR Notice | PulseRoute</title>
-    <meta name="description" content="How this PulseRoute instance handles account, link, and click data.">
+    <title>Privacy Policy &amp; KVKK / GDPR Notice | PulseRoute</title>
+    <meta name="description" content="User-focused privacy notice, cookieless redirection, IP anonymization, and KVKK/GDPR compliance on PulseRoute.">
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -58,58 +58,79 @@
 <body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
     <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
         <div class="border-b border-divider pb-4">
-            <h1 class="text-xl font-display font-bold text-white tracking-tight">Privacy Policy & KVKK / GDPR Notice</h1>
-            <p class="text-xs text-slate-500 font-mono mt-1">LAST REVIEWED FOR THIS CODEBASE • 2026-08-22</p>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">KVKK &amp; GDPR Transparency</span>
+                <span class="text-xs text-slate-500 font-mono">COOKIELess REDIRECT</span>
+            </div>
+            <h1 class="text-2xl font-display font-bold text-white tracking-tight">Privacy Policy &amp; Data Notice</h1>
+            <p class="text-xs text-slate-400 mt-1">Honest, user-centric explanation of what data is processed, how IP addresses are masked, and how your privacy is protected.</p>
         </div>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">1. Scope & Data Controller</h2>
-            <p>PulseRoute is self-hosted, open-source software (MIT License). This notice describes how the PulseRoute application itself handles data at the code level; the operator running this specific instance
+            <h2 class="text-sm font-display font-bold text-white">1. Scope &amp; Data Controller</h2>
+            <p>PulseRoute is open-source link-shortening software built with privacy as a foundational principle. This document outlines data handling at both the application and infrastructure level. The operator of this instance acts as the data controller under the Turkish Personal Data Protection Law (KVKK No. 6698) and the European General Data Protection Regulation (GDPR):</p>
+            <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300">
                 {% if operator_contact_codes %}
-                — reachable at <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
+                Data Controller Contact: <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
                 {% else %}
-                — reachable at <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
+                Data Controller Contact: <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
                 {% endif %}
-                — is the data controller for any personal data processed here, not the PulseRoute project.</p>
+            </div>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">2. Account Data & Passwords</h2>
-            <p>Registering an account stores your e-mail address, optional display name, and a password hash. Passwords are hashed with bcrypt (one-way, salted) before storage — the plaintext password is never written to disk and cannot be recovered or "decrypted" by anyone, including the operator; a forgotten password can only be reset, not retrieved.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">3. Workspace & Link Data Isolation</h2>
-            <p>Every account gets its own workspace on signup; there is no shared workspace between users. Links, click analytics, and custom domains are only visible to, and only manageable by, members of the workspace that owns them — every relevant API endpoint verifies workspace membership before returning or changing data. Links created without an account are not attached to any workspace, expire automatically after 24 hours, and cannot be edited or deleted by anyone (including the person who created them) through the API.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">4. IP Address Anonymization & Cookieless Tracking</h2>
-            <p>Raw visitor IP addresses are never committed to permanent storage. Incoming addresses are masked before persistence by truncating the final octet (IPv4 /24) or the trailing bits (IPv6 /48). Click telemetry (device, browser, referrer, approximate geography) is derived from standard HTTP headers and the masked IP only — no tracking cookies are set by the redirect engine.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">5. Application-Level Security Measures</h2>
-            <ul class="list-disc list-inside space-y-1">
-                <li><strong>SQL injection:</strong> all database access goes through a parameterized async ORM (SQLAlchemy) — no raw string-built SQL.</li>
-                <li><strong>Brute-force protection:</strong> repeated failed logins from the same IP trigger a 10-minute lockout after 10 attempts.</li>
-                <li><strong>Abusive traffic / basic DDoS mitigation:</strong> link creation and other write endpoints are rate-limited per IP (sliding-window). This reduces application-layer abuse but is not a substitute for network-level DDoS protection — operators exposed to volumetric attacks should place a CDN/WAF in front of their deployment.</li>
-                <li><strong>Malicious destination filtering:</strong> known phishing/malware domains and executable file extensions are rejected at link-creation time.</li>
+            <h2 class="text-sm font-display font-bold text-white">2. Privacy for Short Link Visitors (Cookieless &amp; Masked IPs)</h2>
+            <p>When you click on a PulseRoute short link, our highest priority is protecting your identity:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
+                <li><strong>No Raw IP Storage:</strong> Your full IP address is never committed to permanent storage or databases. Incoming addresses are immediately anonymized by truncating the final octet for IPv4 (subnet <code class="text-amber-400">/24</code>, e.g. <code class="text-amber-400">198.51.100.45</code> becomes <code class="text-amber-400">198.51.100.0</code>) or trailing bits for IPv6 (<code class="text-amber-400">/48</code>).</li>
+                <li><strong>Zero Tracking Cookies on Redirects:</strong> The link redirection engine sets absolutely no tracking cookies, behavioral beacons, or persistent advertising fingerprints on your browser.</li>
+                <li><strong>Aggregated Click Analytics:</strong> We record solely high-level telemetry (approximate country and city derived in-memory from the masked IP, device type, and referring website) to display aggregate visit graphs to the link creator.</li>
             </ul>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">6. Your Rights & Data Removal</h2>
-            <p>Under GDPR and KVKK (Law No. 6698) you may request access to, correction of, or erasure of your account data by contacting the instance operator above. Deleting an account removes its workspace and every link, domain, and click record that belongs to it.</p>
+            <h2 class="text-sm font-display font-bold text-white">3. Account Holders &amp; Workspace Isolation</h2>
+            <p>For users who choose to register an account:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
+                <li><strong>Account Credentials:</strong> We store your email address and optional display name. Passwords are salted and hashed with <strong>bcrypt</strong> (one-way encryption). Plaintext passwords are never stored and cannot be viewed or decrypted by anyone, including the instance operator.</li>
+                <li><strong>Strict Workspace Isolation:</strong> Every account is assigned an isolated workspace. Your shortened links, custom domain DNS records, and analytics streams are never accessible to other accounts.</li>
+                <li><strong>Anonymous Links:</strong> Links created without creating an account expire automatically after 24 hours (TTL) and are permanently purged without retaining owner records.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">4. Advertising &amp; Cookie Consent (Google AdSense)</h2>
+            <p>This instance utilizes Google AdSense to support server hosting expenses:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
+                <li>Ad units may appear on the bottom of the management console and on optional countdown interstitial redirect pages.</li>
+                <li><strong>Consent-Gated Cookies:</strong> Personalized ad cookies and third-party advertising scripts are <strong>never loaded</strong> unless you grant explicit consent through the on-screen cookie notice. If you decline or ignore the banner, only non-personalized, privacy-safe advertisements (or none) will be served.</li>
+                <li>Your consent preferences (<code>pr_pref</code>) are stored locally in an encrypted, minimal format.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">5. Security Measures &amp; Field Encryption</h2>
+            <p>PulseRoute is engineered according to modern security best practices:</p>
+            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
+                <li><strong>SQL Injection Prevention:</strong> All database operations execute through parameterized asynchronous ORM queries (SQLAlchemy).</li>
+                <li><strong>Brute-Force Lockout:</strong> Repeated failed login attempts trigger an automated 10-minute IP block to prevent credential stuffing.</li>
+                <li><strong>Webhook Encryption:</strong> Sensitive integration tokens and webhook secrets are encrypted at rest using <strong>Fernet (AES-128-CBC + HMAC)</strong>.</li>
+            </ul>
+        </section>
+
+        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
+            <h2 class="text-sm font-display font-bold text-white">6. Your Rights &amp; Data Erasure (KVKK &amp; GDPR)</h2>
+            <p>Under KVKK (Article 11) and GDPR (Articles 12–23), you hold the right to access, rectify, or request the complete erasure of your personal data.</p>
+            <p>When you request account deletion, your entire workspace—including all shortened links, tags, custom domain associations, and corresponding click statistics—is <strong>permanently and irreversibly deleted</strong> from the database. To exercise your rights, please reach out via the operator contact above.</p>
         </section>
 
         <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
             <div class="flex items-center gap-3">
-                <a href="/terms" class="hover:text-amber-400 transition">Terms</a>
+                <a href="/terms" class="hover:text-amber-400 transition">Terms of Service</a>
                 <span>•</span>
                 <a href="/accessibility" class="hover:text-amber-400 transition">Accessibility</a>
             </div>
-            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console</a>
+            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console →</a>
         </div>
     </div>
     <script src="/static/js/identity-guard.js"></script>

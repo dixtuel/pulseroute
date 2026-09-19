@@ -303,8 +303,16 @@ async def render_privacy(request: Request):
 
 @app.get("/terms", response_class=HTMLResponse, tags=["Legal"])
 async def render_terms(request: Request):
+    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
+    contact_codes = [ord(c) for c in contact_email] if contact_email else None
     return templates.TemplateResponse(
-        request=request, name="terms.html", context={"adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID}
+        request=request,
+        name="terms.html",
+        context={
+            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+            "operator_contact_codes": contact_codes,
+            "primary_domain": settings.PRIMARY_DOMAIN,
+        },
     )
 
 
