@@ -288,7 +288,7 @@ async def render_dashboard(request: Request):
 
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
-    contact_email = settings.OPERATOR_CONTACT_EMAIL or "asrinklcc@dixtuel.tr"
+    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
     contact_codes = [ord(c) for c in contact_email] if contact_email else None
     return templates.TemplateResponse(
         request=request,
@@ -310,7 +310,7 @@ async def render_terms(request: Request):
 
 @app.get("/accessibility", response_class=HTMLResponse, tags=["Legal"])
 async def render_accessibility(request: Request):
-    contact_email = settings.OPERATOR_CONTACT_EMAIL or "asrinklcc@dixtuel.tr"
+    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
     contact_codes = [ord(c) for c in contact_email] if contact_email else None
     return templates.TemplateResponse(
         request=request,

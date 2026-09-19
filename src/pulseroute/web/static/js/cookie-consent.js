@@ -1,20 +1,63 @@
 (function () {
   var KEY = "pulseroute-cookie-consent";
+  var COOKIE_NAME = "pr_pref";
 
-  function getStatus() {
-    try {
-      return localStorage.getItem(KEY);
-    } catch (e) {
-      return null;
-    }
+  function getPerf() {
+    return typeof window !== "undefined" ? window.ClientPerf : null;
   }
 
-  function setStatus(value) {
-    try {
-      localStorage.setItem(KEY, value);
-    } catch (e) {
-      /* private mode / storage disabled — banner just won't persist */
+  function getProfile() {
+    var perf = getPerf();
+    return perf ? perf.ClientProfiler.profile() : { tier: "high" };
+  }
+
+  function getSavedData() {
+    var perf = getPerf();
+    if (perf) {
+      var decrypted = perf.ClientPref.load(COOKIE_NAME);
+      if (decrypted) return decrypted;
     }
+    try {
+      var ls = localStorage.getItem(KEY);
+      if (ls) return { c: ls === "accepted" ? 1 : 0 };
+    } catch (e) {}
+    return null;
+  }
+
+  function getStatus() {
+    var data = getSavedData();
+    if (!data) return null;
+    return data.c === 1 ? "accepted" : "rejected";
+  }
+
+  function isLowMode() {
+    var data = getSavedData();
+    if (data && data.l !== undefined) {
+      return data.l === 1;
+    }
+    return getProfile().tier === "low";
+  }
+
+  function savePreferences(status, lowMode) {
+    var perf = getPerf();
+    var profile = getProfile();
+    var isLow = lowMode !== undefined ? !!lowMode : isLowMode();
+    var consentVal = status === "accepted" ? 1 : 0;
+
+    var payload = {
+      c: consentVal,
+      l: isLow ? 1 : 0,
+      w: profile.isWebView ? 1 : 0,
+      t: Math.floor(Date.now() / 1000)
+    };
+
+    if (perf) {
+      perf.ClientPref.save(COOKIE_NAME, payload);
+      perf.ClientPref.applyLowModeClass(isLow);
+    }
+    try {
+      localStorage.setItem(KEY, status);
+    } catch (e) {}
   }
 
   window.PulseRouteConsent = {
@@ -22,6 +65,13 @@
     isAccepted: function () {
       return getStatus() === "accepted";
     },
+    isLowMode: isLowMode,
+    toggleLowMode: function () {
+      var next = !isLowMode();
+      savePreferences(getStatus() || "accepted", next);
+      return next;
+    },
+    getProfile: getProfile
   };
 
   function pushPendingAds() {
@@ -37,17 +87,23 @@
   }
 
   function accept() {
-    setStatus("accepted");
+    savePreferences("accepted", isLowMode());
     hideBanner();
     pushPendingAds();
   }
 
   function reject() {
-    setStatus("rejected");
+    savePreferences("rejected", isLowMode());
     hideBanner();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
+    var perf = getPerf();
+    var low = isLowMode();
+    if (perf) {
+      perf.ClientPref.applyLowModeClass(low);
+    }
+
     var status = getStatus();
     if (status === "accepted") {
       pushPendingAds();
