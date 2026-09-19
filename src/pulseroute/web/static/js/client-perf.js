@@ -1,14 +1,19 @@
 /**
- * client-perf.js — Adaptive Performance, Profiler & Compact Cookie Engine
- * Provides:
- *  - CompactCookie: Symmetric authenticated stream cipher for cookies (v1_<iv>_<cipher>_<tag>)
- *  - ClientProfiler: Device, WebView (Android/iOS), Save-Data, battery and network capability profiling
- *  - ClientPref: Low-mode & consent management across localStorage & encrypted cookies
+ * client-perf.js — Real-Time Adaptive Performance, Hardware Profiler & Compact Cookie Engine
+ *
+ * Architecture:
+ * 1. CompactCookie: Compact authenticated symmetric stream cipher for session/consent cookies.
+ *    (Cookies do NOT store transient hardware/battery states. Cookies are strictly for site/user preferences).
+ * 2. DynamicPerfMonitor: Truly reactive real-time monitor for hardware, battery saver, Save-Data,
+ *    network changes, old WebView engines and runtime frame drops. Dispatches dynamic events when
+ *    device conditions change (e.g. charging plugged in/unplugged, battery drops, user toggles Data Saver).
  */
 (function (global) {
   "use strict";
 
-  // --- 1. Pure JS SHA-256 & HMAC-SHA256 (Zero dependencies, cross-browser/webview) ---
+  // =========================================================================
+  // 1. PURE JS SHA-256 & HMAC-SHA256 (Zero-dep, Works across ancient WebViews)
+  // =========================================================================
   var K = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -179,74 +184,210 @@
     }
   };
 
-  // --- 2. Client & WebView Profiler ---
-  var ClientProfiler = {
-    profile: function () {
-      var nav = typeof navigator !== 'undefined' ? navigator : {};
-      var ua = nav.userAgent || '';
-      var reasons = [];
+  // =========================================================================
+  // 2. DYNAMIC REAL-TIME PERFORMANCE & ENVIRONMENT MONITOR
+  // =========================================================================
+  var nav = typeof navigator !== 'undefined' ? navigator : {};
+  var ua = nav.userAgent || '';
 
-      // 1. WebView Detection
-      var isAndroidWebView = /Version\/[\d.]+.*Chrome\/[\d.]+/i.test(ua) || /\bwv\b/i.test(ua);
-      var isIosWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua) ||
-        /FBAN|FBAV|Instagram|Twitter|Line|Snapchat/i.test(ua);
-      var isWebView = isAndroidWebView || isIosWebView;
-      if (isWebView) reasons.push('webview');
+  // Static Browser / Engine Analysis (computed once at boot)
+  var isAndroidWebView = /Version\/[\d.]+.*Chrome\/[\d.]+/i.test(ua) || /\bwv\b/i.test(ua);
+  var isIosWebView = /(iPhone|iPod|iPad).*AppleWebKit(?!.*Safari)/i.test(ua) ||
+    /FBAN|FBAV|Instagram|Twitter|Line|Snapchat/i.test(ua);
+  var isWebView = isAndroidWebView || isIosWebView;
 
-      // 2. Browser / Engine Versions
-      var chromeMatch = ua.match(/Chrome\/(\d+)/i);
-      var chromeVer = chromeMatch ? parseInt(chromeMatch[1], 10) : null;
-      var androidMatch = ua.match(/Android\s+([\d.]+)/i);
-      var androidVer = androidMatch ? parseFloat(androidMatch[1]) : null;
-      var isOldWebView = false;
-      if (chromeVer && chromeVer < 90) {
-        isOldWebView = true;
-        reasons.push('old_chromium_' + chromeVer);
-      }
-      if (androidVer && androidVer <= 8) {
-        isOldWebView = true;
-        reasons.push('old_android_' + androidVer);
-      }
+  var chromeMatch = ua.match(/Chrome\/(\d+)/i);
+  var chromeVer = chromeMatch ? parseInt(chromeMatch[1], 10) : null;
+  var androidMatch = ua.match(/Android\s+([\d.]+)/i);
+  var androidVer = androidMatch ? parseFloat(androidMatch[1]) : null;
+  var isOldWebView = (chromeVer !== null && chromeVer < 90) || (androidVer !== null && androidVer <= 8);
 
-      // 3. Hardware & Concurrency
-      var cores = nav.hardwareConcurrency || 4;
-      var mem = nav.deviceMemory || 4;
-      var isLowHardware = cores <= 2 || mem <= 2;
-      if (cores <= 2) reasons.push('cpu_cores_' + cores);
-      if (mem <= 2) reasons.push('ram_gb_' + mem);
+  var cores = nav.hardwareConcurrency || 4;
+  var mem = nav.deviceMemory || 4;
+  var isLowHardware = cores <= 2 || mem <= 2;
 
-      // 4. Network & Save Data
-      var conn = nav.connection || nav.mozConnection || nav.webkitConnection || {};
-      var isSaveData = conn.saveData === true;
-      var isSlowNet = conn.effectiveType === 'slow-2g' || conn.effectiveType === '2g' || conn.effectiveType === '3g';
-      if (isSaveData) reasons.push('save_data');
-      if (isSlowNet) reasons.push('slow_network_' + conn.effectiveType);
-
-      // 5. Reduced Motion
-      var prefersReducedMotion = false;
-      if (typeof window !== 'undefined' && window.matchMedia) {
-        prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-      }
-      if (prefersReducedMotion) reasons.push('reduced_motion');
-
-      var isLowTier = isOldWebView || isLowHardware || isSaveData || isSlowNet || prefersReducedMotion;
-
-      return {
-        isWebView: isWebView,
-        isOldWebView: isOldWebView,
-        isSaveData: isSaveData,
-        isSlowNet: isSlowNet,
-        isLowHardware: isLowHardware,
-        prefersReducedMotion: prefersReducedMotion,
-        tier: isLowTier ? 'low' : 'high',
-        reasons: reasons,
-        dprCap: isLowTier ? 1 : (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1),
-        fpsTarget: isLowTier ? 30 : 60
-      };
-    }
+  // Dynamic Runtime State (changes dynamically over time without page reload)
+  var dynamicState = {
+    batteryCharging: true,
+    batteryLevel: 1.0,
+    isLowBattery: false,
+    saveData: false,
+    effectiveType: '4g',
+    isSlowNet: false,
+    reducedMotion: false,
+    isStruggling: false, // Frame-drop indicator
+    userOverride: null   // 'force_low' | 'force_high' | null
   };
 
-  // --- 3. Persistent Preference Manager ---
+  var listeners = [];
+
+  function getState() {
+    var reasons = [];
+    if (isWebView) reasons.push('webview');
+    if (isOldWebView) reasons.push('old_webview');
+    if (isLowHardware) reasons.push('low_hardware');
+    if (dynamicState.isLowBattery) reasons.push('low_battery_' + Math.round(dynamicState.batteryLevel * 100) + '%');
+    if (dynamicState.saveData) reasons.push('save_data');
+    if (dynamicState.isSlowNet) reasons.push('slow_net_' + dynamicState.effectiveType);
+    if (dynamicState.reducedMotion) reasons.push('reduced_motion');
+    if (dynamicState.isStruggling) reasons.push('frame_drops');
+
+    var autoLow = isOldWebView || isLowHardware || dynamicState.isLowBattery ||
+                  dynamicState.saveData || dynamicState.isSlowNet ||
+                  dynamicState.reducedMotion || dynamicState.isStruggling;
+
+    var effectiveLow = autoLow;
+    if (dynamicState.userOverride === 'force_low') effectiveLow = true;
+    if (dynamicState.userOverride === 'force_high') effectiveLow = false;
+
+    return {
+      isLowMode: effectiveLow,
+      isAutoLow: autoLow,
+      userOverride: dynamicState.userOverride,
+      isWebView: isWebView,
+      isOldWebView: isOldWebView,
+      isLowHardware: isLowHardware,
+      battery: {
+        charging: dynamicState.batteryCharging,
+        level: dynamicState.batteryLevel,
+        isLow: dynamicState.isLowBattery
+      },
+      network: {
+        saveData: dynamicState.saveData,
+        effectiveType: dynamicState.effectiveType,
+        isSlow: dynamicState.isSlowNet
+      },
+      isStruggling: dynamicState.isStruggling,
+      dprCap: effectiveLow ? 1 : (typeof window !== 'undefined' ? Math.min(window.devicePixelRatio || 1, 2) : 1),
+      fpsTarget: effectiveLow ? 30 : 60,
+      reasons: reasons
+    };
+  }
+
+  function notify() {
+    var s = getState();
+    if (typeof document !== 'undefined' && document.documentElement) {
+      if (s.isLowMode) {
+        document.documentElement.classList.add('low-mode');
+      } else {
+        document.documentElement.classList.remove('low-mode');
+      }
+    }
+    for (var i = 0; i < listeners.length; i++) {
+      try {
+        listeners[i](s);
+      } catch (e) {
+        console.error('Perf listener error:', e);
+      }
+    }
+    if (typeof window !== 'undefined' && window.dispatchEvent && typeof CustomEvent !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('perfstatechange', { detail: s }));
+    }
+  }
+
+  // --- Real-Time Battery Monitoring ---
+  if (typeof navigator !== 'undefined' && navigator.getBattery) {
+    navigator.getBattery().then(function (battery) {
+      function updateBattery() {
+        dynamicState.batteryCharging = battery.charging;
+        dynamicState.batteryLevel = battery.level;
+        // Low battery condition: Unplugged AND level <= 20%
+        dynamicState.isLowBattery = (!battery.charging && battery.level <= 0.20);
+        notify();
+      }
+      battery.addEventListener('chargingchange', updateBattery);
+      battery.addEventListener('levelchange', updateBattery);
+      updateBattery();
+    }).catch(function () {});
+  }
+
+  // --- Real-Time Network / Save-Data Monitoring ---
+  var conn = nav.connection || nav.mozConnection || nav.webkitConnection;
+  if (conn) {
+    function updateConn() {
+      dynamicState.saveData = conn.saveData === true;
+      dynamicState.effectiveType = conn.effectiveType || '4g';
+      dynamicState.isSlowNet = ['slow-2g', '2g', '3g'].indexOf(dynamicState.effectiveType) !== -1;
+      notify();
+    }
+    if (conn.addEventListener) {
+      conn.addEventListener('change', updateConn);
+    }
+    updateConn();
+  }
+
+  // --- Real-Time Reduced Motion Monitoring ---
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    var mql = window.matchMedia('(prefers-reduced-motion: reduce)');
+    dynamicState.reducedMotion = mql.matches;
+    function updateMotion(e) {
+      dynamicState.reducedMotion = e.matches;
+      notify();
+    }
+    if (mql.addEventListener) {
+      mql.addEventListener('change', updateMotion);
+    } else if (mql.addListener) {
+      mql.addListener(updateMotion);
+    }
+  }
+
+  // --- Frame-Drop Dynamic Watcher ---
+  // Call `ClientPerf.recordFrame(deltaMs)` inside requestAnimationFrame
+  var slowFrameCounter = 0;
+  function recordFrame(deltaMs) {
+    if (deltaMs > 45) { // Frame took > 45ms (< 22 FPS)
+      slowFrameCounter++;
+      if (slowFrameCounter > 25 && !dynamicState.isStruggling) {
+        dynamicState.isStruggling = true;
+        notify();
+      }
+    } else {
+      if (slowFrameCounter > 0) slowFrameCounter--;
+      if (slowFrameCounter === 0 && dynamicState.isStruggling) {
+        dynamicState.isStruggling = false;
+        notify();
+      }
+    }
+  }
+
+  // Check saved manual override in localStorage (optional client-side only preference)
+  if (typeof localStorage !== 'undefined') {
+    try {
+      var savedOverride = localStorage.getItem('perf_mode_override');
+      if (savedOverride === 'force_low' || savedOverride === 'force_high') {
+        dynamicState.userOverride = savedOverride;
+      }
+    } catch (e) {}
+  }
+
+  function setOverride(mode) {
+    // mode: 'force_low' | 'force_high' | 'auto'
+    if (mode === 'force_low' || mode === 'force_high') {
+      dynamicState.userOverride = mode;
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.setItem('perf_mode_override', mode); } catch (e) {}
+      }
+    } else {
+      dynamicState.userOverride = null;
+      if (typeof localStorage !== 'undefined') {
+        try { localStorage.removeItem('perf_mode_override'); } catch (e) {}
+      }
+    }
+    notify();
+  }
+
+  function subscribe(fn) {
+    listeners.push(fn);
+    fn(getState());
+    return function unsubscribe() {
+      var idx = listeners.indexOf(fn);
+      if (idx !== -1) listeners.splice(idx, 1);
+    };
+  }
+
+  // =========================================================================
+  // 3. COOKIE & CONSENT MANAGER (Cookie = Permanent User/Session Data Only)
+  // =========================================================================
   var ClientPref = {
     getCookie: function (name) {
       if (typeof document === 'undefined') return null;
@@ -267,7 +408,6 @@
     },
 
     load: function (cookieName, secret) {
-      cookieName = cookieName || "sely_pref";
       var raw = this.getCookie(cookieName);
       var data = raw ? CompactCookie.decrypt(raw, secret) : null;
       if (!data && typeof localStorage !== 'undefined') {
@@ -280,7 +420,6 @@
     },
 
     save: function (cookieName, data, secret) {
-      cookieName = cookieName || "sely_pref";
       data.t = Math.floor(Date.now() / 1000);
       var encrypted = CompactCookie.encrypt(data, secret);
       this.setCookie(cookieName, encrypted, 365);
@@ -290,22 +429,22 @@
         } catch (e) {}
       }
       return encrypted;
-    },
-
-    applyLowModeClass: function (isLow) {
-      if (typeof document !== 'undefined' && document.documentElement) {
-        if (isLow) {
-          document.documentElement.classList.add('low-mode');
-        } else {
-          document.documentElement.classList.remove('low-mode');
-        }
-      }
     }
   };
 
+  // Initial class application
+  if (typeof document !== 'undefined' && document.documentElement) {
+    if (getState().isLowMode) {
+      document.documentElement.classList.add('low-mode');
+    }
+  }
+
   var ClientPerf = {
     CompactCookie: CompactCookie,
-    ClientProfiler: ClientProfiler,
+    getState: getState,
+    setOverride: setOverride,
+    subscribe: subscribe,
+    recordFrame: recordFrame,
     ClientPref: ClientPref
   };
 

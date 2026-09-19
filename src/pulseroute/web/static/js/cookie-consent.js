@@ -31,29 +31,22 @@
   }
 
   function isLowMode() {
-    var data = getSavedData();
-    if (data && data.l !== undefined) {
-      return data.l === 1;
-    }
-    return getProfile().tier === "low";
+    var perf = getPerf();
+    return perf ? perf.getState().isLowMode : false;
   }
 
-  function savePreferences(status, lowMode) {
+  function saveConsent(status) {
     var perf = getPerf();
-    var profile = getProfile();
-    var isLow = lowMode !== undefined ? !!lowMode : isLowMode();
     var consentVal = status === "accepted" ? 1 : 0;
 
+    // Cookie ONLY stores persistent site consent & timestamp, NEVER transient battery/network states!
     var payload = {
       c: consentVal,
-      l: isLow ? 1 : 0,
-      w: profile.isWebView ? 1 : 0,
       t: Math.floor(Date.now() / 1000)
     };
 
     if (perf) {
       perf.ClientPref.save(COOKIE_NAME, payload);
-      perf.ClientPref.applyLowModeClass(isLow);
     }
     try {
       localStorage.setItem(KEY, status);
@@ -67,11 +60,18 @@
     },
     isLowMode: isLowMode,
     toggleLowMode: function () {
-      var next = !isLowMode();
-      savePreferences(getStatus() || "accepted", next);
-      return next;
+      var perf = getPerf();
+      if (perf) {
+        var cur = perf.getState().isLowMode;
+        perf.setOverride(cur ? "force_high" : "force_low");
+        return !cur;
+      }
+      return false;
     },
-    getProfile: getProfile
+    getProfile: function () {
+      var perf = getPerf();
+      return perf ? perf.getState() : {};
+    }
   };
 
   function pushPendingAds() {
@@ -87,23 +87,17 @@
   }
 
   function accept() {
-    savePreferences("accepted", isLowMode());
+    saveConsent("accepted");
     hideBanner();
     pushPendingAds();
   }
 
   function reject() {
-    savePreferences("rejected", isLowMode());
+    saveConsent("rejected");
     hideBanner();
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    var perf = getPerf();
-    var low = isLowMode();
-    if (perf) {
-      perf.ClientPref.applyLowModeClass(low);
-    }
-
     var status = getStatus();
     if (status === "accepted") {
       pushPendingAds();
