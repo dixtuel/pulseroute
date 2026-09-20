@@ -1,8 +1,7 @@
-import pytest
 from pulseroute.common.encryption import (
-    encrypt_compact_cookie,
-    decrypt_compact_cookie,
     DEFAULT_COOKIE_SECRET,
+    decrypt_compact_cookie,
+    encrypt_compact_cookie,
 )
 
 
