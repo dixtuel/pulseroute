@@ -408,6 +408,8 @@ async def render_abuse(request: Request, slug: str | None = None, link: str | No
     ctx = {
         "prefill_slug": prefill,
         "primary_domain": settings.PRIMARY_DOMAIN,
+        "abuse_quarantine_threshold": settings.ABUSE_QUARANTINE_REPORT_THRESHOLD,
+        "abuse_delete_threshold": settings.ABUSE_AUTO_DELETE_REPORT_THRESHOLD,
         **_get_operator_context(),
     }
     return templates.TemplateResponse(request=request, name="abuse.html", context=ctx)

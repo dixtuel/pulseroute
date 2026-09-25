@@ -269,3 +269,77 @@ a:focus-visible, [tabindex]:focus-visible {
     .legal-toc li + li { margin-top: 0; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+/* Abuse report: the same kraft ticket language, with an incident form kept clear and calm. */
+.abuse-layout {
+    display: grid;
+    grid-template-columns: minmax(220px, 280px) minmax(0, 720px);
+    align-items: start;
+    gap: clamp(2rem, 6vw, 5rem);
+    width: min(100%, 1080px);
+    margin-inline: auto;
+}
+.abuse-rail { position: sticky; top: 1.5rem; padding-top: 0.6rem; }
+.abuse-rail h2 { margin: 0.8rem 0; font: 600 clamp(1.8rem, 4vw, 2.5rem)/1.12 var(--serif); letter-spacing: -0.025em; }
+.abuse-rail > p:not(.legal-kicker) { color: var(--muted); font-size: 0.94rem; }
+.abuse-rule { display: grid; grid-template-columns: 2rem 1fr; gap: 0.75rem; margin-top: 1.6rem; padding: 1rem 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); }
+.abuse-rule-mark { display: grid; place-items: center; width: 1.8rem; height: 1.8rem; border: 1px solid var(--stamp); border-radius: 50%; color: var(--stamp); font: 500 0.9rem var(--mono); }
+.abuse-rule p { margin: 0; color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
+.abuse-rule strong { color: var(--ink); }
+.abuse-aside-note { margin-top: 1.2rem; font-size: 0.82rem !important; }
+.abuse-sheet { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 5px 16px 16px 5px; background: var(--card); box-shadow: 0 18px 40px -32px rgba(35, 34, 42, 0.6); }
+.abuse-hero { position: relative; padding: clamp(1.5rem, 5vw, 3rem) clamp(1.4rem, 5vw, 3.2rem) 1.8rem; border-bottom: 1px dashed var(--line); }
+.abuse-hero::before { position: absolute; inset: 0 auto 0 -1px; width: 14px; background: radial-gradient(circle at 0 50%, transparent 6px, var(--paper) 6.5px); content: ""; }
+.abuse-hero h1 { max-width: 18ch; margin: 0; font: 600 clamp(2rem, 5vw, 3.2rem)/1.05 var(--serif); letter-spacing: -0.035em; }
+.abuse-hero > p:not(.legal-kicker) { max-width: 52ch; margin: 0.8rem 0 0; color: var(--muted); }
+.abuse-form { display: grid; gap: 1.35rem; padding: clamp(1.4rem, 5vw, 3.2rem); }
+.abuse-field label { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0.45rem; margin-bottom: 0.5rem; font-size: 0.94rem; font-weight: 600; }
+.abuse-field label > span[aria-hidden="true"] { color: var(--stamp); }
+.field-index { color: var(--rail); font: 500 0.7rem var(--mono); }
+.optional-label { color: var(--muted); font-size: 0.78rem; font-weight: 400; }
+.abuse-field input, .abuse-field select, .abuse-field textarea {
+    display: block;
+    width: 100%;
+    min-height: 3rem;
+    padding: 0.78rem 0.9rem;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: #fffdf7;
+    color: var(--ink);
+    font: 400 0.95rem var(--sans);
+    line-height: 1.45;
+}
+.abuse-field input::placeholder, .abuse-field textarea::placeholder { color: #898373; opacity: 1; }
+.abuse-field select { cursor: pointer; }
+.abuse-field textarea { min-height: 7rem; resize: vertical; }
+.abuse-field input:focus-visible, .abuse-field select:focus-visible, .abuse-field textarea:focus-visible { outline: 3px solid rgba(20, 109, 108, 0.28); border-color: var(--rail); }
+.field-hint { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.78rem; line-height: 1.5; }
+.report-submit { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.25rem; padding: 0.75rem 1rem; border: 1px solid #9B301D; border-radius: 4px; background: var(--stamp); color: #fffaf1; font: 600 0.95rem var(--sans); cursor: pointer; transition: background-color 140ms ease, transform 140ms ease; }
+.report-submit:hover:not(:disabled) { background: #A93622; transform: translateY(-1px); }
+.report-submit:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.report-submit:disabled { opacity: 0.68; cursor: wait; }
+.report-status { padding: 1rem; border: 1px solid; border-radius: 4px; font-size: 0.9rem; }
+.report-status[hidden] { display: none; }
+.report-status strong { display: block; font-family: var(--serif); font-size: 1.1rem; }
+.report-status p { margin: 0.35rem 0 0; }
+.report-status.is-success { border-color: #80A69A; background: #E7F0E7; color: #164C43; }
+.report-status.is-notice { border-color: #C5A65E; background: #F7F0D9; color: #5E491A; }
+.report-status.is-error { border-color: #CF8D7B; background: #F6E4DD; color: #772D20; }
+.abuse-card-footer { padding: 0 clamp(1.4rem, 5vw, 3.2rem) 1.4rem; color: var(--muted); font-size: 0.8rem; line-height: 1.6; }
+.abuse-card-footer > p { margin: 0; padding: 1.15rem 0; border-top: 1px solid var(--line); }
+.abuse-card-footer strong { color: var(--ink); }
+.abuse-contact-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-top: 0.85rem; border-top: 1px dashed var(--line); font-size: 0.8rem; }
+.abuse-contact-row > span:first-child { color: var(--muted); }
+.abuse-contact-row .protected-contact-link { margin: 0; font-size: 0.85rem; }
+.abuse-footer { display: flex; justify-content: space-between; gap: 1rem; }
+@media (max-width: 800px) {
+    .abuse-layout { grid-template-columns: minmax(0, 1fr); gap: 1.5rem; }
+    .abuse-rail { position: static; }
+    .abuse-rail h2 { max-width: 20ch; }
+}
+@media (max-width: 520px) {
+    .abuse-footer { flex-wrap: wrap; font-size: 0.78rem; }
+    .abuse-contact-row { align-items: flex-start; flex-direction: column; gap: 0.25rem; }
+    .abuse-field input, .abuse-field select, .abuse-field textarea { font-size: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) { .report-submit { transition: none; } }
