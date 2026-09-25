@@ -100,7 +100,7 @@ The live instance at **[ps.sely.tr](https://ps.sely.tr)** runs this way — no s
 2. **Postgres:** create a free project on [Neon](https://neon.tech) (no card, no expiry) and set `DATABASE_URL` to its connection string — the app auto-normalizes `postgresql://...` to the `asyncpg` driver and strips query params `asyncpg` doesn't accept.
 3. **Redis:** create a free database on [Upstash](https://upstash.com) (no card) and set `REDIS_URL` — the app auto-upgrades `redis://` to `rediss://` (TLS) for any `upstash.io` host.
 
-That's the entire persistent, zero-cost stack; no Docker, no Caddy. Custom-domain TLS provisioning for *your own users'* domains (the `ALLOW_CUSTOM_DOMAINS` feature) still relies on Caddy's On-Demand TLS `ask` endpoint (see below) and isn't automatic on this cloud path — domains added there verify in the database, but a platform admin currently has to also add them as a Render custom domain by hand for traffic/TLS to actually route.
+That's the zero-cost stack while each provider's Free limits are respected; no Docker or Caddy is needed for the shared `ps.sely.tr` domain. Render's Free web service has 0.1 CPU, 512 MB RAM, and a workspace-wide 750 instance-hours per month; the Hobby workspace includes 5 GB/month of outbound bandwidth and 500 build minutes. It includes two custom domains across the workspace, with additional domains billed at $0.25/domain/month. Custom-domain TLS provisioning for *your own users'* domains (the `ALLOW_CUSTOM_DOMAINS` feature) still relies on Caddy's On-Demand TLS `ask` endpoint (see below) and isn't automatic on this cloud path — domains added there verify in the database, but a platform admin currently has to also add them as a Render custom domain by hand for traffic/TLS to actually route.
 
 ---
 
