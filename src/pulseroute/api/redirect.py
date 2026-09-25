@@ -11,7 +11,7 @@ from pulseroute.common.bot_detector import parse_user_agent
 from pulseroute.common.redirect_ticket import issue_ticket, read_ticket
 from pulseroute.core.config import settings
 from pulseroute.core.database import async_session_maker
-from pulseroute.core.redis import get_redis
+from pulseroute.core.redis import get_analytics_redis, get_redis
 from pulseroute.services.analytics_service import AnalyticsService
 from pulseroute.services.link_service import LinkService
 from pulseroute.services.redirect_service import RedirectService
@@ -32,6 +32,9 @@ RESERVED_SLUGS = {
 async def _resolve(request: Request, slug: str, password: Optional[str]):
     async with async_session_maker() as db:
         redis_cli = await get_redis()
+        analytics_redis_cli = (
+            await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else redis_cli
+        )
         return await RedirectService.resolve_and_track(
             db=db,
             redis_cli=redis_cli,
@@ -41,6 +44,7 @@ async def _resolve(request: Request, slug: str, password: Optional[str]):
             client_ip=request.client.host if request.client else "127.0.0.1",
             referrer=request.headers.get("referer"),
             password=password,
+            analytics_redis_cli=analytics_redis_cli,
         )
 
 

@@ -1,7 +1,7 @@
 from collections.abc import AsyncGenerator
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from sqlalchemy import text
+from sqlalchemy import inspect, text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
@@ -90,3 +90,16 @@ async def init_db() -> None:
                 await conn.execute(text(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}"))
             except Exception:
                 pass
+
+        # Idempotent production migration for databases created before reporter fingerprints existed.
+        abuse_columns = await conn.run_sync(
+            lambda sync_conn: {column["name"] for column in inspect(sync_conn).get_columns("abuse_reports")}
+        )
+        if "reporter_fingerprint" not in abuse_columns:
+            await conn.execute(text("ALTER TABLE abuse_reports ADD COLUMN reporter_fingerprint VARCHAR(64)"))
+        await conn.execute(
+            text(
+                "CREATE INDEX IF NOT EXISTS ix_abuse_reports_slug_fp "
+                "ON abuse_reports (slug, reporter_fingerprint)"
+            )
+        )

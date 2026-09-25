@@ -1,151 +1,102 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
-    <title>Terms of Service & Acceptable Use | PulseRoute</title>
-    <meta name="description" content="Clear, user-focused acceptable use policies, community guidelines, and terms for this PulseRoute instance.">
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="PulseRoute terms, acceptable use rules, and abuse reporting process.">
+    <title>Terms of Service | PulseRoute</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        obsidian: '#07090A',
-                        carbon: '#0E1316',
-                        panel: '#141B1F',
-                        divider: '#202A30',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #07090A; color: #E2E8F0; }
-        .grid-bg {
-            background-size: 32px 32px;
-            background-image: 
-                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
-        }
-        .protected-contact-link {
-            color: #fbbf24;
-            text-decoration: underline;
-            cursor: pointer;
-            word-break: break-all;
-        }
-        .bot-decoy {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            position: absolute !important;
-            left: -9999px !important;
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/legal.css">
 </head>
-<body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
-    <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
-        <div class="border-b border-divider pb-4">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-amber-400/10 text-amber-400 border border-amber-400/20">Acceptable Use & Terms</span>
-                <span class="text-xs text-slate-500 font-mono">MIT OPEN SOURCE</span>
-            </div>
-            <h1 class="text-2xl font-display font-bold text-white tracking-tight">Terms of Service &amp; Acceptable Use</h1>
-            <p class="text-xs text-slate-400 mt-1">Clear standards for short link creation, workspace security, and zero tolerance for abuse.</p>
-        </div>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">1. Nature of the Platform</h2>
-            <p>PulseRoute is an open-source, privacy-respecting link shortening and redirection platform distributed under the MIT License. These terms govern your interaction with <em>this specific running instance</em>. If you self-host PulseRoute, you are the independent operator of your own instance and determine your own policies.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">2. Acceptable Use Policy (Zero Tolerance for Abuse)</h2>
-            <p>To keep short links safe, reliable, and trustworthy for all internet users, you agree never to use this service to shorten or distribute:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li>Phishing sites, credential harvesters, fake banking portals, or deceptive authentication pages,</li>
-                <li>Malware, spyware, ransomware, trojans, or hazardous executable files (e.g., <code class="text-amber-400">.exe</code>, <code class="text-amber-400">.scr</code>, <code class="text-amber-400">.bat</code>, <code class="text-amber-400">.vbs</code>, <code class="text-amber-400">.iso</code>, <code class="text-amber-400">.ps1</code>),</li>
-                <li>Internal network probes, loopback destinations, or cloud metadata services (Server-Side Request Forgery / SSRF),</li>
-                <li>Recursive redirect chains or masking the shortener domain to evade threat detection,</li>
-                <li>Scams, fraudulent crypto schemes, or unlawful counterfeit material,</li>
-                <li>Spam campaigns, botnets, or mass unsolicited messaging.</li>
-            </ul>
-            <p>Every destination URL across all devices (desktop, iOS, Android, and regional geo-targets) is screened at creation and update time against known malicious domain registries, restricted file formats, and internal IP ranges. Links violating this policy are placed in immediate automated quarantine without prior notice.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">3. Accounts &amp; Workspace Isolation</h2>
-            <p>Each registered user is assigned an isolated workspace upon sign-up:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li>Your links, custom domains, tags, and click analytics are accessible strictly to members of your workspace.</li>
-                <li>You are solely responsible for all destinations, redirects, and content linked through your workspace.</li>
-                <li><strong>Anonymous Links:</strong> Links created without an account are assigned an automatic 24-hour lifespan (TTL). Once expired, they are purged and cannot be claimed, edited, or recovered.</li>
-            </ul>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">4. Rate Limiting &amp; Abuse Defense</h2>
-            <p>To protect service availability and prevent automated abuse, all endpoints employ automated sliding-window rate limiting. Repeated failed login attempts trigger an automatic 10-minute IP lockout. Scraping or abusive bot traffic targeting link redirection is throttled at the network and application layers.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">5. Warranty &amp; Limitation of Liability</h2>
-            <p>This software is provided on an "AS IS" basis, without warranty of any kind, express or implied. The instance operator is not liable for destination content provided by users, temporary network interruptions, or third-party outages. Users are advised to review the <a href="/privacy" class="text-amber-400 hover:underline">Privacy Policy</a> to understand data handling practices.</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">6. 5651 Sayılı Kanun Uyar-Kaldır &amp; Kötüye Kullanım Bildirimi (Notice &amp; Takedown)</h2>
-            <p><strong>Yer Sağlayıcı Bildirimi:</strong> Bu platform, 5651 sayılı İnternet Ortamında Yapılan Yayınların Düzenlenmesi ve Bu Yayınlar Yoluyla İşlenen Suçlarla Mücadele Edilmesi Hakkında Kanun uyarınca "Yer Sağlayıcı" statüsündedir. Yer sağlayıcı, yönlendirilen üçüncü taraf sitelerin içeriğini önceden denetlemekle yükümlü değildir; ancak haberdar edildiğinde hukuka aykırı içeriği ivedilikle yayından çıkarmakla yükümlüdür.</p>
-            <p>Oltalama (phishing), zararlı yazılım (malware), telif hakkı veya yasa dışı içerik tespit ettiğinizde aşağıdaki kanallardan anında bildirimde bulunabilirsiniz:</p>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <a href="/abuse" class="p-3 bg-panel border border-divider hover:border-amber-400/50 rounded-lg flex items-center gap-2.5 text-slate-200 transition">
-                    <i class="fa-solid fa-flag text-amber-400 text-sm"></i>
-                    <div>
-                        <span class="font-display font-semibold block text-white">Çevrim İçi Bildirim Formu</span>
-                        <span class="text-[10px] text-slate-400">/abuse sayfası üzerinden anında bildirim</span>
-                    </div>
-                </a>
-                <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300 flex flex-col justify-center">
-                    <span class="text-[10px] text-slate-500 uppercase tracking-wider">Doğrudan İletişim:</span>
-                    <span class="protected-contact-link cursor-pointer hover:underline text-amber-400 font-mono inline-flex items-center gap-1 mt-0.5"
-                          data-email="{{ operator_email }}"
-                          title="E-posta göndermek ve adresi kopyalamak için tıklayın"
-                          role="button" tabindex="0">
-                        <span class="protected-user">{{ operator_user }}</span>
-                        <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-anti-bot-harvest-</span>
-                        <span class="protected-at" aria-hidden="true">&#64;</span>
-                        <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-do-not-scrape-</span>
-                        <span class="protected-domain">{{ operator_domain }}</span>
-                        <i class="fa-solid fa-copy text-[10px] opacity-70 ml-1"></i>
-                    </span>
+<body>
+    <a class="skip-link" href="#document">Skip to terms</a>
+    <div class="legal-page">
+        <header class="legal-topbar">
+            <a class="brand-mark" href="/" aria-label="PulseRoute home"><span class="brand-dot" aria-hidden="true"></span>PulseRoute</a>
+            <nav class="top-links" aria-label="Legal pages">
+                <a href="/terms" aria-current="page">Terms</a>
+                <a href="/privacy">Privacy</a>
+            </nav>
+        </header>
+        <div class="legal-layout">
+            <nav class="legal-toc" aria-label="Terms sections">
+                <h2>On this page</h2>
+                <ol>
+                    <li><a href="#platform">The platform</a></li>
+                    <li><a href="#acceptable-use">Acceptable use</a></li>
+                    <li><a href="#accounts">Accounts</a></li>
+                    <li><a href="#rate-limits">Rate limits</a></li>
+                    <li><a href="#liability">Warranty</a></li>
+                    <li><a href="#reporting">Report abuse</a></li>
+                </ol>
+            </nav>
+            <main class="legal-sheet" id="document">
+                <header class="legal-hero">
+                    <div class="legal-kicker">Service terms · MIT open source</div>
+                    <h1>Terms of service</h1>
+                    <p>Clear standards for creating short links, protecting workspaces, and reporting harmful destinations.</p>
+                    <span class="legal-stamp">ACCEPTABLE USE</span>
+                </header>
+                <div class="legal-content">
+                    <section class="legal-section" id="platform">
+                        <h2><span class="section-no">01</span>Nature of the platform</h2>
+                        <p>PulseRoute is an open-source link-shortening and redirection platform distributed under the MIT License. These terms govern your interaction with this specific running instance. If you self-host PulseRoute, you are the independent operator of your instance and set its policies.</p>
+                    </section>
+                    <section class="legal-section" id="acceptable-use">
+                        <h2><span class="section-no">02</span>Acceptable use</h2>
+                        <p>Do not use this service to shorten or distribute:</p>
+                        <ul>
+                            <li>Phishing sites, credential harvesters, fake banking portals, or deceptive sign-in pages.</li>
+                            <li>Malware, spyware, ransomware, trojans, or hazardous executable files such as <code>.exe</code>, <code>.scr</code>, <code>.bat</code>, <code>.vbs</code>, <code>.iso</code>, or <code>.ps1</code>.</li>
+                            <li>Internal network probes, loopback destinations, or cloud metadata services (SSRF).</li>
+                            <li>Recursive redirect chains or attempts to mask the shortener domain to evade threat detection.</li>
+                            <li>Scams, fraudulent crypto schemes, unlawful counterfeit material, spam campaigns, botnets, or mass unsolicited messages.</li>
+                        </ul>
+                        <p>Destination URLs for desktop, iOS, Android, regional routing, and expiry fallbacks are screened when links are created or updated. Known malicious destinations, restricted file formats, and internal IP ranges are blocked.</p>
+                    </section>
+                    <section class="legal-section" id="accounts">
+                        <h2><span class="section-no">03</span>Accounts and workspaces</h2>
+                        <ul>
+                            <li>Each registered user receives an isolated workspace. Links, custom domains, tags, and click analytics are available only to members of that workspace.</li>
+                            <li>You are responsible for the destinations and content linked through your workspace.</li>
+                            <li>Anonymous links expire automatically after 24 hours. After expiry, they are removed and cannot be claimed, edited, or recovered.</li>
+                        </ul>
+                    </section>
+                    <section class="legal-section" id="rate-limits">
+                        <h2><span class="section-no">04</span>Rate limits and abuse response</h2>
+                        <p>Sliding-window rate limits protect the service from automated abuse. Repeated failed sign-ins trigger a 10-minute IP lockout. Abuse reports about phishing or malware can quarantine a link immediately. Other report types are counted once per reporter signal during the deduplication window; {{ abuse_quarantine_threshold }} distinct reports quarantine a link, and {{ abuse_delete_threshold }} can result in permanent deletion.</p>
+                        <p>These automated actions do not replace a human review of a report. Accounts and workspaces found to repeatedly violate these terms may be closed.</p>
+                    </section>
+                    <section class="legal-section" id="liability">
+                        <h2><span class="section-no">05</span>Warranty and limitation of liability</h2>
+                        <p>This software is provided on an “AS IS” basis, without warranty of any kind, express or implied. The instance operator is not liable for user-provided destination content, temporary network interruptions, or third-party outages. See the <a href="/privacy">Privacy Notice</a> for information about data handling.</p>
+                    </section>
+                    <section class="legal-section" id="reporting">
+                        <h2><span class="section-no">06</span>5651 notice and takedown</h2>
+                        <p><strong>Yer sağlayıcı bildirimi:</strong> Bu platform, 5651 sayılı İnternet Ortamında Yapılan Yayınların Düzenlenmesi ve Bu Yayınlar Yoluyla İşlenen Suçlarla Mücadele Edilmesi Hakkında Kanun kapsamında yer sağlayıcı statüsündedir. Yer sağlayıcı, yönlendirilen üçüncü taraf sitelerin içeriğini önceden denetlemekle yükümlü değildir; hukuka aykırı içerikten haberdar edildiğinde gerekli işlemleri ivedilikle yapar.</p>
+                        <p>Phishing, malware, copyright, or unlawful-content notices can be sent through the online form or directly to the data controller:</p>
+                        <p><a href="/abuse">Open the abuse report form</a></p>
+                        <div class="legal-contact">
+                            <span class="legal-contact-label">Direct contact · select to copy or open your mail app</span>
+                            <span class="protected-contact-link" data-email="{{ operator_email }}" data-locale="en" title="Copy the address or open your mail app" role="button" tabindex="0">
+                                <span class="protected-user">{{ operator_user }}</span><span class="bot-decoy" aria-hidden="true">-anti-bot-harvest-</span>
+                                <span class="protected-at" aria-hidden="true">&#64;</span><span class="bot-decoy" aria-hidden="true">-do-not-scrape-</span>
+                                <span class="protected-domain">{{ operator_domain }}</span>
+                            </span>
+                        </div>
+                        <p class="notice-line"><strong>Repeat-infringer policy:</strong> Accounts and workspaces found to repeatedly violate these rules may be permanently closed and related network addresses may be blocked.</p>
+                    </section>
                 </div>
-            </div>
-            <p class="text-[11px] text-slate-400 pt-1">
-                <strong>Tekrarlayan İhlalci Politikası (Repeat Infringer):</strong> Kötüye kullanım politikalarını ihlal ettiği tespit edilen kullanıcı hesapları ve çalışma alanları (workspaces) kalıcı olarak kapatılır ve ilgili ağ adresleri engellenir.
-            </p>
-        </section>
-
-        <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
-            <div class="flex items-center gap-3">
-                <a href="/privacy" class="hover:text-amber-400 transition">Privacy Notice</a>
-                <span>•</span>
-                <a href="/accessibility" class="hover:text-amber-400 transition">Accessibility</a>
-            </div>
-            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console →</a>
+            </main>
         </div>
+        <footer class="legal-footer">
+            <nav aria-label="More information"><a href="/privacy">Privacy notice</a><a href="/accessibility">Accessibility</a></nav>
+            <a href="/">Back to PulseRoute</a>
+        </footer>
     </div>
-    <script src="/static/js/identity-guard.js"></script>
+    <script src="/static/js/identity-guard.js" defer></script>
 </body>
 </html>

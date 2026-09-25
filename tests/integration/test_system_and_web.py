@@ -22,6 +22,8 @@ async def test_render_privacy_and_terms(client: AsyncClient):
     res_priv = await client.get("/privacy", headers={"Accept": "text/html"})
     assert res_priv.status_code == 200
     assert "Privacy Policy" in res_priv.text
+    assert "keyed HMAC-SHA-256" in res_priv.text
+    assert "/static/legal.css" in res_priv.text
 
     res_terms = await client.get("/terms", headers={"Accept": "text/html"})
     assert res_terms.status_code == 200
@@ -38,6 +40,16 @@ async def test_health_check(client: AsyncClient):
     # Automated health checks should not receive browser-only security headers
     assert "Content-Security-Policy" not in res.headers
     assert "X-Frame-Options" not in res.headers
+    assert res.headers["cache-control"] == "no-store"
+
+    browser_res = await client.get("/healthz", headers={"Accept": "text/html"})
+    assert browser_res.status_code == res.status_code
+    assert "Dependency health" in browser_res.text
+    assert "Database" in browser_res.text
+    assert browser_res.headers["cache-control"] == "no-store"
+
+    machine_res = await client.get("/healthz", headers={"Accept": "application/json"})
+    assert machine_res.json()["status"] in ("healthy", "degraded")
 
 
 @pytest.mark.asyncio
@@ -54,6 +66,15 @@ async def test_keepalive_never_checks_external_services(client: AsyncClient, mon
     # Automated keepalive should not receive browser-only security headers
     assert "Content-Security-Policy" not in res.headers
     assert "X-Frame-Options" not in res.headers
+
+    json_res = await client.get("/healtalive", headers={"Accept": "application/json"})
+    assert json_res.json() == {"status": "alive"}
+    assert json_res.headers["cache-control"] == "no-store"
+
+    browser_res = await client.get("/healtalive", headers={"Accept": "text/html"})
+    assert browser_res.status_code == 200
+    assert "Process liveness" in browser_res.text
+    assert "ALIVE" in browser_res.text
 
 
 @pytest.mark.asyncio

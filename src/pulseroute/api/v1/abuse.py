@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import Enum
 from typing import Optional
 from urllib.parse import urlparse
@@ -10,7 +10,7 @@ from pydantic import BaseModel, EmailStr, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pulseroute.common.privacy import anonymize_ip
+from pulseroute.common.privacy import anonymize_ip, extract_client_ip, generate_reporter_fingerprint
 from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
 from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
@@ -57,7 +57,7 @@ async def report_abuse(
     db: AsyncSession = Depends(get_db),
     redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
 ):
-    client_ip = request.client.host if request.client else "127.0.0.1"
+    client_ip = extract_client_ip(request)
 
     # Rate limiting: Max 15 reports per hour per IP to prevent griefing/abuse of reporting channel
     allowed, rem = await SlidingWindowRateLimiter.is_allowed(
@@ -77,7 +77,7 @@ async def report_abuse(
         )
 
     # 1. Locate the link in the database
-    query = select(ShortLink).where(ShortLink.slug == slug)
+    query = select(ShortLink).where(ShortLink.slug == slug).with_for_update()
     res = await db.execute(query)
     link = res.scalars().first()
 
@@ -88,7 +88,32 @@ async def report_abuse(
             detail=f"Short link not found for slug '{slug}'.",
         )
 
-    # 2. Record the formal Abuse Report for 5651 Sayılı Kanun and Safe Harbor auditability
+    # Keep only a keyed digest of transient request signals; raw UA/language/IP are not stored.
+    fingerprint = generate_reporter_fingerprint(
+        client_ip=client_ip,
+        user_agent=request.headers.get("user-agent", ""),
+        accept_language=request.headers.get("accept-language", ""),
+        secret_key=settings.SECRET_KEY,
+    )
+    dedupe_cutoff = datetime.now(UTC) - timedelta(seconds=settings.ABUSE_REPORT_DEDUP_WINDOW_SECONDS)
+    duplicate = await db.execute(
+        select(AbuseReport.id)
+        .where(
+            AbuseReport.slug == link.slug,
+            AbuseReport.reporter_fingerprint == fingerprint,
+            AbuseReport.created_at >= dedupe_cutoff,
+        )
+        .limit(1)
+    )
+    if duplicate.scalar_one_or_none() is not None:
+        return {
+            "status": "duplicate",
+            "slug": link.slug,
+            "action_taken": "A recent report from this browser and network was already recorded.",
+            "message": "Bu bağlantı için yakın zamanda aynı cihaz ve ağdan bildirim alındı.",
+        }
+
+    # Record the formal Abuse Report for 5651 Sayılı Kanun and Safe Harbor auditability.
     masked_ip = anonymize_ip(client_ip)
     report = AbuseReport(
         link_id=link.id,
@@ -97,12 +122,13 @@ async def report_abuse(
         details=payload.details,
         reporter_email=str(payload.reporter_email),
         reporter_ip=masked_ip,
+        reporter_fingerprint=fingerprint,
         status="quarantined" if payload.reason in (AbuseReason.PHISHING, AbuseReason.MALWARE) else "pending",
         created_at=datetime.now(UTC),
     )
     db.add(report)
 
-    # 3. High-Priority Automated Quarantine & Deletion Policy:
+    # High-Priority Automated Quarantine & Deletion Policy:
     # If cumulative report count reaches deletion threshold, permanently remove link.
     # If reported for Phishing/Malware or cumulative report count reaches quarantine threshold, immediately quarantine.
     current_reports = (link.abuse_reports_count or 0) + 1

@@ -7,7 +7,8 @@ from sqlalchemy import delete, func, select, update
 
 from pulseroute.core.config import settings
 from pulseroute.core.database import async_session_maker
-from pulseroute.core.redis import get_redis
+from pulseroute.core.redis import get_analytics_redis, get_redis
+from pulseroute.models.abuse import AbuseReport
 from pulseroute.models.click import ClickEvent
 from pulseroute.models.link import ShortLink
 from pulseroute.services.webhook_service import WebhookService
@@ -31,7 +32,6 @@ async def purge_expired_click_events(retention_days: int) -> int:
     """
     if retention_days <= 0:
         return 0
-
     cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
     try:
         async with async_session_maker() as db:
@@ -46,6 +46,22 @@ async def purge_expired_click_events(retention_days: int) -> int:
         return 0
 
 
+async def purge_expired_reporter_fingerprints(window_seconds: int) -> int:
+    """Delete pseudonymous abuse dedupe tokens after their matching window expires."""
+    cutoff = datetime.now(UTC) - timedelta(seconds=window_seconds)
+    try:
+        async with async_session_maker() as db:
+            result = await db.execute(
+                update(AbuseReport)
+                .where(AbuseReport.created_at < cutoff, AbuseReport.reporter_fingerprint.is_not(None))
+                .values(reporter_fingerprint=None)
+            )
+            await db.commit()
+            return result.rowcount or 0
+    except Exception as e:
+        logger.warning("abuse_fingerprint_retention_failed", error=type(e).__name__)
+        return 0
+
 async def run_analytics_batch_worker(
     batch_size: int = 100,
     interval_seconds: float = 2.0,
@@ -58,10 +74,19 @@ async def run_analytics_batch_worker(
     - Wakes up immediately when notify_click_event_published() is called on incoming clicks.
     - Runs a lightweight daily retention pass to purge expired granular click telemetry.
     """
-    redis_cli = await get_redis()
+    redis_cli = (
+        await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else await get_redis()
+    )
     if not redis_cli:
-        logger.warning("analytics_worker_no_redis_skipping")
-        return
+        if not settings.REDIS_URL and not settings.ANALYTICS_REDIS_URL:
+            logger.warning("analytics_worker_no_redis_skipping")
+            return
+        while not redis_cli:
+            logger.warning("analytics_worker_redis_unavailable_retrying")
+            await asyncio.sleep(max(5.0, interval_seconds))
+            redis_cli = (
+                await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else await get_redis()
+            )
 
     stream_name = "pulseroute:events:clicks"
     group_name = "pulseroute_analytics_group"
@@ -76,6 +101,8 @@ async def run_analytics_batch_worker(
 
     current_idle = interval_seconds
     last_retention_purge_ts = 0.0
+    last_fingerprint_purge_ts = 0.0
+    recover_pending = True
 
     while True:
         try:
@@ -84,15 +111,29 @@ async def run_analytics_batch_worker(
             if now_ts - last_retention_purge_ts >= 86400:
                 last_retention_purge_ts = now_ts
                 await purge_expired_click_events(settings.ANALYTICS_RETENTION_DAYS)
+            if now_ts - last_fingerprint_purge_ts >= 900:
+                last_fingerprint_purge_ts = now_ts
+                await purge_expired_reporter_fingerprints(settings.ABUSE_REPORT_DEDUP_WINDOW_SECONDS)
 
             _new_click_event.clear()
-            entries = await redis_cli.xreadgroup(
-                groupname=group_name,
-                consumername=consumer_name,
-                streams={stream_name: ">"},
-                count=batch_size,
-                block=int(interval_seconds * 1000),
-            )
+            entries = []
+            if recover_pending:
+                entries = await redis_cli.xreadgroup(
+                    groupname=group_name,
+                    consumername=consumer_name,
+                    streams={stream_name: "0"},
+                    count=batch_size,
+                )
+                recover_pending = bool(entries)
+
+            if not entries:
+                entries = await redis_cli.xreadgroup(
+                    groupname=group_name,
+                    consumername=consumer_name,
+                    streams={stream_name: ">"},
+                    count=batch_size,
+                    block=int(interval_seconds * 1000),
+                )
 
             if not entries:
                 current_idle = min(current_idle * 2, max_idle_seconds)
@@ -146,31 +187,41 @@ async def run_analytics_batch_worker(
                         )
                     await db.commit()
 
-                    # Notify workspace-owned links' webhook subscribers (fire-and-forget)
-                    owners = await db.execute(
-                        select(ShortLink.id, ShortLink.workspace_id, ShortLink.slug).where(
-                            ShortLink.id.in_(link_click_counts.keys())
-                        )
-                    )
-                    for link_id, workspace_id, slug in owners.all():
-                        if workspace_id:
-                            await WebhookService.notify_workspace(
-                                db,
-                                workspace_id,
-                                "link.clicked",
-                                {
-                                    "link_id": link_id,
-                                    "slug": slug,
-                                    "clicks": link_click_counts[link_id],
-                                },
-                            )
-
-            # Acknowledge messages
+            # Ack only after the DB commit; pending messages are replayed after a DB outage/restart.
             if msg_ids_to_ack:
                 await redis_cli.xack(stream_name, group_name, *msg_ids_to_ack)
+            recover_pending = len(msg_ids_to_ack) >= batch_size
+
+            # Webhooks are best-effort and run after ack so their failure cannot replay committed clicks.
+            if events_to_insert and link_click_counts:
+                try:
+                    async with async_session_maker() as db:
+                        owners = await db.execute(
+                            select(ShortLink.id, ShortLink.workspace_id, ShortLink.slug).where(
+                                ShortLink.id.in_(link_click_counts.keys())
+                            )
+                        )
+                        for link_id, workspace_id, slug in owners.all():
+                            if workspace_id:
+                                try:
+                                    await WebhookService.notify_workspace(
+                                        db,
+                                        workspace_id,
+                                        "link.clicked",
+                                        {
+                                            "link_id": link_id,
+                                            "slug": slug,
+                                            "clicks": link_click_counts[link_id],
+                                        },
+                                    )
+                                except Exception as webhook_err:
+                                    logger.warning("analytics_webhook_notify_failed", error=str(webhook_err))
+                except Exception as webhook_query_err:
+                    logger.warning("analytics_webhook_lookup_failed", error=str(webhook_query_err))
 
         except asyncio.CancelledError:
             break
         except Exception as e:
+            recover_pending = True
             logger.error("analytics_worker_exception", error=str(e))
             await asyncio.sleep(2.0)

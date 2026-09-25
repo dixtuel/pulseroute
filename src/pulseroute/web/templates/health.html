@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>{{ title }} | PulseRoute</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/legal.css">
+    <meta http-equiv="Cache-Control" content="no-store">
+</head>
+<body>
+<main class="legal-page">
+    <nav class="legal-topbar" aria-label="Main navigation">
+        <a class="brand-mark" href="/"><span class="brand-dot" aria-hidden="true"></span>PulseRoute</a>
+        <a href="/">Home</a>
+    </nav>
+    <article class="health-sheet" aria-labelledby="health-title">
+        <p class="legal-kicker">SYSTEM CHECK</p>
+        <h1 id="health-title">{{ title }}</h1>
+        <p class="health-status {% if status in ['healthy', 'alive'] %}is-good{% else %}is-bad{% endif %}">{{ status|upper }}</p>
+        <p>{{ detail }}</p>
+        {% if snapshot %}
+        <dl class="health-facts">
+            <div><dt>Database</dt><dd>{{ snapshot.database }}</dd></div>
+            <div><dt>Redis</dt><dd>{{ snapshot.redis }}</dd></div>
+            <div><dt>Probe time</dt><dd>{{ snapshot.latency_ms }} ms</dd></div>
+            <div><dt>Version</dt><dd>{{ snapshot.version }}</dd></div>
+        </dl>
+        {% endif %}
+        <p class="health-footnote">This endpoint does not expose credentials or connection details.</p>
+    </article>
+</main>
+</body>
+</html>

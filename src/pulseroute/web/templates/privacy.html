@@ -1,156 +1,97 @@
-<!DOCTYPE html>
-<html lang="en" class="dark">
+<!doctype html>
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
-    <title>Privacy Policy &amp; KVKK / GDPR Notice | PulseRoute</title>
-    <meta name="description" content="User-focused privacy notice, cookieless redirection, IP anonymization, and KVKK/GDPR compliance on PulseRoute.">
-    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Privacy Policy &amp; Data Notice | PulseRoute</title>
+    <meta name="description" content="How this PulseRoute instance handles account, click analytics, advertising, and abuse report data.">
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                        display: ['Space Grotesk', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        obsidian: '#07090A',
-                        carbon: '#0E1316',
-                        panel: '#141B1F',
-                        divider: '#202A30',
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body { background-color: #07090A; color: #E2E8F0; }
-        .grid-bg {
-            background-size: 32px 32px;
-            background-image: 
-                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
-        }
-        .protected-contact-link {
-            color: #fbbf24;
-            text-decoration: underline;
-            cursor: pointer;
-            word-break: break-all;
-        }
-        .bot-decoy {
-            display: none !important;
-            visibility: hidden !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            position: absolute !important;
-            left: -9999px !important;
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/legal.css">
 </head>
-<body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
-    <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
-        <div class="border-b border-divider pb-4">
-            <div class="flex items-center gap-2 mb-2">
-                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-emerald-400/10 text-emerald-400 border border-emerald-400/20">KVKK &amp; GDPR Transparency</span>
-                <span class="text-xs text-slate-500 font-mono">COOKIELess REDIRECT</span>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="legal-page">
+    <header class="legal-topbar">
+        <a class="brand-mark" href="/"><span class="brand-dot" aria-hidden="true"></span>PulseRoute</a>
+        <nav class="top-links" aria-label="Legal pages">
+            <a href="/terms">Terms</a><a href="/privacy" aria-current="page">Privacy</a>
+        </nav>
+    </header>
+    <main id="main" class="legal-layout">
+        <nav class="legal-toc" aria-label="On this page">
+            <h2>IN THIS NOTICE</h2>
+            <ol>
+                <li><a href="#controller">Controller</a></li>
+                <li><a href="#visitors">Link visitors</a></li>
+                <li><a href="#accounts">Accounts</a></li>
+                <li><a href="#ads">Advertising</a></li>
+                <li><a href="#security">Security</a></li>
+                <li><a href="#rights">Your rights</a></li>
+                <li><a href="#abuse">Abuse reports</a></li>
+            </ol>
+        </nav>
+        <article class="legal-sheet">
+            <header class="legal-hero">
+                <p class="legal-kicker">PRIVACY · KVKK · GDPR</p>
+                <h1>Privacy Policy &amp; Data Notice</h1>
+                <p>What this PulseRoute instance processes, why it does so, and how long it keeps the information.</p>
+                <span class="legal-stamp">LAST REVIEWED · 25 SEP 2026</span>
+            </header>
+            <div class="legal-content">
+                <section class="legal-section" id="controller">
+                    <h2><span class="section-no">01</span>Scope and data controller</h2>
+                    <p>PulseRoute is open-source link-shortening software. This notice covers this hosted instance and its application and infrastructure processing. The instance operator is the data controller under Turkish Personal Data Protection Law No. 6698 (KVKK) and, where applicable, the GDPR.</p>
+                    <div class="legal-contact"><span class="legal-contact-label">Data controller contact</span>
+                        <span class="protected-contact-link" data-email="{{ operator_email }}" title="Click to email or copy the address" role="button" tabindex="0">
+                            <span class="protected-user">{{ operator_user }}</span><span class="bot-decoy" aria-hidden="true">-anti-bot-harvest-</span><span class="protected-at" aria-hidden="true">&#64;</span><span class="bot-decoy" aria-hidden="true">-do-not-scrape-</span><span class="protected-domain">{{ operator_domain }}</span>
+                        </span>
+                    </div>
+                </section>
+                <section class="legal-section" id="visitors">
+                    <h2><span class="section-no">02</span>Short link visitors</h2>
+                    <ul>
+                        <li><strong>Redirects:</strong> the redirect flow does not set tracking cookies or behavioral beacons.</li>
+                        <li><strong>Click analytics:</strong> when analytics are enabled, the service records link and time, approximate location derived from a masked IP, and device, browser, operating system, and referrer information. Raw click IP addresses are not stored in click records. IPv4 addresses are masked to <code>/24</code> and IPv6 to <code>/48</code> before location processing.</li>
+                        <li><strong>Retention:</strong> detailed click events are retained for up to {{ analytics_retention_days or 90 }} days and then purged; aggregate click counts may remain with the link.</li>
+                    </ul>
+                </section>
+                <section class="legal-section" id="accounts">
+                    <h2><span class="section-no">03</span>Accounts and workspaces</h2>
+                    <ul>
+                        <li>Registered account data includes email address, optional display name, password hash, workspace membership, links, custom domain records, and related analytics.</li>
+                        <li>Passwords are hashed with bcrypt. Workspace authorization restricts access to its members and permitted roles.</li>
+                        <li>Anonymous links expire after 24 hours. Account holders can request deletion using account settings or the authenticated <code>DELETE /api/v1/auth/me</code> endpoint. Provider backups and legally required records may persist for their applicable retention period.</li>
+                    </ul>
+                </section>
+                <section class="legal-section" id="ads">
+                    <h2><span class="section-no">04</span>Advertising and cookies</h2>
+                    <p>This instance may display Google AdSense ads on the management console or optional countdown pages. Advertising scripts and personalized advertising cookies are loaded only after consent where consent is required. If consent is declined or absent, personalized advertising is not enabled; availability of non-personalized ads depends on provider behavior.</p>
+                    <p>The <code>pr_pref</code> cookie stores the advertising choice for up to 180 days. It contains the preference, not account credentials. Browser storage and essential session behavior may also be used where needed for the service.</p>
+                </section>
+                <section class="legal-section" id="security">
+                    <h2><span class="section-no">05</span>Security and service providers</h2>
+                    <p>Controls include parameterized database queries, rate limits, access controls, and authenticated encryption for supported integration secrets. No online service can guarantee absolute security.</p>
+                    <p>Cloudflare, Render, Neon Postgres, and Upstash Redis may process request or service data to provide DNS, hosting, database, and cache/queue infrastructure. Their processing is governed by their own terms and applicable data processing terms.</p>
+                </section>
+                <section class="legal-section" id="rights">
+                    <h2><span class="section-no">06</span>Your rights</h2>
+                    <p>Subject to applicable law, you may request access, correction, deletion, restriction, or an explanation of processing, and may lodge a complaint with the competent authority. Contact the controller above. Requests may require identity verification and may be limited by legal retention duties.</p>
+                </section>
+                <section class="legal-section" id="abuse">
+                    <h2><span class="section-no">07</span>Abuse reports and deduplication</h2>
+                    <p>When you submit a report through the <a href="/abuse">abuse portal</a> or API, the service processes the submitted link, reason, details, reporter email, and a masked IP to review the notice and prevent misuse of the reporting channel. Reports may be retained as required to investigate incidents and meet legal obligations under Law No. 5651 and applicable data protection law.</p>
+                    <p>To prevent repeated submissions from automatically affecting a link, the service derives a keyed HMAC-SHA-256 digest from the request IP, user-agent, and language headers. The raw values used for this matching digest are not stored by this feature. The digest is pseudonymous personal data, not anonymous data: it is used for matching during the configured window (default 24 hours), then cleared on the next retention pass, which runs every 15 minutes. The digest is not used for advertising or cross-site tracking.</p>
+                    <p>Distinct reports can cause a link to be quarantined at the configured threshold; phishing or malware reports may quarantine immediately. Permanent deletion follows the higher configured threshold. See <a href="/terms">Terms and Acceptable Use</a> for the report handling rules.</p>
+                </section>
             </div>
-            <h1 class="text-2xl font-display font-bold text-white tracking-tight">Privacy Policy &amp; Data Notice</h1>
-            <p class="text-xs text-slate-400 mt-1">Honest, user-centric explanation of what data is processed, how IP addresses are masked, and how your privacy is protected.</p>
-        </div>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">1. Scope &amp; Data Controller</h2>
-            <p>PulseRoute is open-source link-shortening software built with privacy as a foundational principle. This document outlines data handling at both the application and infrastructure level. The operator of this instance acts as the data controller under the Turkish Personal Data Protection Law (KVKK No. 6698) and the European General Data Protection Regulation (GDPR):</p>
-            <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300">
-                Data Controller Contact: 
-                <span class="protected-contact-link cursor-pointer hover:underline text-amber-400 font-mono inline-flex items-center gap-1"
-                      data-email="{{ operator_email }}"
-                      title="E-posta göndermek ve adresi kopyalamak için tıklayın"
-                      role="button" tabindex="0">
-                    <span class="protected-user">{{ operator_user }}</span>
-                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-anti-bot-harvest-</span>
-                    <span class="protected-at" aria-hidden="true">&#64;</span>
-                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-do-not-scrape-</span>
-                    <span class="protected-domain">{{ operator_domain }}</span>
-                    <i class="fa-solid fa-copy text-[10px] opacity-70 ml-1"></i>
-                </span>
-            </div>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">2. Privacy for Short Link Visitors (Cookieless &amp; Masked IPs)</h2>
-            <p>When you click on a PulseRoute short link, our highest priority is protecting your identity:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li><strong>No Raw IP Storage:</strong> Your full IP address is never committed to permanent storage or databases. Incoming addresses are immediately anonymized by truncating the final octet for IPv4 (subnet <code class="text-amber-400">/24</code>, e.g. <code class="text-amber-400">198.51.100.45</code> becomes <code class="text-amber-400">198.51.100.0</code>) or trailing bits for IPv6 (<code class="text-amber-400">/48</code>).</li>
-                <li><strong>Zero Tracking Cookies on Redirects:</strong> The link redirection engine sets absolutely no tracking cookies, behavioral beacons, or persistent advertising fingerprints on your browser.</li>
-                <li><strong>Aggregated Click Analytics:</strong> We record solely high-level telemetry (approximate country and city derived in-memory from the masked IP, device type, and referring website) to display aggregate visit graphs to the link creator.</li>
-            </ul>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">3. Account Holders &amp; Workspace Isolation</h2>
-            <p>For users who choose to register an account:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li><strong>Account Credentials:</strong> We store your email address and optional display name. Passwords are salted and hashed with <strong>bcrypt</strong> (one-way encryption). Plaintext passwords are never stored and cannot be viewed or decrypted by anyone, including the instance operator.</li>
-                <li><strong>Strict Workspace Isolation:</strong> Every account is assigned an isolated workspace. Your shortened links, custom domain DNS records, and analytics streams are never accessible to other accounts.</li>
-                <li><strong>Anonymous Links:</strong> Links created without creating an account expire automatically after 24 hours (TTL) and are permanently purged without retaining owner records.</li>
-            </ul>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">4. Advertising &amp; Cookie Consent (Google AdSense)</h2>
-            <p>This instance utilizes Google AdSense to support server hosting expenses:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li>Ad units may appear on the bottom of the management console and on optional countdown interstitial redirect pages.</li>
-                <li><strong>Consent-Gated Cookies:</strong> Personalized ad cookies and third-party advertising scripts are <strong>never loaded</strong> unless you grant explicit consent through the on-screen cookie notice. If you decline or ignore the banner, only non-personalized, privacy-safe advertisements (or none) will be served.</li>
-                <li><strong>Zero-Tracking Preference Cookie:</strong> Your consent preference (<code>pr_pref</code>) is encrypted client-side using a cryptographic CSPRNG stream cipher and expires automatically after 180 days (6 months) in strict accordance with KVKK and European EDPB standards. It contains zero personal identifiable information (PII).</li>
-            </ul>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">5. Security Measures &amp; Field Encryption</h2>
-            <p>PulseRoute is engineered according to modern security and data minimization standards:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li><strong>SQL Injection Prevention:</strong> All database operations execute through parameterized asynchronous ORM queries (SQLAlchemy).</li>
-                <li><strong>Brute-Force Lockout:</strong> Repeated failed login attempts trigger an automated 10-minute IP block to prevent credential stuffing.</li>
-                <li><strong>AEAD Hardware Encryption:</strong> Sensitive integration tokens, webhook secrets, and encrypted payloads are protected at rest using <strong>AES-256-GCM</strong> with 128-bit authentication tags and smart threshold compression.</li>
-                <li><strong>Infrastructure Providers:</strong> Essential hosting and routing infrastructure (Cloudflare, Render, Neon Postgres, Upstash Redis) process data strictly under data processing agreements for hosting operations.</li>
-            </ul>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">6. Your Rights &amp; Self-Service Data Erasure (KVKK &amp; GDPR)</h2>
-            <p>Under KVKK (Article 11) and GDPR (Articles 12–23), you hold the right to access, rectify, or request the complete erasure of your personal data.</p>
-            <p><strong>Immediate Self-Service Account &amp; Workspace Deletion:</strong> You can permanently delete your account and all associated personal data at any time via your account settings or directly via the authenticated <code class="text-amber-400">DELETE /api/v1/auth/me</code> endpoint. Deletion is instantaneous and irreversible: your credentials, workspace, short links, tags, custom domains, and click logs are permanently purged from all databases and cache layers (KVKK Article 7 / GDPR Article 17).</p>
-        </section>
-
-        <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">7. Abuse Reports &amp; Legal Compliance (5651 Sayılı Kanun &amp; KVKK m. 5/2-ç)</h2>
-            <p>When you submit a notice through our <a href="/abuse" class="text-amber-400 hover:underline">/abuse portal</a> or reporting API:</p>
-            <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li>We process the provided reporter email address and masked IP address solely to evaluate the security notice, verify legitimate claims, and prevent bad-faith reporting attacks against valid links.</li>
-                <li>Processing is conducted pursuant to legal compliance obligations under Turkish Law No. 5651 (Hosting Provider Notice-and-Takedown) and KVKK Article 5/2-ç (fulfilling legal obligations of the data controller).</li>
-                <li>Abuse report records are retained strictly for the statutory limitation period to defend against potential legal disputes and are never monetized, profiled, or transferred to third-party marketing entities.</li>
-            </ul>
-        </section>
-
-        <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">
-            <div class="flex items-center gap-3">
-                <a href="/terms" class="hover:text-amber-400 transition">Terms of Service</a>
-                <span>•</span>
-                <a href="/accessibility" class="hover:text-amber-400 transition">Accessibility</a>
-            </div>
-            <a href="/dashboard" class="text-amber-400 hover:underline">Return to Console →</a>
-        </div>
-    </div>
-    <script src="/static/js/identity-guard.js"></script>
+        </article>
+    </main>
+    <footer class="legal-footer"><a href="/terms">Terms of Service</a> · <a href="/accessibility">Accessibility</a> · <a href="/">Return to PulseRoute</a></footer>
+</div>
+<script src="/static/js/identity-guard.js"></script>
 </body>
 </html>

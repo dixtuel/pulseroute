@@ -170,47 +170,88 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 # Health & Diagnostics
+_health_cache: tuple[float, dict] | None = None
+_health_cache_lock = asyncio.Lock()
+
+
+async def _health_snapshot() -> dict:
+    """Probe dependencies at most once every five seconds per process."""
+    global _health_cache
+    now = time.monotonic()
+    if _health_cache and now - _health_cache[0] < 5:
+        return _health_cache[1]
+
+    async with _health_cache_lock:
+        now = time.monotonic()
+        if _health_cache and now - _health_cache[0] < 5:
+            return _health_cache[1]
+
+        start_time = time.monotonic()
+        db_ok = False
+        redis_ok = False
+        try:
+            async with async_session_maker() as db:
+                await db.execute(text("SELECT 1"))
+                db_ok = True
+        except Exception:
+            pass
+        try:
+            redis_cli = await get_redis()
+            if redis_cli:
+                await redis_cli.ping()
+                redis_ok = True
+        except Exception:
+            pass
+
+        snapshot = {
+            "status": "healthy" if db_ok else "degraded",
+            "version": app.version,
+            "database": "connected" if db_ok else "disconnected",
+            "redis": "connected" if redis_ok else "disabled_or_unavailable",
+            "latency_ms": round((time.monotonic() - start_time) * 1000, 2),
+        }
+        _health_cache = (time.monotonic(), snapshot)
+        return snapshot
+
+
 @app.get("/healtalive", response_class=PlainTextResponse, tags=["Diagnostics"])
-async def keepalive():
+async def keepalive(request: Request):
     """Process liveness probe; never connects to Postgres or Redis."""
+    accept = request.headers.get("accept", "")
+    if "text/html" in accept:
+        return templates.TemplateResponse(
+            request=request,
+            name="health.html",
+            context={"title": "Process liveness", "status": "alive", "detail": "The web process is responding. Dependencies are not queried by this check."},
+            headers={"Cache-Control": "no-store"},
+        )
+    if "application/json" in accept:
+        return JSONResponse({"status": "alive"}, headers={"Cache-Control": "no-store"})
     return PlainTextResponse("alive\n", headers={"Cache-Control": "no-store"})
 
 
 @app.get("/healthz", tags=["Diagnostics"])
-async def health_check():
-    start_time = time.time()
-    db_ok = False
-    redis_ok = False
-
-    # Check DB
-    try:
-        async with async_session_maker() as db:
-            await db.execute(text("SELECT 1"))
-            db_ok = True
-    except Exception:
-        pass
-
-    # Check Redis
-    try:
-        r = await get_redis()
-        if r:
-            await r.ping()
-            redis_ok = True
-    except Exception:
-        pass
-
-    elapsed_ms = round((time.time() - start_time) * 1000, 2)
-    is_healthy = db_ok
-
+async def health_check(request: Request):
+    snapshot = await _health_snapshot()
+    is_healthy = snapshot["status"] == "healthy"
+    headers = {"Cache-Control": "no-store"}
+    if "text/html" in request.headers.get("accept", ""):
+        return templates.TemplateResponse(
+            request=request,
+            name="health.html",
+            context={
+                "title": "Dependency health",
+                "status": snapshot["status"],
+                "detail": "Dependency checks are briefly cached per process to reduce database and Redis load.",
+                "snapshot": snapshot,
+            },
+            status_code=200 if is_healthy else 503,
+            headers=headers,
+        )
     return JSONResponse(
         status_code=200 if is_healthy else 503,
-        content={
-            "status": "healthy" if is_healthy else "degraded",
-            "version": "1.0.0",
-            "database": "connected" if db_ok else "disconnected",
-            "redis": "connected" if redis_ok else "disabled_or_unavailable",
-            "latency_ms": elapsed_ms,
-        },
+        content=snapshot,
+        headers=headers,
     )
 
 
@@ -333,6 +374,7 @@ async def render_privacy(request: Request):
     ctx = {
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
         "primary_domain": settings.PRIMARY_DOMAIN,
+        "analytics_retention_days": settings.ANALYTICS_RETENTION_DAYS,
         **_get_operator_context(),
     }
     return templates.TemplateResponse(request=request, name="privacy.html", context=ctx)
@@ -343,6 +385,8 @@ async def render_terms(request: Request):
     ctx = {
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
         "primary_domain": settings.PRIMARY_DOMAIN,
+        "abuse_quarantine_threshold": settings.ABUSE_QUARANTINE_REPORT_THRESHOLD,
+        "abuse_delete_threshold": settings.ABUSE_AUTO_DELETE_REPORT_THRESHOLD,
         **_get_operator_context(),
     }
     return templates.TemplateResponse(request=request, name="terms.html", context=ctx)

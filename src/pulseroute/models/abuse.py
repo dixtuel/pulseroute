@@ -15,6 +15,7 @@ class AbuseReport(Base):
     __table_args__ = (
         Index("ix_abuse_reports_slug", "slug"),
         Index("ix_abuse_reports_created_at", "created_at"),
+        Index("ix_abuse_reports_slug_fp", "slug", "reporter_fingerprint"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -26,6 +27,7 @@ class AbuseReport(Base):
     details: Mapped[str | None] = mapped_column(Text, nullable=True)
     reporter_email: Mapped[str] = mapped_column(String(255), nullable=False)
     reporter_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Anonymized / masked client IP
+    reporter_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Salted HMAC-SHA256 fingerprint
     status: Mapped[str] = mapped_column(String(50), default="quarantined")  # quarantined, pending, resolved, dismissed
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 

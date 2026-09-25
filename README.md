@@ -98,7 +98,7 @@ The live instance at **[ps.sely.tr](https://ps.sely.tr)** runs this way — no s
 
 1. **Web service:** deploy this repo to [Render](https://render.com) as a Python web service (`pip install -e .` / `pulseroute serve --host 0.0.0.0 --port $PORT`). Render's free plan needs no credit card; the default `*.onrender.com` subdomain can be disabled once your own custom domain is verified (Render dashboard → service → Settings → Custom Domains).
 2. **Postgres:** create a free project on [Neon](https://neon.tech) (no card, no expiry) and set `DATABASE_URL` to its connection string — the app auto-normalizes `postgresql://...` to the `asyncpg` driver and strips query params `asyncpg` doesn't accept.
-3. **Redis:** create a free database on [Upstash](https://upstash.com) (no card) and set `REDIS_URL` — the app auto-upgrades `redis://` to `rediss://` (TLS) for any `upstash.io` host.
+3. **Redis:** create a free database on [Upstash](https://upstash.com) (no card) and set `REDIS_URL` — the app auto-upgrades `redis://` to `rediss://` (TLS) for any `upstash.io` host. Optionally set `ANALYTICS_REDIS_URL` to a separate Redis-compatible endpoint for click-stream buffering; when omitted, analytics shares `REDIS_URL`. This separate stream is volatile if its provider does not persist Redis data, so it is not a database replacement.
 
 That's the zero-cost stack while each provider's Free limits are respected; no Docker or Caddy is needed for the shared `ps.sely.tr` domain. Render's Free web service has 0.1 CPU, 512 MB RAM, and a workspace-wide 750 instance-hours per month; the Hobby workspace includes 5 GB/month of outbound bandwidth and 500 build minutes. It includes two custom domains across the workspace, with additional domains billed at $0.25/domain/month. Custom-domain TLS provisioning for *your own users'* domains (the `ALLOW_CUSTOM_DOMAINS` feature) still relies on Caddy's On-Demand TLS `ask` endpoint (see below) and isn't automatic on this cloud path — domains added there verify in the database, but a platform admin currently has to also add them as a Render custom domain by hand for traffic/TLS to actually route.
 
@@ -127,6 +127,11 @@ Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). T
 | :--- | :--- | :--- |
 | `DATABASE_URL` | embedded SQLite | Postgres connection string in production — see Docker Compose above. |
 | `REDIS_URL` | `redis://127.0.0.1:6379/0` | Cache + click-stream backend; omit entirely to run in zero-Redis fallback mode. |
+| `ANALYTICS_REDIS_URL` | same as `REDIS_URL` | Optional dedicated Redis-compatible click-stream backend. Useful for a separate temporary queue; unset keeps the current single-Redis behavior. A provider restart can lose queued events if it has no persistence. |
+| `ANALYTICS_STREAM_MAXLEN` | `2000` | Approximate maximum click events retained in the Redis Stream. Tune against the configured analytics Redis memory limit. |
+| `ABUSE_QUARANTINE_REPORT_THRESHOLD` | `5` | Distinct request fingerprints needed to quarantine a non-phishing/non-malware link. |
+| `ABUSE_AUTO_DELETE_REPORT_THRESHOLD` | `10` | Distinct report threshold for permanent link deletion; must exceed the quarantine threshold. |
+| `ABUSE_REPORT_DEDUP_WINDOW_SECONDS` | `86400` | Window during which a matching keyed request fingerprint is counted once per link (60 seconds to 7 days). |
 | `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `links.example.com`). |
 | `ALLOW_CUSTOM_DOMAINS` | `true` | Whether logged-in workspace owners/admins can add a custom domain at all. Set `false` to disable the feature entirely. |
 | `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. |

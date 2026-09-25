@@ -12,7 +12,11 @@ from pulseroute.common.encryption import (
     secure_decode_payload,
     secure_encode_payload,
 )
-from pulseroute.common.privacy import anonymize_ip, generate_pseudonymous_visitor_id
+from pulseroute.common.privacy import (
+    anonymize_ip,
+    generate_pseudonymous_visitor_id,
+    generate_reporter_fingerprint,
+)
 
 # --- Privacy & IP Anonymization ---
 
@@ -35,6 +39,20 @@ def test_pseudonymous_visitor_id():
     # Same subnet -> same pseudonymous hash
     assert id1 == id2
     assert len(id1) == 16
+
+
+def test_abuse_report_fingerprint_is_keyed_and_signal_specific():
+    args = {
+        "client_ip": "198.51.100.45",
+        "user_agent": "Example Browser/1.0",
+        "accept_language": "en-US,en;q=0.9",
+        "secret_key": "test-secret",
+    }
+    first = generate_reporter_fingerprint(**args)
+    assert first == generate_reporter_fingerprint(**args)
+    assert first != generate_reporter_fingerprint(**{**args, "secret_key": "another-secret"})
+    assert first != generate_reporter_fingerprint(**{**args, "user_agent": "Other Browser/1"})
+    assert len(first) == 64
 
 
 # --- At-Rest Field Encryption (Fernet / AES-128-CBC + HMAC) ---
@@ -202,5 +220,4 @@ def test_get_client_preferences_server_side():
     # 3. Missing cookie
     req.cookies = {}
     assert get_client_preferences(req) is None
-
 

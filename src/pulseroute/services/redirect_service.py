@@ -77,6 +77,7 @@ class RedirectService:
         client_ip: str,
         referrer: Optional[str],
         password: Optional[str] = None,
+        analytics_redis_cli: Optional[aioredis.Redis] = None,
     ) -> Tuple[Optional[str], int, Optional[str], Optional[dict]]:
         """
         Returns (destination_url: Optional[str], status_code: int, error_or_auth_message: Optional[str], interstitial_data: Optional[dict])
@@ -223,7 +224,8 @@ class RedirectService:
             target_url = link_data["android_destination"]
 
         # 9. Asynchronous Click Event Dispatch (Redis Stream or Direct DB Fallback)
-        if redis_cli:
+        event_redis = analytics_redis_cli or redis_cli
+        if event_redis:
             try:
                 event_payload = {
                     "link_id": str(link_data["id"]),
@@ -236,7 +238,12 @@ class RedirectService:
                     "is_bot": "1" if is_bot else "0",
                     "timestamp": str(int(time.time())),
                 }
-                await redis_cli.xadd("pulseroute:events:clicks", event_payload, maxlen=2000, approximate=True)
+                await event_redis.xadd(
+                    "pulseroute:events:clicks",
+                    event_payload,
+                    maxlen=settings.ANALYTICS_STREAM_MAXLEN,
+                    approximate=True,
+                )
                 try:
                     from pulseroute.workers.analytics_worker import notify_click_event_published
 

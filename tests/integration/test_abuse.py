@@ -127,11 +127,16 @@ async def test_abuse_threshold_quarantine_and_auto_delete(client: AsyncClient):
         client, "threshold_user@domain.com", "thresh-slug-1", "https://suspicious-threshold.com"
     )
 
-    # 1. First report (spam - threshold not yet reached)
-    r1 = await client.post(
-        "/api/v1/abuse/report",
-        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r1@test.com"},
-    )
+    # Unique browser signals count as separate reporters; duplicate reports are deduplicated.
+    async def report(number: int):
+        return await client.post(
+            "/api/v1/abuse/report",
+            headers={"User-Agent": f"reporter-{number}"},
+            json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": f"r{number}@test.com"},
+        )
+
+    # The first four distinct reports are queued for review.
+    r1 = await report(1)
     assert r1.status_code == 202
     assert r1.json()["status"] == "received"
 
@@ -139,37 +144,40 @@ async def test_abuse_threshold_quarantine_and_auto_delete(client: AsyncClient):
     check1 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
     assert check1.status_code in [200, 307]
 
-    # 2. Second report (spam - hits threshold 2 -> quarantined)
-    r2 = await client.post(
+    # 2. A second identical report is ignored and does not change the cumulative count.
+    duplicate = await client.post(
         "/api/v1/abuse/report",
-        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r2@test.com"},
+        headers={"User-Agent": "reporter-1"},
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "same-user@test.com"},
     )
-    assert r2.status_code == 202
-    assert r2.json()["status"] == "quarantined"
+    assert duplicate.status_code == 202
+    assert duplicate.json()["status"] == "duplicate"
+
+    for number in range(2, 5):
+        response = await report(number)
+        assert response.status_code == 202
+        assert response.json()["status"] == "received"
+
+    # Fifth distinct report reaches the quarantine threshold.
+    r5 = await report(5)
+    assert r5.status_code == 202
+    assert r5.json()["status"] == "quarantined"
 
     # Redirection now returns 451
     check2 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
     assert check2.status_code == 451
 
-    # 3. Third and fourth reports
-    await client.post(
-        "/api/v1/abuse/report",
-        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r3@test.com"},
-    )
-    await client.post(
-        "/api/v1/abuse/report",
-        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r4@test.com"},
-    )
+    # Reports six through nine remain quarantined while awaiting formal review.
+    for number in range(6, 10):
+        response = await report(number)
+        assert response.status_code == 202
+        assert response.json()["status"] == "quarantined"
 
-    # 4. Fifth report (hits threshold 5 -> auto deleted)
-    r5 = await client.post(
-        "/api/v1/abuse/report",
-        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r5@test.com"},
-    )
-    assert r5.status_code == 202
-    assert r5.json()["status"] == "deleted"
+    # Tenth distinct report reaches the permanent deletion threshold.
+    r10 = await report(10)
+    assert r10.status_code == 202
+    assert r10.json()["status"] == "deleted"
 
     # Now the link is deleted -> 404
-    check5 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
-    assert check5.status_code == 404
-
+    check10 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
+    assert check10.status_code == 404
