@@ -7,13 +7,12 @@
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/static/moderation.css?v=20260926-1">
-  <script src="/static/js/moderation.js?v=20260926-2" defer></script>
+  <link rel="stylesheet" href="/static/moderation.css?v=20260926-2">
+  <script src="/static/js/moderation.js?v=20260926-3" defer></script>
 </head>
 <body class="moderation-body">
-{% include "_language_switch.html" %}
 <main class="desk-shell">
-  <header class="desk-header"><a class="desk-brand" href="/">PulseRoute<span> / safety desk</span></a><div class="desk-header-right"><a href="/dashboard" class="quiet-button" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px" data-i18n="Return to site">← Return to site</a><span class="secure-label" data-i18n="Owner access">Owner access</span><button id="logout" class="quiet-button" hidden data-i18n="Sign out">Sign out</button></div></header>
+  <header class="desk-header"><a class="desk-brand" href="/">PulseRoute<span> / safety desk</span></a><div class="desk-header-right"><a href="/dashboard" class="quiet-button" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px" data-i18n="Return to site">← Return to site</a>{% include "_language_switch.html" %}<span class="secure-label" data-i18n="Owner access">Owner access</span><button id="logout" class="quiet-button" hidden data-i18n="Sign out">Sign out</button></div></header>
   <section id="login-view" class="login-view" aria-labelledby="login-title">
     <div class="login-copy"><p class="eyebrow" data-i18n="TRUST & SAFETY">TRUST &amp; SAFETY</p><h1 id="login-title" data-i18n="Review with care.">Review with care.</h1><p data-i18n="A private workspace for reports, link restrictions and owner appeals.">A private workspace for reports, link restrictions and owner appeals.</p></div>
     <form id="login-form" class="login-card"><label><span data-i18n="Owner email">Owner email</span><input name="email" type="email" autocomplete="username" required></label><label><span data-i18n="Password">Password</span><input name="password" type="password" autocomplete="current-password" required></label><button class="primary-button" type="submit" data-i18n="Open safety desk">Open safety desk <span aria-hidden="true">↗</span></button><p id="login-error" class="form-error" role="status"></p><p class="login-foot" data-i18n="Short-lived secure session · 30 minutes">Short-lived secure session · 30 minutes</p></form>

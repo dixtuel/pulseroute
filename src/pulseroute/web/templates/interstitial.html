@@ -68,10 +68,9 @@
     {% endif %}
 </head>
 <body class="interstitial-page min-h-screen flex flex-col justify-between p-4 sm:p-6 antialiased font-sans">
-{% include "_language_switch.html" %}
 
     <!-- Header Navigation -->
-    <header class="max-w-xl mx-auto w-full flex items-center justify-between py-3 px-1">
+    <header class="max-w-xl mx-auto w-full flex items-center justify-between py-3 px-1 gap-2">
         <a href="/" class="flex items-center gap-2.5 group transition">
             <div class="w-8 h-8 rounded-md bg-rail flex items-center justify-center text-card shadow-sm group-hover:bg-railDeep transition">
                 <i class="fa-solid fa-route text-xs"></i>
@@ -81,9 +80,12 @@
                 <span class="text-[10px] text-inkSoft font-mono uppercase tracking-wider">Transit Gate</span>
             </div>
         </a>
-        <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-paperDeep/60 border border-line text-[11px] font-mono text-inkSoft">
-            <span class="w-2 h-2 rounded-full bg-rail animate-pulse"></span>
-            <span>Aktarım İstasyonu</span>
+        <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 px-2.5 py-1 rounded-full bg-paperDeep/60 border border-line text-[11px] font-mono text-inkSoft">
+                <span class="w-2 h-2 rounded-full bg-rail animate-pulse"></span>
+                <span>Aktarım İstasyonu</span>
+            </div>
+            {% include "_language_switch.html" %}
         </div>
     </header>
 

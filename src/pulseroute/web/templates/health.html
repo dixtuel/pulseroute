@@ -10,15 +10,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/legal.css?v=20260926-1">
+    <link rel="stylesheet" href="/static/legal.css?v=20260926-2">
     <meta http-equiv="Cache-Control" content="no-store">
 </head>
 <body>
-{% include "_language_switch.html" %}
 <main class="legal-page">
     <nav class="legal-topbar" aria-label="Main navigation">
         <a class="brand-mark" href="/"><span class="brand-dot" aria-hidden="true"></span>PulseRoute</a>
-        <a href="/">Home</a>
+        <div class="top-links">
+            <a href="/">Home</a>
+            {% include "_language_switch.html" %}
+        </div>
     </nav>
     <article class="health-sheet" aria-labelledby="health-title">
         <p class="legal-kicker">SYSTEM CHECK</p>

@@ -222,3 +222,50 @@ async def test_account_deletion_kvkk_gdpr_flow(client: AsyncClient):
     redir = await client.get("/erasure-link", follow_redirects=False)
     assert redir.status_code == 404
 
+
+@pytest.mark.asyncio
+async def test_owner_web_token_grants_moderation_access(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+    from pulseroute.core.config import settings
+    from pulseroute.core.security import hash_password
+
+    owner_email = "superowner@example.com"
+    monkeypatch.setattr(settings, "MODERATION_OWNER_EMAIL", owner_email)
+    monkeypatch.setattr(settings, "MODERATION_OWNER_PASSWORD_HASH", hash_password("OwnerSecurePass123!"))
+
+    # 1. Non-owner login
+    reg_normal = await client.post(
+        "/api/v1/auth/register",
+        json={"email": "regular-user@example.com", "password": "UserPass123!", "full_name": "Regular User"},
+    )
+    assert reg_normal.status_code == 200
+    login_normal = await client.post(
+        "/api/v1/auth/login", json={"email": "regular-user@example.com", "password": "UserPass123!"}
+    )
+    normal_token = login_normal.json()["access_token"]
+
+    # 2. Normal user cannot access moderation session (401 Unauthorized)
+    res_unauth = await client.get("/api/v1/moderation/session", headers={"Authorization": f"Bearer {normal_token}"})
+    assert res_unauth.status_code == 401
+
+    # 3. Create and login as the owner account
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": owner_email, "password": "OwnerSecurePass123!", "full_name": "Owner Admin"},
+    )
+    login_owner = await client.post(
+        "/api/v1/auth/login", json={"email": owner_email, "password": "OwnerSecurePass123!"}
+    )
+    assert login_owner.status_code == 200
+    owner_token = login_owner.json()["access_token"]
+
+    # 4. Moderation session auto-authenticates with normal web Bearer token!
+    mod_sess = await client.get("/api/v1/moderation/session", headers={"Authorization": f"Bearer {owner_token}"})
+    assert mod_sess.status_code == 200
+    assert mod_sess.json()["authenticated"] is True
+    assert mod_sess.json()["email"].lower() == owner_email.lower()
+
+    # 5. Reports queue is accessible with the web Bearer token!
+    reports_res = await client.get("/api/v1/moderation/reports", headers={"Authorization": f"Bearer {owner_token}"})
+    assert reports_res.status_code == 200
+    assert "items" in reports_res.json()
+

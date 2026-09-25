@@ -1,35 +1,97 @@
 html.i18n-pending body { visibility: hidden; }
+
+/* Base language switch button */
 .pr-language-switch {
-    position: fixed;
-    z-index: 1000;
-    top: 0.7rem;
-    right: max(0.75rem, calc((100vw - 1120px) / 2));
     display: inline-flex;
     align-items: center;
-    gap: 0.42rem;
-    min-height: 2.25rem;
-    padding: 0.35rem 0.65rem;
-    border: 1px solid rgba(35, 34, 42, 0.24);
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid rgba(35, 34, 42, 0.2);
     border-radius: 999px;
     background: #FBF8F0;
     color: #6B6659;
-    box-shadow: 0 3px 12px rgba(35, 34, 42, 0.12);
     font: 600 0.72rem/1 "IBM Plex Mono", monospace;
     cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    user-select: none;
+    flex-shrink: 0;
+    line-height: 1;
 }
-.pr-language-switch [aria-current="true"], .pr-language-switch .is-current { color: #146D6C; }
-.pr-language-switch:focus-visible { outline: 3px solid #B9861E; outline-offset: 2px; }
-.pr-language-divider { color: #B7AA82; }
+
+.pr-language-switch:hover {
+    border-color: rgba(35, 34, 42, 0.38);
+    background: #FFFFFF;
+    color: #23222A;
+}
+
+.pr-language-switch [aria-current="true"],
+.pr-language-switch .is-current {
+    color: #146D6C;
+    font-weight: 700;
+}
+
+.pr-language-switch:focus-visible {
+    outline: 2px solid #B9861E;
+    outline-offset: 2px;
+}
+
+.pr-language-divider {
+    color: #B7AA82;
+    margin: 0 1px;
+    font-weight: 400;
+}
+
+/* Floating fallback for standalone pages without a structured navbar */
+.pr-language-switch.is-floating {
+    position: fixed;
+    z-index: 1000;
+    top: 1rem;
+    right: 1.25rem;
+    box-shadow: 0 3px 12px rgba(35, 34, 42, 0.12);
+}
+
+@media (max-width: 640px) {
+    .pr-language-switch.is-floating {
+        top: 0.75rem;
+        right: 0.75rem;
+        min-height: 1.85rem;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.68rem;
+    }
+}
+
+/* Dark themed pages styling (404, 410, quarantine, accessibility) */
+.grid-bg .pr-language-switch,
+.carbon-theme .pr-language-switch {
+    background: rgba(22, 27, 34, 0.85);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #94A3B8;
+    backdrop-filter: blur(8px);
+}
+
+.grid-bg .pr-language-switch:hover,
+.carbon-theme .pr-language-switch:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #F8FAFC;
+}
+
+.grid-bg .pr-language-switch [aria-current="true"],
+.grid-bg .pr-language-switch .is-current,
+.carbon-theme .pr-language-switch [aria-current="true"],
+.carbon-theme .pr-language-switch .is-current {
+    color: #38BDF8;
+}
+
+.grid-bg .pr-language-divider,
+.carbon-theme .pr-language-divider {
+    color: #475569;
+}
+
+/* Footer locale visibility */
 .pr-footer-locale [data-footer-locale] { display: none; }
 html[data-locale="tr"] .pr-footer-locale [data-footer-locale="tr"],
 html:not([data-locale="tr"]) .pr-footer-locale [data-footer-locale="en"] { display: inline; }
-.legal-topbar { padding-right: 5.5rem; }
-.pr-header-inner { padding-right: 5.5rem !important; }
-@media (max-width: 600px) {
-    .pr-language-switch { top: 0.45rem; right: 0.45rem; min-height: 2rem; padding-inline: 0.5rem; }
-    .legal-topbar { padding-right: 4.2rem; }
-    body.dashboard-page .pr-language-switch { top: 4.1rem; }
-    body.dashboard-page .pr-header-inner { padding-right: 1.25rem !important; }
-    body.dashboard-page .dashboard-mobile-tabs { padding-right: 5.3rem; }
-    body.interstitial-page { padding-top: 4rem; }
-}

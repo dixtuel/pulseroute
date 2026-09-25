@@ -1,13 +1,14 @@
 from datetime import UTC, datetime, timedelta
-from typing import Literal
+from typing import Literal, Optional
 
 import redis.asyncio as aioredis
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response, Security
+from fastapi.security import HTTPAuthorizationCredentials
 from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pulseroute.api.deps import require_authenticated_user
+from pulseroute.api.deps import require_authenticated_user, security_scheme
 from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.moderation_policy import ADMIN_PAGE_SIZE, ADMIN_SESSION_MINUTES
@@ -61,9 +62,78 @@ def _admin_claims(token: str | None) -> dict:
     if not _configured() or not token:
         raise HTTPException(404, "Not found")
     claims = decode_access_token(token)
-    if not claims or claims.get("purpose") != "moderation" or claims.get("sub") != settings.MODERATION_OWNER_EMAIL:
+    if not claims:
         raise HTTPException(401, "Authentication required")
-    return claims
+    if claims.get("purpose") == "moderation" and claims.get("sub", "").casefold() == settings.MODERATION_OWNER_EMAIL.casefold():
+        return claims
+    if claims.get("email") and claims.get("email", "").casefold() == settings.MODERATION_OWNER_EMAIL.casefold():
+        return {"sub": settings.MODERATION_OWNER_EMAIL, "purpose": "moderation", "email": claims["email"]}
+    raise HTTPException(401, "Authentication required")
+
+
+async def require_moderation_admin(
+    request: Request,
+    pr_moderation: str | None = Cookie(default=None),
+    pr_token: str | None = Cookie(default=None),
+    auth: Optional[HTTPAuthorizationCredentials] = Security(security_scheme),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    if not _configured():
+        raise HTTPException(404, "Not found")
+
+    # 1. Öncelik: Dedicated moderasyon çerezi
+    if pr_moderation:
+        claims = decode_access_token(pr_moderation)
+        if claims and claims.get("purpose") == "moderation":
+            sub = claims.get("sub", "")
+            if sub.casefold() == settings.MODERATION_OWNER_EMAIL.casefold():
+                return claims
+
+    # 2. Öncelik: Normal web auth token (Bearer auth veya pr_token çerezi)
+    token = None
+    if auth and auth.credentials:
+        token = auth.credentials
+    elif pr_token:
+        token = pr_token
+    else:
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
+
+    if token:
+        claims = decode_access_token(token)
+        if claims:
+            # Token doğrudan moderasyon tokenı ise
+            if claims.get("purpose") == "moderation":
+                sub = claims.get("sub", "")
+                if sub.casefold() == settings.MODERATION_OWNER_EMAIL.casefold():
+                    return claims
+
+            # Normal web JWT'si: sub=user_id, email=user.email
+            token_email = claims.get("email")
+            if token_email and token_email.casefold() == settings.MODERATION_OWNER_EMAIL.casefold():
+                return {
+                    "sub": settings.MODERATION_OWNER_EMAIL,
+                    "purpose": "moderation",
+                    "user_id": claims.get("sub"),
+                    "email": token_email,
+                }
+
+            # DB üzerinden kullanıcı yetkisini doğrula
+            sub = claims.get("sub")
+            if sub and str(sub).isdigit():
+                user = await db.get(User, int(sub))
+                if user and user.is_active:
+                    if user.email.casefold() == settings.MODERATION_OWNER_EMAIL.casefold() or user.is_superuser:
+                        return {
+                            "sub": settings.MODERATION_OWNER_EMAIL,
+                            "purpose": "moderation",
+                            "user_id": user.id,
+                            "email": user.email,
+                        }
+
+    raise HTTPException(401, "Authentication required")
+
 
 
 
@@ -100,8 +170,7 @@ async def create_session(payload: LoginPayload, request: Request, response: Resp
 
 
 @router.delete("/session")
-async def delete_session(request: Request, response: Response, pr_moderation: str | None = Cookie(default=None)):
-    _admin_claims(pr_moderation)
+async def delete_session(request: Request, response: Response, claims: dict = Depends(require_moderation_admin)):
     if not _origin_ok(request):
         raise HTTPException(403, "Invalid origin")
     response.delete_cookie(COOKIE_NAME, path="/api/v1/moderation", secure=_request_is_https(request), httponly=True, samesite="strict")
@@ -109,14 +178,17 @@ async def delete_session(request: Request, response: Response, pr_moderation: st
 
 
 @router.get("/session")
-async def session_status(pr_moderation: str | None = Cookie(default=None)):
-    claims = _admin_claims(pr_moderation)
-    return {"authenticated": True, "email": claims["sub"]}
+async def session_status(request: Request, response: Response, claims: dict = Depends(require_moderation_admin)):
+    token = create_access_token(
+        {"sub": settings.MODERATION_OWNER_EMAIL, "purpose": "moderation"},
+        expires_delta=timedelta(minutes=ADMIN_SESSION_MINUTES),
+    )
+    response.set_cookie(COOKIE_NAME, token, max_age=ADMIN_SESSION_MINUTES * 60, httponly=True, secure=_request_is_https(request), samesite="strict", path="/api/v1/moderation")
+    return {"authenticated": True, "email": claims.get("email") or claims["sub"]}
 
 
 @router.get("/reports")
-async def list_reports(status: str = "new", before: int | None = None, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def list_reports(status: str = "new", before: int | None = None, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     query = select(AbuseReport.id, AbuseReport.slug, AbuseReport.reason, AbuseReport.reporter_email, AbuseReport.status, AbuseReport.review_status, AbuseReport.created_at).where(AbuseReport.review_status == status).order_by(AbuseReport.id.desc()).limit(ADMIN_PAGE_SIZE + 1)
     if before:
         query = query.where(AbuseReport.id < before)
@@ -139,8 +211,7 @@ async def _action_history(db: AsyncSession, *, report_id: int | None = None, app
 
 
 @router.get("/reports/{report_id}")
-async def report_detail(report_id: int, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def report_detail(report_id: int, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     row = (await db.execute(select(AbuseReport, ShortLink).outerjoin(ShortLink, AbuseReport.link_id == ShortLink.id).where(AbuseReport.id == report_id))).first()
     if not row:
         raise HTTPException(404, "Report not found")
@@ -150,8 +221,7 @@ async def report_detail(report_id: int, pr_moderation: str | None = Cookie(defau
 
 
 @router.post("/reports/{report_id}/decision")
-async def decide_report(report_id: int, payload: DecisionPayload, request: Request, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
-    claims = _admin_claims(pr_moderation)
+async def decide_report(report_id: int, payload: DecisionPayload, request: Request, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
     if not _origin_ok(request):
         raise HTTPException(403, "Invalid origin")
     report = await db.get(AbuseReport, report_id, with_for_update=True)
@@ -194,8 +264,7 @@ async def decide_report(report_id: int, payload: DecisionPayload, request: Reque
 
 
 @router.get("/restricted")
-async def list_restricted(before: int | None = None, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def list_restricted(before: int | None = None, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     query = select(ShortLink.id, ShortLink.slug, ShortLink.title, ShortLink.moderation_status, ShortLink.quarantine_reason, ShortLink.moderation_updated_at).where(ShortLink.moderation_status.in_(("quarantined", "banned", "removed"))).order_by(ShortLink.id.desc()).limit(ADMIN_PAGE_SIZE + 1)
     if before:
         query = query.where(ShortLink.id < before)
@@ -204,8 +273,7 @@ async def list_restricted(before: int | None = None, pr_moderation: str | None =
 
 
 @router.get("/links/{link_id}")
-async def restricted_detail(link_id: int, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def restricted_detail(link_id: int, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     link = await db.get(ShortLink, link_id)
     if not link:
         raise HTTPException(404, "Link not found")
@@ -222,8 +290,7 @@ async def restricted_detail(link_id: int, pr_moderation: str | None = Cookie(def
 
 
 @router.get("/appeals")
-async def list_appeals(status: str = "pending", before: int | None = None, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def list_appeals(status: str = "pending", before: int | None = None, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     query = select(ModerationAppeal.id, ModerationAppeal.slug, ModerationAppeal.requester_email, ModerationAppeal.status, ModerationAppeal.created_at).where(ModerationAppeal.status == status).order_by(ModerationAppeal.id.desc()).limit(ADMIN_PAGE_SIZE + 1)
     if before:
         query = query.where(ModerationAppeal.id < before)
@@ -232,8 +299,7 @@ async def list_appeals(status: str = "pending", before: int | None = None, pr_mo
 
 
 @router.get("/appeals/{appeal_id}")
-async def appeal_detail(appeal_id: int, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db)):
-    _admin_claims(pr_moderation)
+async def appeal_detail(appeal_id: int, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db)):
     row = (await db.execute(select(ModerationAppeal, ShortLink).outerjoin(ShortLink, ModerationAppeal.link_id == ShortLink.id).where(ModerationAppeal.id == appeal_id))).first()
     if not row:
         raise HTTPException(404, "Appeal not found")
@@ -243,8 +309,7 @@ async def appeal_detail(appeal_id: int, pr_moderation: str | None = Cookie(defau
 
 
 @router.post("/links/{link_id}/decision")
-async def decide_link(link_id: int, payload: DecisionPayload, request: Request, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
-    claims = _admin_claims(pr_moderation)
+async def decide_link(link_id: int, payload: DecisionPayload, request: Request, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
     if not _origin_ok(request):
         raise HTTPException(403, "Invalid origin")
     link = await db.scalar(select(ShortLink).where(ShortLink.id == link_id).with_for_update())
@@ -274,8 +339,7 @@ async def decide_link(link_id: int, payload: DecisionPayload, request: Request, 
 
 
 @router.post("/appeals/{appeal_id}/decision")
-async def decide_appeal(appeal_id: int, payload: DecisionPayload, request: Request, pr_moderation: str | None = Cookie(default=None), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
-    claims = _admin_claims(pr_moderation)
+async def decide_appeal(appeal_id: int, payload: DecisionPayload, request: Request, claims: dict = Depends(require_moderation_admin), db: AsyncSession = Depends(get_db), redis_cli: aioredis.Redis | None = Depends(get_redis)):
     if not _origin_ok(request):
         raise HTTPException(403, "Invalid origin")
     appeal = await db.get(ModerationAppeal, appeal_id, with_for_update=True)

@@ -9,8 +9,14 @@
   let queue = 'reports', cursor = null, selected = null, cacheItems = [];
   const tr = (s) => labels[locale][s] || s;
   const safe = (v) => v == null || v === '' ? '—' : String(v);
+  const getToken = () => { try { return localStorage.getItem('pr_token'); } catch (_) { return null; } };
   const request = async (url, options = {}) => {
-    const res = await fetch(url, {credentials:'same-origin', ...options, headers:{'Content-Type':'application/json', ...(options.headers || {})}});
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    const token = getToken();
+    if (token && !headers['Authorization']) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const res = await fetch(url, { credentials: 'same-origin', ...options, headers });
     if (!res.ok) { if (res.status === 401) showLogin(); throw new Error(res.status === 404 ? 'not-found' : 'request'); }
     return res.status === 204 ? null : res.json();
   };
@@ -62,7 +68,7 @@
     catch(_){window.alert(tr('failed'))}
   }
   $('#login-form').addEventListener('submit',async(event)=>{event.preventDefault();const form=new FormData(event.currentTarget);$('#login-error').textContent='';try{await request(`${api}/session`,{method:'POST',body:JSON.stringify({email:form.get('email'),password:form.get('password')})});event.currentTarget.reset();showDesk()}catch(_){$('#login-error').textContent=tr('failed')}});
-  $('#logout').addEventListener('click',async()=>{try{await request(`${api}/session`,{method:'DELETE'});showLogin()}catch(_){window.alert(tr('signout'))}});
+  $('#logout').addEventListener('click',async()=>{try{await request(`${api}/session`,{method:'DELETE'})}catch(_){}try{localStorage.removeItem('pr_token')}catch(_){}document.cookie='pr_token=; path=/; max-age=0';document.cookie='pr_moderation=; path=/api/v1/moderation; max-age=0';showLogin()});
   document.querySelectorAll('.queue-tab').forEach((button)=>button.addEventListener('click',()=>{queue=button.dataset.queue;selected=null;document.querySelectorAll('.queue-tab').forEach(x=>x.classList.toggle('active',x===button));$('#detail-card').hidden=true;$('#empty-detail').hidden=false;loadQueue(true)}));
   $('#load-more').addEventListener('click',()=>loadQueue(false));
   window.addEventListener('pulseroute:localechange',(event)=>{ if(locale === event.detail.locale) return; locale=event.detail.locale; if(!$('#desk-view').hidden)loadQueue(true); });

@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Optional
 
 import redis.asyncio as aioredis
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,6 +11,7 @@ from pulseroute.api.deps import require_authenticated_user
 from pulseroute.common.email_validator import email_domain_accepts_mail
 from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
+from pulseroute.core.moderation_policy import ADMIN_SESSION_MINUTES
 from pulseroute.core.redis import get_redis
 from pulseroute.core.security import create_access_token, hash_password, verify_password
 from pulseroute.core.security_middleware import BruteForceGuard
@@ -69,10 +70,16 @@ async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
     return user
 
 
+def _request_is_https(request: Request) -> bool:
+    scheme = request.headers.get("x-forwarded-proto", request.url.scheme).split(",", 1)[0].strip()
+    return scheme == "https"
+
+
 @router.post("/login", response_model=Token)
 async def login(
     login_data: LoginRequest,
     request: Request,
+    response: Response,
     db: AsyncSession = Depends(get_db),
     redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
 ):
@@ -105,6 +112,37 @@ async def login(
 
     await BruteForceGuard.record_success(redis_cli, client_ip)
     token = create_access_token(data={"sub": str(user.id), "email": user.email}, expires_delta=timedelta(days=7))
+
+    # Standard web session cookie
+    response.set_cookie(
+        "pr_token",
+        token,
+        max_age=7 * 86400,
+        httponly=False,
+        secure=_request_is_https(request),
+        samesite="lax",
+        path="/",
+    )
+
+    # If this is the owner account, also issue moderation cookie immediately
+    if (
+        bool(settings.MODERATION_OWNER_EMAIL and settings.MODERATION_OWNER_PASSWORD_HASH)
+        and user.email.casefold() == settings.MODERATION_OWNER_EMAIL.casefold()
+    ):
+        mod_token = create_access_token(
+            {"sub": settings.MODERATION_OWNER_EMAIL, "purpose": "moderation"},
+            expires_delta=timedelta(minutes=ADMIN_SESSION_MINUTES),
+        )
+        response.set_cookie(
+            "pr_moderation",
+            mod_token,
+            max_age=ADMIN_SESSION_MINUTES * 60,
+            httponly=True,
+            secure=_request_is_https(request),
+            samesite="strict",
+            path="/api/v1/moderation",
+        )
+
     return {"access_token": token, "token_type": "bearer"}
 
 

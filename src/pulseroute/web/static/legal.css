@@ -72,7 +72,7 @@ a:focus-visible, [tabindex]:focus-visible {
     text-decoration: none;
 }
 .brand-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rail); }
-.top-links { display: flex; gap: 1.1rem; }
+.top-links { display: flex; align-items: center; gap: 1.1rem; }
 .top-links a { font-weight: 600; }
 .top-links a[aria-current="page"] { color: var(--ink); text-decoration-thickness: 2px; }
 .legal-layout {

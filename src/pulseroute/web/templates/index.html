@@ -110,11 +110,10 @@
     </style>
 </head>
 <body class="dashboard-page min-h-screen grain flex flex-col text-ink antialiased font-sans">
-{% include "_language_switch.html" %}
 
     <!-- Header -->
     <header class="border-b border-line/80 bg-paper/95 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4 pr-header-inner">
+        <div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
             <div class="flex items-center gap-2.5 shrink-0">
                 <span class="w-8 h-8 rounded-full bg-ink text-paper flex items-center justify-center">
                     <i class="fa-solid fa-route text-[13px]"></i>
@@ -159,6 +158,8 @@
                         <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
                     </button>
                 </div>
+
+                {% include "_language_switch.html" %}
             </div>
         </div>
         <!-- Mobile tab bar -->
@@ -760,6 +761,8 @@
         function signOut() {
             localStorage.removeItem('pr_token');
             localStorage.removeItem('pr_workspace_id');
+            document.cookie = 'pr_token=; path=/; max-age=0';
+            document.cookie = 'pr_moderation=; path=/api/v1/moderation; max-age=0';
             window.location.reload();
         }
 
@@ -776,6 +779,7 @@
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     localStorage.setItem('pr_token', data.access_token);
+                    document.cookie = `pr_token=${encodeURIComponent(data.access_token)}; path=/; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
                     closeModal('loginModal');
                     window.location.reload();
                 } else {
@@ -807,6 +811,7 @@
                         return;
                     }
                     localStorage.setItem('pr_token', loginData.access_token);
+                    document.cookie = `pr_token=${encodeURIComponent(loginData.access_token)}; path=/; max-age=604800; SameSite=Lax${location.protocol === 'https:' ? '; Secure' : ''}`;
                     closeModal('registerModal');
                     window.location.reload();
                 } else {
