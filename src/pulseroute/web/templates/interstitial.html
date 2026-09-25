@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bağlantı kontrol ediliyor — PulseRoute</title>
@@ -96,7 +97,8 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
     {% endif %}
 </head>
-<body class="min-h-screen flex flex-col justify-between p-4 sm:p-6 antialiased font-sans">
+<body class="interstitial-page min-h-screen flex flex-col justify-between p-4 sm:p-6 antialiased font-sans">
+{% include "_language_switch.html" %}
 
     <!-- Header Navigation -->
     <header class="max-w-xl mx-auto w-full flex items-center justify-between py-3 px-1">

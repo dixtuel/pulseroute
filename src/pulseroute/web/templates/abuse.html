@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="tr">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kötüye kullanım bildirimi | PulseRoute</title>
@@ -12,6 +13,7 @@
     <link rel="stylesheet" href="/static/legal.css">
 </head>
 <body>
+{% include "_language_switch.html" %}
 <a class="skip-link" href="#report-main">Ana içeriğe geç</a>
 <div class="legal-page abuse-page">
     <header class="legal-topbar">
@@ -83,7 +85,9 @@
             </form>
 
             <footer class="abuse-card-footer">
-                <p><strong>Yer sağlayıcı bildirimi</strong> · Hukuka aykırı içerik bildirimleri 5651 sayılı Kanun ve geçerli yükümlülükler kapsamında değerlendirilir. Otomatik eşikler kişi doğrulaması değildir; bir bağlantının karantinaya alınması veya silinmesi için tek başına kesin hukuki karar sayılmaz.</p>
+                <p><strong>Yer sağlayıcı bildirimi</strong> · 5651 sayılı Kanun’un 5. maddesi yer sağlayıcı için içerikleri sürekli izleme veya hukuka aykırılığı araştırma yükümlülüğü öngörmez. Kanundaki geçerli bildirim ve kararlar üzerine doğan yükümlülükler saklıdır.</p>
+                <p>Bu hizmette 7/24 insan incelemesi yoktur; anında yanıt veya belirli bir sonuç garanti edilemez. Otomatik güvenlik sinyalleri insan incelemesinden önce karantina uygulayabilir; zararlı içerik gözden kaçabilir veya bağlantı yanlış işaretlenebilir. Bildirim, zorunlu hukuki süreçlerin yerine geçmez.</p>
+                <p>Otomatik eşikler kişi doğrulaması değildir; tek başına kesin hukuki karar sayılmaz.</p>
                 <div class="abuse-contact-row">
                     <span>Yetkili iletişim</span>
                     <span class="protected-contact-link" data-email="{{ operator_email }}" title="E-posta göndermek veya adresi kopyalamak için seçin" role="button" tabindex="0">
@@ -147,7 +151,7 @@
                     form.reset();
                 }
             } else {
-                showStatus('error', 'Bildirim gönderilemedi', data.detail || 'Bağlantıyı ve girdiğiniz bilgileri kontrol edip tekrar deneyin.');
+                showStatus('error', 'Bildirim gönderilemedi', window.PulseRouteI18n.translateOr(data.detail, 'The report could not be processed. Check the link and try again.'));
             }
         } catch (error) {
             showStatus('error', 'Sunucuya ulaşılamadı', 'Lütfen bağlantınızı kontrol edip daha sonra tekrar deneyin.');

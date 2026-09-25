@@ -148,8 +148,8 @@ async def report_abuse(
         return {
             "status": "deleted",
             "slug": slug,
-            "action_taken": "Link has been permanently removed due to exceeding the maximum abuse report threshold.",
-            "message": "Bağlantı çok sayıda şikayet alması nedeniyle sistemden kalıcı olarak silinmiştir.",
+            "action_taken": "Link has been permanently removed after reaching the configured abuse report threshold.",
+            "message": "Bağlantı, yapılandırılmış kötüye kullanım bildirim eşiğine ulaşıldığı için kalıcı olarak silinmiştir.",
         }
 
     is_quarantined = False
@@ -184,13 +184,13 @@ async def report_abuse(
         "status": action_status,
         "slug": link.slug,
         "action_taken": (
-            "Link has been quarantined immediately and redirection halted pending formal review."
+            "Automated safety controls quarantined the link immediately and stopped redirection pending review."
             if is_quarantined
-            else "Report has been safely logged and prioritized for compliance review within 24 hours."
+            else "Report has been safely recorded for review; review timing may vary with operational capacity."
         ),
         "message": (
             "Bağlantı 5651 Sayılı Kanun ve Güvenlik İlkelerimiz kapsamında derhal karantinaya alınmış ve erişimi durdurulmuştur."
             if is_quarantined
-            else "Bildiriminiz alınmıştır. İnceleme en geç 24 saat içinde tamamlanacaktır."
+            else "Bildiriminiz alındı. İnceleme süresi operasyonel kapasiteye göre değişebilir; anında yanıt garanti edilmez."
         ),
     }

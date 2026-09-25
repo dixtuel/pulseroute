@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
@@ -13,6 +14,7 @@
     <link rel="stylesheet" href="/static/legal.css">
 </head>
 <body>
+{% include "_language_switch.html" %}
 <a class="skip-link" href="#main">Skip to content</a>
 <div class="legal-page">
     <header class="legal-topbar">
@@ -70,7 +72,7 @@
                 <section class="legal-section" id="ads">
                     <h2><span class="section-no">04</span>Advertising and cookies</h2>
                     <p>This instance may display Google AdSense ads on the management console or optional countdown pages. Advertising scripts and personalized advertising cookies are loaded only after consent where consent is required. If consent is declined or absent, personalized advertising is not enabled; availability of non-personalized ads depends on provider behavior.</p>
-                    <p>The <code>pr_pref</code> cookie stores the advertising choice for up to 180 days. It contains the preference, not account credentials. Browser storage and essential session behavior may also be used where needed for the service.</p>
+                    <p>The preference cookie <code>pr_pref</code> stores the advertising choice for up to 180 days. It contains the preference, not account credentials. Browser storage and essential session behavior may also be used where needed for the service. <code>pulseroute_locale</code> stores the language you selected in this browser and is not sent to the service.</p>
                 </section>
                 <section class="legal-section" id="security">
                     <h2><span class="section-no">05</span>Security and service providers</h2>
@@ -85,7 +87,8 @@
                     <h2><span class="section-no">07</span>Abuse reports and deduplication</h2>
                     <p>When you submit a report through the <a href="/abuse">abuse portal</a> or API, the service processes the submitted link, reason, details, reporter email, and a masked IP to review the notice and prevent misuse of the reporting channel. Reports may be retained as required to investigate incidents and meet legal obligations under Law No. 5651 and applicable data protection law.</p>
                     <p>To prevent repeated submissions from automatically affecting a link, the service derives a keyed HMAC-SHA-256 digest from the request IP, user-agent, and language headers. The raw values used for this matching digest are not stored by this feature. The digest is pseudonymous personal data, not anonymous data: it is used for matching during the configured window (default 24 hours), then cleared on the next retention pass, which runs every 15 minutes. The digest is not used for advertising or cross-site tracking.</p>
-                    <p>Distinct reports can cause a link to be quarantined at the configured threshold; phishing or malware reports may quarantine immediately. Permanent deletion follows the higher configured threshold. See <a href="/terms">Terms and Acceptable Use</a> for the report handling rules.</p>
+                    <p>Distinct reports can cause a link to be quarantined at the configured threshold; phishing or malware reports may quarantine immediately. Permanent deletion follows the higher configured threshold. Automated signals can miss harmful material or flag a link incorrectly. See <a href="/terms">Terms and Acceptable Use</a> for the report handling rules.</p>
+                    <p>The service does not continuously monitor every third-party destination, and no human operator is continuously available for immediate review. Reports are reviewed as operational capacity allows; a submission does not guarantee an immediate response or a particular decision. Applicable legal duties and valid notices or orders continue to apply. Automated controls may quarantine a link without prior human review.</p>
                 </section>
             </div>
         </article>

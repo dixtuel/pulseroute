@@ -1,0 +1,17 @@
+<script>
+(() => {
+    let locale = null;
+    try { locale = localStorage.getItem('pulseroute_locale'); } catch (_) {}
+    if (locale !== 'tr' && locale !== 'en') {
+        const browserLanguage = (navigator.languages && navigator.languages[0]) || navigator.language || 'en';
+        locale = /^(tr|az)(-|$)/i.test(browserLanguage) ? 'tr' : 'en';
+    }
+    document.documentElement.lang = locale;
+    document.documentElement.dataset.locale = locale;
+    document.documentElement.classList.add('i18n-pending');
+    window.setTimeout(() => document.documentElement.classList.remove('i18n-pending'), 3000);
+})();
+</script>
+<noscript><style>html.i18n-pending body { visibility: visible; }</style></noscript>
+<link rel="stylesheet" href="/static/i18n.css">
+<script src="/static/js/i18n.js" defer></script>

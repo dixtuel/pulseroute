@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if adsense_client_id %}<meta name="google-adsense-account" content="{{ adsense_client_id }}">{% endif %}
@@ -56,6 +57,7 @@
     </style>
 </head>
 <body class="min-h-screen py-12 px-6 grid-bg antialiased text-slate-200">
+{% include "_language_switch.html" %}
     <div class="max-w-3xl mx-auto space-y-8 bg-carbon border border-divider p-8 rounded-xl shadow-2xl">
         <div class="border-b border-divider pb-4">
             <h1 class="text-xl font-display font-bold text-white tracking-tight">Accessibility Statement</h1>
@@ -69,7 +71,7 @@
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
             <h2 class="text-sm font-display font-bold text-white">2. Conformance Standards</h2>
-            <p>Our platform is built and maintained to conform with the Web Content Accessibility Guidelines (<strong>WCAG 2.1 Level AA</strong>) standards.</p>
+            <p>We aim to follow the Web Content Accessibility Guidelines (<strong>WCAG 2.1 Level AA</strong>) as we improve the platform. This is an ongoing effort, not a third-party certification.</p>
         </section>
 
         <section class="space-y-3 text-xs text-slate-300 font-sans leading-relaxed">

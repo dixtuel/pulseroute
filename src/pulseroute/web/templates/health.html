@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
@@ -13,6 +14,7 @@
     <meta http-equiv="Cache-Control" content="no-store">
 </head>
 <body>
+{% include "_language_switch.html" %}
 <main class="legal-page">
     <nav class="legal-topbar" aria-label="Main navigation">
         <a class="brand-mark" href="/"><span class="brand-dot" aria-hidden="true"></span>PulseRoute</a>
@@ -26,7 +28,7 @@
         {% if snapshot %}
         <dl class="health-facts">
             <div><dt>Database</dt><dd>{{ snapshot.database }}</dd></div>
-            <div><dt>Redis</dt><dd>{{ snapshot.redis }}</dd></div>
+            <div><dt>Redis</dt><dd>{% if snapshot.redis == 'disabled_or_unavailable' %}disabled or unavailable{% else %}{{ snapshot.redis }}{% endif %}</dd></div>
             <div><dt>Probe time</dt><dd>{{ snapshot.latency_ms }} ms</dd></div>
             <div><dt>Version</dt><dd>{{ snapshot.version }}</dd></div>
         </dl>

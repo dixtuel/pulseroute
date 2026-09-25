@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    {% include "_language_head.html" %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     {% if adsense_client_id %}
@@ -140,11 +141,12 @@
         details[open] .chevron { transform: rotate(180deg); }
     </style>
 </head>
-<body class="min-h-screen grain flex flex-col text-ink antialiased font-sans">
+<body class="dashboard-page min-h-screen grain flex flex-col text-ink antialiased font-sans">
+{% include "_language_switch.html" %}
 
     <!-- Header -->
     <header class="border-b border-line/80 bg-paper/95 backdrop-blur sticky top-0 z-40">
-        <div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4">
+        <div class="max-w-5xl mx-auto px-5 h-16 flex items-center justify-between gap-4 pr-header-inner">
             <div class="flex items-center gap-2.5 shrink-0">
                 <span class="w-8 h-8 rounded-full bg-ink text-paper flex items-center justify-center">
                     <i class="fa-solid fa-route text-[13px]"></i>
@@ -189,7 +191,7 @@
             </div>
         </div>
         <!-- Mobile tab bar -->
-        <nav class="md:hidden flex items-center gap-1 px-5 pb-2.5 text-sm font-medium overflow-x-auto">
+        <nav class="dashboard-mobile-tabs md:hidden flex items-center gap-1 px-5 pb-2.5 text-sm font-medium overflow-x-auto">
             <button onclick="switchTab('links')" id="tabBtn-links-m" class="tab-active px-3 py-1.5 rounded-full transition whitespace-nowrap">Links</button>
             <button onclick="switchTab('analytics')" id="tabBtn-analytics-m" class="tab-inactive px-3 py-1.5 rounded-full transition whitespace-nowrap">Board</button>
             <button onclick="switchTab('domains')" id="tabBtn-domains-m" class="tab-inactive px-3 py-1.5 rounded-full transition whitespace-nowrap">Routes</button>
@@ -654,6 +656,11 @@
             return localStorage.getItem('pr_token');
         }
 
+        function showRequestError(detail, fallback) {
+            const message = window.PulseRouteI18n.translateOr(detail, fallback);
+            alert(message);
+        }
+
         function getAuthHeaders() {
             const token = getToken();
             const headers = { 'Content-Type': 'application/json' };
@@ -778,9 +785,9 @@
                     closeModal('loginModal');
                     window.location.reload();
                 } else {
-                    alert(data.detail || "That email and password don't match.");
+                    showRequestError(data.detail, "The request failed. Check the details and try again.");
                 }
-            } catch (e) { alert('Could not reach the server. Try again.'); }
+            } catch (e) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
         document.getElementById('registerForm').addEventListener('submit', async (e) => {
@@ -806,9 +813,9 @@
                     window.location.reload();
                 } else {
                     const data = await res.json();
-                    alert(data.detail || "Couldn't create that account.");
+                    showRequestError(data.detail, "The account could not be created.");
                 }
-            } catch (e) { alert('Could not reach the server. Try again.'); }
+            } catch (e) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
         document.getElementById('newWorkspaceForm').addEventListener('submit', async (e) => {
@@ -830,9 +837,9 @@
                     loadLinks();
                 } else {
                     const data = await res.json();
-                    alert(data.detail || "Couldn't create that workspace.");
+                    showRequestError(data.detail, "The workspace could not be created.");
                 }
-            } catch (e) { alert('Could not reach the server. Try again.'); }
+            } catch (e) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
         async function loadLinks() {
@@ -896,7 +903,7 @@
         }
 
         async function deleteLink(id) {
-            if (!confirm('Delete this link?')) return;
+            if (!confirm(window.PulseRouteI18n.translate('Delete this link?'))) return;
             await fetch(`/api/v1/links/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
             loadLinks();
         }
@@ -926,7 +933,7 @@
                 }
 
                 const ctx = document.getElementById('deviceChart').getContext('2d');
-                const labels = data.devices && data.devices.length ? data.devices.map(d => d.name) : ['Desktop', 'Mobile', 'Tablet'];
+                const labels = data.devices && data.devices.length ? data.devices.map(d => window.PulseRouteI18n.translate(d.name)) : ['Desktop', 'Mobile', 'Tablet'].map(label => window.PulseRouteI18n.translate(label));
                 const counts = data.devices && data.devices.length ? data.devices.map(d => d.count) : [0, 0, 0];
 
                 if (deviceChart) deviceChart.destroy();
@@ -1022,7 +1029,7 @@
         }
 
         async function deleteDomainRow(id) {
-            if (!confirm('Remove this domain?')) return;
+            if (!confirm(window.PulseRouteI18n.translate('Remove this domain?'))) return;
             try {
                 await fetch(`/api/v1/domains/${id}`, { method: 'DELETE', headers: getAuthHeaders() });
             } finally { refreshWorkspaceDomains(); }
@@ -1050,9 +1057,9 @@
                     document.getElementById('newDomainInput').value = '';
                     refreshWorkspaceDomains();
                 } else {
-                    alert(data.detail || "Couldn't add that domain.");
+                    showRequestError(data.detail, "The domain could not be added.");
                 }
-            } catch (err) { alert('Could not reach the server. Try again.'); }
+            } catch (err) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
@@ -1096,9 +1103,9 @@
                     document.getElementById('shortenForm').reset();
                     loadLinks();
                 } else {
-                    alert(data.detail || "Couldn't create that link.");
+                    showRequestError(data.detail, "The link could not be created.");
                 }
-            } catch (err) { alert('Could not reach the server. Try again.'); }
+            } catch (err) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
         function copyResultLink() {
@@ -1116,6 +1123,10 @@
                 img.classList.add('hidden');
             }
         }
+
+        window.addEventListener('pulseroute:localechange', () => {
+            if (deviceChart && getToken() && currentWorkspaceId) loadAnalytics();
+        });
 
         initAuth();
     </script>
