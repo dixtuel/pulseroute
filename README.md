@@ -2,167 +2,105 @@
 
 # PulseRoute
 
-**Self-hosted URL shortener with custom domains, click analytics, QR codes and webhooks**
+**A self-hosted link shortener with custom domains, analytics and a small, focused dashboard.**
 
-[![CI Pipeline](https://github.com/dixtuel/pulseroute/actions/workflows/ci.yml/badge.svg)](https://github.com/dixtuel/pulseroute/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue.svg)](https://www.python.org/)
 
-*Sub-10ms redirects, automated Caddy On-Demand TLS for custom domains, distributed Base62 ID generation, non-blocking Redis Stream analytics ingestion, GDPR/KVKK IP anonymization, and an embedded modern dashboard with rich terminal CLI.*
-
-[Live Demo](https://ps.sely.tr) • [Architecture](#system-architecture) • [Security & Privacy](#security-and-privacy) • [CLI Guide](#rich-terminal-cli) • [Cloud Deploy](#cloud-deployment-render--neon--upstash) • [Self-Hosted Deploy](#self-hosted-deployment-docker-compose)
+[Live demo](https://ps.sely.tr) · [Quick start](#quick-start) · [Configuration](#configuration) · [Development](#development)
 
 ---
 
 </div>
 
-## System Architecture
+## What it does
 
-```mermaid
-graph TD
-    Client([Client / Visitor]) -->|HTTP Request /custom-domain/slug| Caddy[Caddy Proxy - On-Demand TLS]
-    Caddy -->|Check Domain Auth| CaddyCheck[PulseRoute /api/v1/internal/caddy-check]
-    Caddy -->|Forward Request| FastAPI[FastAPI Async Router]
+- Create short links, QR codes, custom domains and workspaces.
+- View click analytics and publish signed `link.created` / `link.clicked` webhooks.
+- Route browsers through a fixed five-second verification screen; API clients and bots receive a redirect directly. Link creators cannot change the delay.
+- Accept abuse reports and provide an owner-only moderation desk for reports, restricted links and appeals.
+- Use the English or Turkish dashboard. The default follows the browser language (`tr`/`az` → Turkish; otherwise English).
 
-    subgraph "Fast Read Path (<10ms)"
-        FastAPI -->|1. Lookup Slug| RedisCache[(Redis KV Cache)]
-        FastAPI -.->|Cache Miss| PG[(PostgreSQL / SQLite)]
-    end
+FastAPI serves the application. PostgreSQL stores accounts, links and moderation records; Redis provides cache and a bounded click-event stream. Redis is not a replacement for the database, and buffered analytics can be lost if its Redis service loses data.
 
-    FastAPI -->|Browser: verification screen, then 5s minimum| Client
-    FastAPI -->|Bots and API clients: HTTP 307| Client
+## Security and privacy
 
-    subgraph "Non-Blocking Analytics Pipeline"
-        FastAPI -->|2. Push Click Event| RedisStream[(Redis Stream `events:clicks`)]
-        Worker[Async Batch Worker] -->|3. Consume 100-event Batches| RedisStream
-        Worker -->|4. Anonymize IP + GeoIP + Bot Filter| Worker
-        Worker -->|5. Bulk Insert| DBStore[(PostgreSQL Click Events)]
-    end
-```
+- Workspace APIs check membership before reading or changing account-owned data. Anonymous links expire after 24 hours and cannot be managed through an account API.
+- Visitor IP addresses are masked before analytics storage. Abuse and moderation records use the documented retention policy in the application.
+- Webhook secrets are encrypted at rest using a key derived from `SECRET_KEY`.
+- The private owner desk is disabled unless both moderation owner settings are configured.
 
-Browser visitors see the verification screen immediately. The link is resolved in a separate request; the countdown begins only after validation and counts toward a fixed five-second minimum from the initial request. If validation itself takes longer, the continue button becomes available immediately. Unknown links show a clear not-found state. Link creators cannot change the delay. A short-lived encrypted ticket prevents the browser completion endpoint from revealing the destination early.
+## CLI
 
----
-
-## Security and Privacy
-
-- **SQL Injection Prevention:** 100% parameterized queries via SQLAlchemy Async ORM.
-- **Multi-Tenant Workspace Isolation:** Every account gets its own workspace (`owner` role) on signup — there is no shared workspace. All link, analytics, custom-domain, and webhook endpoints require authentication and verify workspace membership before returning or mutating anything; anonymous links (24h TTL) have no owner and can't be managed via the API at all, only viewed in aggregate (`GET /api/v1/links/stats/anonymous-count`). In `REQUIRE_CUSTOM_DOMAIN=true` mode, anonymous link creation is rejected outright (server-side, and the dashboard now shows a "sign in required" state instead of the anonymous-link form) since anonymous visitors can never own a verified domain.
-- **Brute-Force Protection:** Automated rate limiting and 10-minute IP jailing after 10 consecutive failed authentication attempts.
-- **GDPR / KVKK Compliance:** Raw visitor IP addresses are never saved to disk. IPs are masked (`192.168.1.0/24`) prior to database persistence.
-- **Data Encryption at Rest:** Webhook secrets are encrypted before being stored (Fernet: AES-128-CBC + HMAC-SHA256, keyed from `SECRET_KEY`) — never persisted or returned in plaintext after creation.
-- **Custom Error Handling:** Branded 404/410/500 pages with support for custom fallback URLs per domain.
-- **Single Platform AdSense Account:** Display-ad monetization is a single, server-administrator-configured account (`GLOBAL_ADSENSE_CLIENT_ID`/`GLOBAL_ADSENSE_SLOT_ID`) — Google AdSense requires per-site ownership verification, so per-user/per-workspace monetization isn't offered.
-
----
-
-## Rich Terminal CLI
-
-PulseRoute comes equipped with a first-class CLI powered by **Typer** and **Rich**:
+Install the package, then use the `pulseroute` command:
 
 ```bash
-# Start server and dashboard
 pulseroute serve --port 8000
-
-# Shorten a URL with custom slug and print an ASCII QR Code
-pulseroute link create https://github.com/dixtuel/pulseroute --slug gh-repo --qr
-
-# List all active links in a formatted table
+pulseroute link create https://example.com --slug example --qr
 pulseroute link list
-
-# Add & verify custom domains
-pulseroute domain add links.mybrand.com
-pulseroute domain verify links.mybrand.com
-
-# Inspect global analytics
+pulseroute domain add links.example.com
+pulseroute domain verify links.example.com
 pulseroute analytics summary --days 7
 ```
 
----
+## Quick start
 
-## Webhooks
+Run the included FastAPI, PostgreSQL, Redis and Caddy stack with Docker Compose:
 
-Subscribe a workspace to `link.created` and/or `link.clicked` events (`POST /api/v1/webhooks`, workspace-scoped, auth required). Each event is delivered as a signed `POST`:
+```bash
+git clone https://github.com/dixtuel/pulseroute.git
+cd pulseroute/deploy
+docker compose up --build -d
+```
+
+Open the dashboard at `http://localhost:8000/dashboard`. The Compose file uses local PostgreSQL and Redis defaults. Set production secrets and domain values in the `app` service environment before exposing the service publicly. The app can also be deployed to a Python web host with an external PostgreSQL database and any compatible Redis provider; see [`deploy/.env.example`](deploy/.env.example) for available settings.
+
+The shared-domain live instance is [ps.sely.tr](https://ps.sely.tr). Custom-domain TLS for a self-hosted deployment uses the included Caddy `ask` endpoint.
+
+## Configuration
+
+See [`deploy/.env.example`](deploy/.env.example) for settings and defaults. The main production settings are:
+
+| Variable | Purpose |
+| :--- | :--- |
+| `DATABASE_URL` | PostgreSQL connection string. Local development defaults to SQLite. |
+| `REDIS_URL` | Redis-compatible cache and rate-limit backend. |
+| `ANALYTICS_REDIS_URL` | Optional Redis-compatible click-event stream backend; defaults to `REDIS_URL`. Redis is temporary queue/cache storage, not the database. |
+| `SECRET_KEY` | Signs JWTs and derives encryption keys. Set a unique, random secret for every deployment. |
+| `PRIMARY_DOMAIN` | Shared link host for this instance. |
+| `ALLOW_CUSTOM_DOMAINS` / `REQUIRE_CUSTOM_DOMAIN` | Enable user domains and choose shared-domain or bring-your-own-domain link creation. |
+| `MODERATION_OWNER_EMAIL` | Optional owner login email. |
+| `MODERATION_OWNER_PASSWORD_HASH` | Optional bcrypt hash for the owner password; never set the plaintext password. |
+
+The owner login can also sign in through the regular dashboard if the same email belongs to an active database account. It does not bypass PostgreSQL availability or create that account. Moderation thresholds and retention policy are fixed in code.
+
+## Development
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"
+npm ci
+npm run build:css
+pulseroute serve --reload
+```
+
+Tailwind utility CSS is compiled to `src/pulseroute/web/static/tailwind.css`; Node.js is only needed to regenerate this file after changing utility classes. Run the tests with `pytest` and lint with `ruff check src/ tests/`.
+
+## API and webhooks
+
+The JSON API is rooted at `/api/v1`. Webhook subscriptions are workspace-scoped and require authentication. Deliveries include an HMAC signature:
 
 ```
 X-PulseRoute-Signature: <hmac-sha256(secret_key, body)>
 ```
 
-The signing secret is generated server-side and shown exactly once in the creation response — verify the signature on your receiving endpoint before trusting the payload. This is API-only by design (no dashboard UI) to keep the web dashboard focused on the core shorten-a-link flow.
+The signing secret is returned once when the subscription is created. Verify the signature before trusting a webhook payload.
 
----
+## Open-source attribution
 
-## Cloud Deployment (Render + Neon + Upstash)
-
-The live instance at **[ps.sely.tr](https://ps.sely.tr)** runs this way — no server to manage, no card required on any of the three services:
-
-1. **Web service:** deploy this repo to [Render](https://render.com) as a Python web service (`pip install -e .` / `pulseroute serve --host 0.0.0.0 --port $PORT`). Render's free plan needs no credit card; the default `*.onrender.com` subdomain can be disabled once your own custom domain is verified (Render dashboard → service → Settings → Custom Domains).
-2. **Postgres:** create a free project on [Neon](https://neon.tech) (no card, no expiry) and set `DATABASE_URL` to its connection string — the app auto-normalizes `postgresql://...` to the `asyncpg` driver and strips query params `asyncpg` doesn't accept.
-3. **Redis:** create a free database on [Upstash](https://upstash.com) (no card) and set `REDIS_URL` — the app auto-upgrades `redis://` to `rediss://` (TLS) for any `upstash.io` host. Optionally set `ANALYTICS_REDIS_URL` to a separate Redis-compatible endpoint for click-stream buffering; when omitted, analytics shares `REDIS_URL`. This separate stream is volatile if its provider does not persist Redis data, so it is not a database replacement.
-
-That's the zero-cost stack while each provider's Free limits are respected; no Docker or Caddy is needed for the shared `ps.sely.tr` domain. Render's Free web service has 0.1 CPU, 512 MB RAM, and a workspace-wide 750 instance-hours per month; the Hobby workspace includes 5 GB/month of outbound bandwidth and 500 build minutes. It includes two custom domains across the workspace, with additional domains billed at $0.25/domain/month. Custom-domain TLS provisioning for *your own users'* domains (the `ALLOW_CUSTOM_DOMAINS` feature) still relies on Caddy's On-Demand TLS `ask` endpoint (see below) and isn't automatic on this cloud path — domains added there verify in the database, but a platform admin currently has to also add them as a Render custom domain by hand for traffic/TLS to actually route.
-
----
-
-## Self-Hosted Deployment (Docker Compose)
-
-Run the full stack (FastAPI + PostgreSQL 16 + Redis 7 + Caddy On-Demand TLS) with one command on your own server:
-
-```bash
-git clone https://github.com/dixtuel/pulseroute.git
-cd pulseroute/deploy
-cp .env.example .env
-docker compose up -d
-```
-
-PulseRoute also ships with fallback drivers for a zero-infra local run: without `DATABASE_URL`/`REDIS_URL` set, it falls back to embedded SQLite and in-memory rate limiting — useful for trying it out, not for production.
-
----
-
-## ⚙️ Configuration Reference
-
-Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). Abuse deduplication and automated moderation thresholds are fixed in code; they are not environment settings. Links disabled by the report policy retain their moderation and appeal record rather than being immediately hard-deleted. The ones you're most likely to actually touch:
-
-| Variable | Default | What it does |
-| :--- | :--- | :--- |
-| `DATABASE_URL` | embedded SQLite | Postgres connection string in production — see Docker Compose above. |
-| `REDIS_URL` | `redis://127.0.0.1:6379/0` | Cache + click-stream backend; omit entirely to run in zero-Redis fallback mode. |
-| `ANALYTICS_REDIS_URL` | same as `REDIS_URL` | Optional dedicated Redis-compatible click-stream backend. Useful for a separate temporary queue; unset keeps the current single-Redis behavior. A provider restart can lose queued events if it has no persistence. |
-| `ANALYTICS_STREAM_MAXLEN` | `2000` | Approximate maximum click events retained in the Redis Stream. Tune against the configured analytics Redis memory limit. |
-| `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `links.example.com`). |
-| `ALLOW_CUSTOM_DOMAINS` | `true` | Whether logged-in workspace owners/admins can add a custom domain at all. Set `false` to disable the feature entirely. |
-| `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. |
-| `ENFORCE_SAFE_BROWSING` | `true` | Rejects known-malicious/phishing destination URLs at link-creation time. |
-| `ENFORCE_EMAIL_DOMAIN_CHECK` | `true` | Rejects registration if the email's domain has no MX/A record at all (catches typo/garbage domains). Fails open on DNS timeouts. |
-| `MODERATION_OWNER_EMAIL` | unset | Optional owner login email; `/ad434mi232n` remains hidden until both moderation settings are set. |
-| `MODERATION_OWNER_PASSWORD_HASH` | unset | bcrypt password hash for the owner login; configure as a secret, never use plaintext, and keep the password within bcrypt’s 72-byte limit. |
-| `OPERATOR_CONTACT_EMAIL` | unset | Shown (bot-obfuscated) on `/privacy` as the data-controller contact for this instance. |
-| `ANALYTICS_RETENTION_DAYS` | `90` | Purge granular click telemetry logs older than N days (KVKK/GDPR storage minimization). Aggregate click totals remain intact. |
-| `GLOBAL_ADSENSE_CLIENT_ID` / `GLOBAL_ADSENSE_SLOT_ID` | unset | The single, server-wide Google AdSense unit shown on interstitial pages (see Security & Privacy above — this is not per-user). |
-| `SECRET_KEY` | insecure placeholder | **Change this** in any real deployment — signs JWTs. |
-
-Note: there is no per-user API key feature — JWT (`Authorization: Bearer <token>` from `/api/v1/auth/login`) is the only auth method.
-
----
-
-## Testing & Quality Assurance
-
-Run the comprehensive unit and integration test suite (63 passing tests):
-
-```bash
-# Run tests with coverage
-pytest --cov=pulseroute -v
-
-# Run linting
-ruff check src/ tests/
-```
-
-## Open Source Attribution
-
-For detailed information about external open-source libraries, web servers, CLI engines, and cryptographic dependencies used in this project, see [ATTRIBUTION.md](ATTRIBUTION.md).
-
----
+See [`ATTRIBUTION.md`](ATTRIBUTION.md) for external libraries and services used by PulseRoute.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+PulseRoute is licensed under the [MIT License](LICENSE).
