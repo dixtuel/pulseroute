@@ -74,9 +74,21 @@ async def run_analytics_batch_worker(
     - Wakes up immediately when notify_click_event_published() is called on incoming clicks.
     - Runs a lightweight daily retention pass to purge expired granular click telemetry.
     """
-    redis_cli = (
-        await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else await get_redis()
+    core_redis_cli = await get_redis()
+    analytics_redis_cli = (
+        await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else core_redis_cli
     )
+    # On first enabling a dedicated analytics store, drain the existing core Redis
+    # stream before switching. This preserves its pending click events across migration.
+    legacy_redis_cli = (
+        core_redis_cli
+        if settings.ANALYTICS_REDIS_URL
+        and core_redis_cli is not None
+        and analytics_redis_cli is not None
+        and core_redis_cli is not analytics_redis_cli
+        else None
+    )
+    redis_cli = legacy_redis_cli or analytics_redis_cli
     if not redis_cli:
         if not settings.REDIS_URL and not settings.ANALYTICS_REDIS_URL:
             logger.warning("analytics_worker_no_redis_skipping")
@@ -84,19 +96,36 @@ async def run_analytics_batch_worker(
         while not redis_cli:
             logger.warning("analytics_worker_redis_unavailable_retrying")
             await asyncio.sleep(max(5.0, interval_seconds))
-            redis_cli = (
-                await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else await get_redis()
+            core_redis_cli = await get_redis()
+            analytics_redis_cli = (
+                await get_analytics_redis() if settings.ANALYTICS_REDIS_URL else core_redis_cli
             )
+            legacy_redis_cli = (
+                core_redis_cli
+                if settings.ANALYTICS_REDIS_URL
+                and core_redis_cli is not None
+                and analytics_redis_cli is not None
+                and core_redis_cli is not analytics_redis_cli
+                else None
+            )
+            redis_cli = legacy_redis_cli or analytics_redis_cli
 
     stream_name = "pulseroute:events:clicks"
     group_name = "pulseroute_analytics_group"
     consumer_name = "worker_1"
 
-    try:
-        await redis_cli.xgroup_create(stream_name, group_name, id="0", mkstream=True)
-    except Exception:
-        pass  # Group already exists
+    group_clients = [redis_cli]
+    if legacy_redis_cli and analytics_redis_cli and legacy_redis_cli is not redis_cli:
+        group_clients.append(analytics_redis_cli)
+    for group_client in group_clients:
+        try:
+            await group_client.xgroup_create(stream_name, group_name, id="0", mkstream=True)
+        except Exception:
+            pass  # Group already exists
 
+    legacy_draining = legacy_redis_cli is not None
+    if legacy_draining:
+        logger.info("analytics_legacy_stream_drain_started", stream=stream_name)
     logger.info("analytics_batch_worker_started", stream=stream_name)
 
     current_idle = interval_seconds
@@ -136,6 +165,13 @@ async def run_analytics_batch_worker(
                 )
 
             if not entries:
+                if legacy_draining:
+                    redis_cli = analytics_redis_cli
+                    legacy_draining = False
+                    recover_pending = True
+                    current_idle = interval_seconds
+                    logger.info("analytics_legacy_stream_drain_complete", stream=stream_name)
+                    continue
                 current_idle = min(current_idle * 2, max_idle_seconds)
                 try:
                     await asyncio.wait_for(_new_click_event.wait(), timeout=current_idle)
