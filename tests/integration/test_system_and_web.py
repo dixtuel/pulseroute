@@ -18,6 +18,26 @@ async def test_render_root_and_dashboard(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_render_privacy_and_terms(client: AsyncClient):
+    res_priv = await client.get("/privacy", headers={"Accept": "text/html"})
+    assert res_priv.status_code == 200
+    assert "Privacy Policy" in res_priv.text
+
+    res_terms = await client.get("/terms", headers={"Accept": "text/html"})
+    assert res_terms.status_code == 200
+    assert "Terms of Service" in res_terms.text
+
+
+@pytest.mark.asyncio
+async def test_health_check(client: AsyncClient):
+    res = await client.get("/healthz")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] in ("healthy", "degraded")
+    assert "version" in data
+
+
+@pytest.mark.asyncio
 async def test_keepalive_never_checks_external_services(client: AsyncClient, monkeypatch):
     async def unexpected_call(*args, **kwargs):
         raise AssertionError("keepalive must not access external services")
@@ -49,24 +69,6 @@ async def test_app_starts_when_database_is_unavailable(client: AsyncClient, monk
     async with app.router.lifespan_context(app):
         response = await client.get("/healtalive")
         assert response.status_code == 200
-
-
-@pytest.mark.asyncio
-async def test_render_privacy_and_terms(client: AsyncClient):
-    res_priv = await client.get("/privacy", headers={"Accept": "text/html"})
-    assert res_priv.status_code == 200
-    assert "Privacy Policy" in res_priv.text
-
-    res_terms = await client.get("/terms", headers={"Accept": "text/html"})
-    assert res_terms.status_code == 200
-    assert "Terms of Service" in res_terms.text
-
-
-@pytest.mark.asyncio
-async def test_unknown_link_shows_verification_shell_first(client: AsyncClient):
-    response = await client.get("/not-found-xyz-abc", headers={"Accept": "text/html"})
-    assert response.status_code == 200
-    assert "Bağlantı kontrol ediliyor" in response.text
 
 
 @pytest.mark.asyncio

@@ -1,10 +1,10 @@
 import base64
 import hashlib
 import hmac
-import json
 import os
 from typing import Any, Dict, Optional
 
+import orjson
 from cryptography.fernet import Fernet
 
 from pulseroute.core.config import settings
@@ -43,7 +43,7 @@ def encrypt_compact_cookie(data: Dict[str, Any], secret: Optional[str] = None) -
     compatible with frontend ClientPerf / CompactCookie (v1_<iv>_<cipher>_<tag>).
     """
     key = (secret or DEFAULT_COOKIE_SECRET).encode("utf-8")
-    plaintext = json.dumps(data, separators=(",", ":")).encode("utf-8")
+    plaintext = orjson.dumps(data)
     iv = os.urandom(4)
 
     keystream = bytearray()
@@ -93,7 +93,8 @@ def decrypt_compact_cookie(token_str: str, secret: Optional[str] = None) -> Opti
 
     plaintext = bytes(c ^ k for c, k in zip(ciphertext, keystream[:len(ciphertext)]))
     try:
-        return json.loads(plaintext.decode("utf-8"))
+        return orjson.loads(plaintext)
     except Exception:
         return None
+
 

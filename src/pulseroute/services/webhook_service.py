@@ -1,10 +1,10 @@
 import asyncio
 import hashlib
 import hmac
-import json
 from typing import Any
 
 import httpx
+import orjson
 import structlog
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,8 +33,8 @@ class WebhookService:
 
     @staticmethod
     async def dispatch_event(url: str, secret_key: str, event_type: str, payload: dict[str, Any]) -> bool:
-        body = json.dumps({"event": event_type, "data": payload}, separators=(",", ":"))
-        signature = hmac.new(secret_key.encode(), body.encode(), hashlib.sha256).hexdigest()
+        body = orjson.dumps({"event": event_type, "data": payload})
+        signature = hmac.new(secret_key.encode(), body, hashlib.sha256).hexdigest()
 
         headers = {
             "Content-Type": "application/json",

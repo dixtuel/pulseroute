@@ -16,5 +16,18 @@ def serve(
     print_banner()
     console.print(f"[bold green]Starting PulseRoute server on http://{host}:{port}[/bold green]")
     console.print(f"[cyan]Web Dashboard:[/cyan] http://localhost:{port}/dashboard")
-    console.print(f"[cyan]API Docs:[/cyan]      http://localhost:{port}/docs\n")
-    uvicorn.run("pulseroute.main:app", host=host, port=port, reload=reload)
+    loop_choice = "auto"
+    try:
+        import uvloop  # noqa: F401
+        loop_choice = "uvloop"
+    except ImportError:
+        pass
+
+    http_choice = "auto"
+    try:
+        import httptools  # noqa: F401
+        http_choice = "httptools"
+    except ImportError:
+        pass
+
+    uvicorn.run("pulseroute.main:app", host=host, port=port, reload=reload, loop=loop_choice, http=http_choice)

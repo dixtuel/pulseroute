@@ -1,8 +1,8 @@
-import json
 import re
 import time
 from datetime import UTC, datetime, timedelta
 
+import orjson
 import pytest
 from httpx import AsyncClient
 
@@ -12,7 +12,7 @@ from pulseroute.common.redirect_ticket import issue_ticket
 def _start_ticket(html: str) -> str:
     match = re.search(r"const startTicket = (\"[^\"]+\");", html)
     assert match is not None
-    return json.loads(match.group(1))
+    return orjson.loads(match.group(1))
 
 
 @pytest.mark.asyncio

@@ -246,15 +246,6 @@ async def test_link_short_url_uses_its_own_custom_domain(client: AsyncClient, db
 
 
 @pytest.mark.asyncio
-async def test_health_check(client: AsyncClient):
-    res = await client.get("/healthz")
-    assert res.status_code == 200
-    data = res.json()
-    assert data["status"] in ("healthy", "degraded")
-    assert "version" in data
-
-
-@pytest.mark.asyncio
 async def test_authenticated_link_creation_without_workspace_id_assigns_default_workspace(
     client: AsyncClient,
 ):

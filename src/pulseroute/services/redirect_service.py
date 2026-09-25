@@ -1,9 +1,9 @@
 import asyncio
-import json
 import time
 from datetime import UTC, datetime
 from typing import Optional, Tuple
 
+import orjson
 import redis.asyncio as aioredis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -105,7 +105,7 @@ class RedirectService:
                     set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
                     return None, 404, "Link not found", None
                 if cached_json:
-                    link_data = json.loads(cached_json)
+                    link_data = orjson.loads(cached_json)
                     set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
             except Exception:
                 pass
@@ -131,7 +131,7 @@ class RedirectService:
                             set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
                             return None, 404, "Link not found", None
                         if cached_json:
-                            link_data = json.loads(cached_json)
+                            link_data = orjson.loads(cached_json)
                             set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
                     except Exception:
                         pass
@@ -171,7 +171,9 @@ class RedirectService:
                     set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
                     if redis_cli:
                         try:
-                            await redis_cli.set(cache_key, json.dumps(link_data), ex=settings.CACHE_DEFAULT_TTL)
+                            await redis_cli.set(
+                                cache_key, orjson.dumps(link_data).decode(), ex=settings.CACHE_DEFAULT_TTL
+                            )
                         except Exception:
                             pass
 

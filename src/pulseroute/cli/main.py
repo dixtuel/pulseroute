@@ -1,3 +1,9 @@
+try:
+    import uvloop
+    uvloop.install()
+except ImportError:
+    pass
+
 import typer
 
 from pulseroute.cli.commands.analytics import analytics_app

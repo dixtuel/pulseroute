@@ -4,6 +4,13 @@ import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+try:
+    import uvloop
+    uvloop.install()
+except ImportError:
+    pass
+
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse

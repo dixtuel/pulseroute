@@ -1,6 +1,6 @@
-import json
 from typing import List, Optional
 
+import orjson
 import redis.asyncio as aioredis
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -121,7 +121,9 @@ class LinkService:
                 domain_str = domain.domain if domain else None
                 cache_key = LinkService._build_cache_key(domain_str, slug)
                 cache_payload = LinkService.serialize_cache_payload(link)
-                await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
+                await redis_cli.set(
+                    cache_key, orjson.dumps(cache_payload).decode(), ex=settings.CACHE_DEFAULT_TTL
+                )
             except Exception:
                 pass
 
@@ -176,7 +178,9 @@ class LinkService:
             try:
                 cache_key = LinkService._build_cache_key(domain_name, link.slug)
                 cache_payload = LinkService.serialize_cache_payload(link)
-                await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
+                await redis_cli.set(
+                    cache_key, orjson.dumps(cache_payload).decode(), ex=settings.CACHE_DEFAULT_TTL
+                )
             except Exception:
                 pass
 
