@@ -5,7 +5,7 @@ import redis.asyncio as aioredis
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pulseroute.common.abuse_filter import is_url_safe
+from pulseroute.common.abuse_filter import validate_link_targets
 from pulseroute.common.id_generator import generate_unique_slug
 from pulseroute.core.config import settings
 from pulseroute.core.security import hash_password
@@ -46,6 +46,8 @@ class LinkService:
             "has_password": bool(link.password_hash),
             "public_stats": link.public_stats,
             "is_active": link.is_active,
+            "is_quarantined": getattr(link, "is_quarantined", False),
+            "quarantine_reason": getattr(link, "quarantine_reason", None) or "",
             "expires_at": link.expires_at.isoformat() if link.expires_at else "",
         }
 
@@ -58,9 +60,15 @@ class LinkService:
         base_domain: Optional[str] = None,
     ) -> ShortLink:
         if settings.ENFORCE_SAFE_BROWSING:
-            safe, reason = is_url_safe(data.destination_url)
+            safe, err, _ = validate_link_targets(
+                destination_url=data.destination_url,
+                ios_destination=data.ios_destination,
+                android_destination=data.android_destination,
+                geo_targets=data.geo_targets,
+                expired_url=data.expired_url,
+            )
             if not safe:
-                raise ValueError(f"URL Safety Violation: {reason}")
+                raise ValueError(f"URL Safety Violation: {err}")
 
         domain = None
         if data.domain_id:
@@ -155,10 +163,19 @@ class LinkService:
         domain_name = await LinkService._link_domain_name(db, link)
 
         update_fields = data.model_dump(exclude_unset=True)
-        if "destination_url" in update_fields and settings.ENFORCE_SAFE_BROWSING:
-            safe, reason = is_url_safe(update_fields["destination_url"])
+        if settings.ENFORCE_SAFE_BROWSING and any(
+            k in update_fields
+            for k in ("destination_url", "ios_destination", "android_destination", "geo_targets", "expired_url")
+        ):
+            safe, err, _ = validate_link_targets(
+                destination_url=update_fields.get("destination_url", link.destination_url),
+                ios_destination=update_fields.get("ios_destination", link.ios_destination),
+                android_destination=update_fields.get("android_destination", link.android_destination),
+                geo_targets=update_fields.get("geo_targets", link.geo_targets),
+                expired_url=update_fields.get("expired_url", link.expired_url),
+            )
             if not safe:
-                raise ValueError(f"URL Safety Violation: {reason}")
+                raise ValueError(f"URL Safety Violation: {err}")
 
         for field, value in update_fields.items():
             setattr(link, field, value)
@@ -252,3 +269,47 @@ class LinkService:
         await db.delete(link)
         await db.commit()
         return True
+
+    @staticmethod
+    async def quarantine_link(
+        db: AsyncSession,
+        redis_cli: Optional[aioredis.Redis],
+        slug: str,
+        reason: str,
+    ) -> Optional[ShortLink]:
+        """
+        Immediately halts redirection to a link under 5651 Sayılı Kanun and Safe Harbor notice-and-takedown.
+        Marks link as quarantined, deactivates it, updates quarantine reason, and purges/updates all caches.
+        """
+        query = select(ShortLink).where(ShortLink.slug == slug)
+        res = await db.execute(query)
+        link = res.scalars().first()
+        if not link:
+            return None
+
+        link.is_active = False
+        link.is_quarantined = True
+        link.quarantine_reason = reason
+        link.abuse_reports_count = (link.abuse_reports_count or 0) + 1
+        await db.commit()
+        await db.refresh(link)
+
+        domain_name = await LinkService._link_domain_name(db, link)
+        try:
+            from pulseroute.services.redirect_service import RedirectService
+
+            RedirectService.invalidate_l1(domain_name, link.slug)
+        except Exception:
+            pass
+
+        if redis_cli:
+            try:
+                cache_key = LinkService._build_cache_key(domain_name, link.slug)
+                cache_payload = LinkService.serialize_cache_payload(link)
+                await redis_cli.set(
+                    cache_key, orjson.dumps(cache_payload).decode(), ex=settings.CACHE_DEFAULT_TTL
+                )
+            except Exception:
+                pass
+
+        return link

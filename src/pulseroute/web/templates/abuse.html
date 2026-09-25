@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kötüye Kullanım Bildir (Notice &amp; Takedown) | PulseRoute</title>
+    <meta name="description" content="5651 Sayılı Kanun ve Safe Harbor kapsamında şüpheli bağlantı, oltalama (phishing) veya zararlı yazılım bildirimi formu.">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#07090A',
+                        carbon: '#0E1316',
+                        panel: '#141B1F',
+                        divider: '#202A30',
+                        accent: '#EAB308',
+                        danger: '#EF4444',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #07090A; color: #E2E8F0; }
+        .grid-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(32, 42, 48, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(32, 42, 48, 0.3) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-10 px-4 sm:px-6 grid-bg antialiased text-slate-200 flex flex-col justify-between">
+    <div class="max-w-2xl mx-auto w-full space-y-6 bg-carbon border border-divider p-6 sm:p-8 rounded-2xl shadow-2xl">
+        
+        <!-- Header -->
+        <div class="border-b border-divider pb-5">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-red-500/10 text-red-400 border border-red-500/20">
+                    5651 Sayılı Kanun Uyar-Kaldır
+                </span>
+                <span class="text-xs text-slate-500 font-mono">GLOBAL SAFE HARBOR</span>
+            </div>
+            <h1 class="text-2xl font-display font-bold text-white tracking-tight">Kötüye Kullanım &amp; Güvenlik İhlali Bildir</h1>
+            <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+                PulseRoute üzerinden dağıtılan oltalama (phishing), zararlı yazılım, telif hakkı veya yasa dışı içerik bağlantılarını buradan bildirebilirsiniz. Phishing ve malware bildirimlerinde bağlantılar derhal otomatik karantinaya alınır.
+            </p>
+        </div>
+
+        <!-- Form Card -->
+        <form id="abuseForm" class="space-y-5">
+            <div>
+                <label for="linkInput" class="block text-xs font-mono text-slate-300 mb-1.5">Şüpheli Kısa Bağlantı veya Kod (Slug) *</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500 text-xs font-mono">
+                        <i class="fa-solid fa-link"></i>
+                    </span>
+                    <input type="text" id="linkInput" required placeholder="ör. sely.tr/ornek-link veya ornek-link"
+                           value="{{ prefill_slug or '' }}"
+                           class="w-full pl-9 pr-3 py-2.5 bg-panel border border-divider rounded-lg text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition">
+                </div>
+            </div>
+
+            <div>
+                <label for="reasonSelect" class="block text-xs font-mono text-slate-300 mb-1.5">İhlal Türü (Kategori) *</label>
+                <select id="reasonSelect" required class="w-full px-3 py-2.5 bg-panel border border-divider rounded-lg text-xs text-slate-200 focus:outline-none focus:border-amber-400 transition">
+                    <option value="phishing" selected>Oltalama / Sahte Giriş Sayfası / Dolandırıcılık (Phishing)</option>
+                    <option value="malware">Zararlı Yazılım / Virüs / Tehlikeli Dosya İndirme (Malware)</option>
+                    <option value="illegal_content">Yasa Dışı İçerik (Katalog Suçlar, Yasa Dışı Bahis vb.)</option>
+                    <option value="copyright">Telif Hakkı / Marka İhlali (DMCA / FSEK)</option>
+                    <option value="spam">İstenmeyen Toplu İleti / Spam</option>
+                    <option value="other">Diğer Güvenlik İhlali</option>
+                </select>
+            </div>
+
+            <div>
+                <label for="emailInput" class="block text-xs font-mono text-slate-300 mb-1.5">İletişim E-posta Adresiniz *</label>
+                <input type="email" id="emailInput" required placeholder="guvenlik@kurumunuz.com veya e-posta adresiniz"
+                       class="w-full px-3 py-2.5 bg-panel border border-divider rounded-lg text-xs font-mono text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 transition">
+                <p class="text-[11px] text-slate-500 mt-1">Bildirim sonucu veya ek teyit gerekirse tarafınıza geri dönüş amacıyla kullanılır.</p>
+            </div>
+
+            <div>
+                <label for="detailsInput" class="block text-xs font-mono text-slate-300 mb-1.5">Detaylı Açıklama veya Delil (İsteğe bağlı)</label>
+                <textarea id="detailsInput" rows="3" placeholder="Bağlantının hedefindeki ihlale ilişkin kısa açıklama, sahtesi yapılan kurum adı vb."
+                          class="w-full px-3 py-2 bg-panel border border-divider rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-amber-400 transition"></textarea>
+            </div>
+
+            <div id="statusMessage" class="hidden p-3.5 rounded-lg text-xs font-mono"></div>
+
+            <div class="pt-2">
+                <button type="submit" id="submitBtn" class="w-full flex items-center justify-center gap-2 py-3 px-6 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition shadow-lg shadow-red-900/20">
+                    <i class="fa-solid fa-paper-plane text-xs"></i>
+                    <span>Bildirimi Gönder ve İncelemeyi Başlat</span>
+                </button>
+            </div>
+        </form>
+
+        <!-- Legal Disclaimer Footer inside Card -->
+        <div class="pt-4 border-t border-divider text-[11px] text-slate-400 leading-relaxed font-sans space-y-2">
+            <p>
+                <strong>5651 Sayılı Kanun Uyarınca Yer Sağlayıcı Bilgilendirmesi:</strong> PulseRoute yönlendirme altyapısı bir yer sağlayıcıdır. Hukuka aykırı içeriğin bildirilmesi halinde ilgili bağlantı derhal karantinaya alınır ve hedef sayfaya yönlendirme engellenir. Mükerrer ihlal gerçekleştiren kullanıcı hesapları kalıcı olarak sonlandırılır.
+            </p>
+        </div>
+    </div>
+
+    <!-- Page Footer -->
+    <footer class="max-w-2xl mx-auto w-full text-center py-6 text-xs font-mono text-slate-500 flex justify-between items-center">
+        <a href="/terms" class="hover:text-amber-400 transition">← Kullanım Şartları</a>
+        <a href="/privacy" class="hover:text-amber-400 transition">Gizlilik Politikası</a>
+        <a href="/dashboard" class="hover:text-amber-400 transition">Konsol</a>
+    </footer>
+
+    <script>
+        document.getElementById('abuseForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const statusBox = document.getElementById('statusMessage');
+            const linkInput = document.getElementById('linkInput').value.trim();
+            const reason = document.getElementById('reasonSelect').value;
+            const email = document.getElementById('emailInput').value.trim();
+            const details = document.getElementById('detailsInput').value.trim();
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>İşleniyor...</span>';
+            statusBox.className = 'hidden';
+
+            try {
+                const response = await fetch('/api/v1/abuse/report', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        short_url_or_slug: linkInput,
+                        reason: reason,
+                        reporter_email: email,
+                        details: details || null,
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    statusBox.className = 'p-3.5 rounded-lg text-xs font-mono bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 block';
+                    statusBox.innerHTML = `<strong>Bildirim Başarıyla Kaydedildi!</strong><br>${data.message}`;
+                    document.getElementById('abuseForm').reset();
+                } else {
+                    statusBox.className = 'p-3.5 rounded-lg text-xs font-mono bg-red-950/60 border border-red-500/40 text-red-300 block';
+                    statusBox.innerHTML = `<strong>Hata:</strong> ${data.detail || 'Bildirim kaydedilemedi. Lütfen bağlantı adresini kontrol edin.'}`;
+                }
+            } catch (err) {
+                statusBox.className = 'p-3.5 rounded-lg text-xs font-mono bg-red-950/60 border border-red-500/40 text-red-300 block';
+                statusBox.innerHTML = `<strong>Bağlantı Hatası:</strong> Sunucuya erişilemedi. Lütfen daha sonra tekrar deneyin.`;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i><span>Bildirimi Gönder ve İncelemeyi Başlat</span>';
+            }
+        });
+    </script>
+</body>
+</html>

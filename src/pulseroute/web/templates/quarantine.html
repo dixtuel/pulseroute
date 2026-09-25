@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Güvenlik Uyarısı — Bağlantı Askıya Alındı | PulseRoute</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Space Grotesk', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        obsidian: '#07090A',
+                        carbon: '#0E1316',
+                        panel: '#141B1F',
+                        divider: '#202A30',
+                        alertRed: '#EF4444',
+                        alertRedDeep: '#991B1B',
+                        alertBg: '#450A0A',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #07090A; color: #E2E8F0; }
+        .grid-bg {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(239, 68, 68, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(239, 68, 68, 0.05) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="min-h-screen py-12 px-6 grid-bg antialiased flex flex-col justify-between items-center text-slate-200">
+    <div class="max-w-xl w-full my-auto space-y-6 bg-carbon border border-red-500/30 p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-red-600 via-rose-500 to-amber-500"></div>
+
+        <div class="flex items-center gap-4 border-b border-divider pb-6">
+            <div class="w-14 h-14 rounded-xl bg-red-950/70 border border-red-500/40 flex items-center justify-center text-red-400 shrink-0 shadow-inner">
+                <i class="fa-solid fa-shield-virus text-2xl"></i>
+            </div>
+            <div>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-mono font-semibold bg-red-500/10 text-red-400 border border-red-500/20 mb-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping"></span>
+                    <span>HTTP 451 • ERİŞİM ENGELLENDİ</span>
+                </span>
+                <h1 class="text-xl sm:text-2xl font-display font-bold text-white tracking-tight">Güvenlik Uyarısı: Bağlantı Karantinaya Alındı</h1>
+            </div>
+        </div>
+
+        <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+            <p>
+                Ulaşmaya çalıştığınız kısa bağlantı; <strong>5651 Sayılı Kanun</strong>, <strong>Oltalama (Phishing)</strong>, <strong>Zararlı Yazılım (Malware)</strong> veya <strong>Kötüye Kullanım İlkelerimizin</strong> ihlali şüphesiyle sistemimiz tarafından derhal askıya alınmış ve hedef sayfaya yönlendirme durdurulmuştur.
+            </p>
+
+            <div class="p-3.5 bg-panel border border-divider rounded-xl space-y-1.5 font-mono text-xs">
+                <div class="flex items-center justify-between text-slate-400">
+                    <span>Erişim Durumu:</span>
+                    <span class="text-red-400 font-semibold">Askıya Alındı (Quarantined)</span>
+                </div>
+                <div class="flex items-center justify-between text-slate-400">
+                    <span>Yasal / Güvenlik Dayanağı:</span>
+                    <span class="text-slate-200">5651 Sayılı Kanun &amp; Safe Harbor Uyar-Kaldır</span>
+                </div>
+                {% if detail %}
+                <div class="pt-2 border-t border-divider/60 text-slate-400">
+                    <span class="text-[11px] text-slate-500 block">Güvenlik Notu:</span>
+                    <span class="text-slate-300 break-words">{{ detail }}</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="p-3 bg-red-950/20 border border-red-500/20 rounded-lg text-xs text-red-300/90 flex gap-2.5 items-start">
+                <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5 shrink-0"></i>
+                <p>
+                    Güvenliğiniz için bu bağlantının yönlendirmeye çalıştığı orijinal adresi ziyaret etmeyiniz ve kişisel veya finansal bilgilerinizi kesinlikle paylaşmayınız.
+                </p>
+            </div>
+        </div>
+
+        <div class="pt-4 border-t border-divider flex flex-col sm:flex-row gap-3 justify-between items-center text-xs font-mono">
+            <a href="/abuse" class="w-full sm:w-auto text-center px-4 py-2.5 rounded-lg bg-panel hover:bg-divider border border-divider text-slate-300 transition">
+                <i class="fa-solid fa-flag text-red-400 mr-1.5"></i>
+                <span>Kötüye Kullanım Bildir</span>
+            </a>
+            <a href="/terms" class="text-slate-400 hover:text-white transition">
+                <span>Hizmet Şartları &amp; Güvenlik Politikası →</span>
+            </a>
+        </div>
+    </div>
+
+    <footer class="text-center text-xs font-mono text-slate-600 mt-6">
+        <span>PulseRoute Edge Security • 5651 Sayılı Kanun Uyarınca Yer Sağlayıcı Güvenlik Mekanizması</span>
+    </footer>
+</body>
+</html>

@@ -75,12 +75,14 @@
             <h2 class="text-sm font-display font-bold text-white">2. Acceptable Use Policy (Zero Tolerance for Abuse)</h2>
             <p>To keep short links safe, reliable, and trustworthy for all internet users, you agree never to use this service to shorten or distribute:</p>
             <ul class="list-disc list-inside space-y-1 text-slate-400 pl-2">
-                <li>Phishing sites, credential harvesters, or deceptive login pages,</li>
-                <li>Malware, spyware, ransomware, or dangerous executable files (e.g., <code class="text-amber-400">.exe</code>, <code class="text-amber-400">.scr</code>, <code class="text-amber-400">.bat</code>, <code class="text-amber-400">.vbs</code>),</li>
-                <li>Scams, fraud schemes, or unlawful counterfeit material,</li>
-                <li>Spam campaigns or mass unsolicited messaging.</li>
+                <li>Phishing sites, credential harvesters, fake banking portals, or deceptive authentication pages,</li>
+                <li>Malware, spyware, ransomware, trojans, or hazardous executable files (e.g., <code class="text-amber-400">.exe</code>, <code class="text-amber-400">.scr</code>, <code class="text-amber-400">.bat</code>, <code class="text-amber-400">.vbs</code>, <code class="text-amber-400">.iso</code>, <code class="text-amber-400">.ps1</code>),</li>
+                <li>Internal network probes, loopback destinations, or cloud metadata services (Server-Side Request Forgery / SSRF),</li>
+                <li>Recursive redirect chains or masking the shortener domain to evade threat detection,</li>
+                <li>Scams, fraudulent crypto schemes, or unlawful counterfeit material,</li>
+                <li>Spam campaigns, botnets, or mass unsolicited messaging.</li>
             </ul>
-            <p>Every destination URL is screened at creation time against known malicious domain databases and restricted file types. Links found to violate this policy will be disabled immediately without prior notice, and offending accounts or IPs may be permanently banned.</p>
+            <p>Every destination URL across all devices (desktop, iOS, Android, and regional geo-targets) is screened at creation and update time against known malicious domain registries, restricted file formats, and internal IP ranges. Links violating this policy are placed in immediate automated quarantine without prior notice.</p>
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
@@ -104,15 +106,29 @@
         </section>
 
         <section class="space-y-2 text-xs text-slate-300 font-sans leading-relaxed">
-            <h2 class="text-sm font-display font-bold text-white">6. Reporting Abuse &amp; Contact</h2>
-            <p>If you encounter a PulseRoute short link redirecting to a malicious destination, or if you have questions regarding these terms, please report it directly to the instance operator:</p>
-            <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300">
-                {% if operator_contact_codes %}
-                Operator Contact: <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                {% else %}
-                Operator Contact: <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                {% endif %}
+            <h2 class="text-sm font-display font-bold text-white">6. 5651 Sayılı Kanun Uyar-Kaldır &amp; Kötüye Kullanım Bildirimi (Notice &amp; Takedown)</h2>
+            <p><strong>Yer Sağlayıcı Bildirimi:</strong> Bu platform, 5651 sayılı İnternet Ortamında Yapılan Yayınların Düzenlenmesi ve Bu Yayınlar Yoluyla İşlenen Suçlarla Mücadele Edilmesi Hakkında Kanun uyarınca "Yer Sağlayıcı" statüsündedir. Yer sağlayıcı, yönlendirilen üçüncü taraf sitelerin içeriğini önceden denetlemekle yükümlü değildir; ancak haberdar edildiğinde hukuka aykırı içeriği ivedilikle yayından çıkarmakla yükümlüdür.</p>
+            <p>Oltalama (phishing), zararlı yazılım (malware), telif hakkı veya yasa dışı içerik tespit ettiğinizde aşağıdaki kanallardan anında bildirimde bulunabilirsiniz:</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <a href="/abuse" class="p-3 bg-panel border border-divider hover:border-amber-400/50 rounded-lg flex items-center gap-2.5 text-slate-200 transition">
+                    <i class="fa-solid fa-flag text-amber-400 text-sm"></i>
+                    <div>
+                        <span class="font-display font-semibold block text-white">Çevrim İçi Bildirim Formu</span>
+                        <span class="text-[10px] text-slate-400">/abuse sayfası üzerinden anında bildirim</span>
+                    </div>
+                </a>
+                <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300 flex flex-col justify-center">
+                    <span class="text-[10px] text-slate-500 uppercase tracking-wider">Doğrudan İletişim:</span>
+                    {% if operator_contact_codes %}
+                    <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
+                    {% else %}
+                    <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
+                    {% endif %}
+                </div>
             </div>
+            <p class="text-[11px] text-slate-400 pt-1">
+                <strong>Tekrarlayan İhlalci Politikası (Repeat Infringer):</strong> Kötüye kullanım politikalarını ihlal ettiği tespit edilen kullanıcı hesapları ve çalışma alanları (workspaces) kalıcı olarak kapatılır ve ilgili ağ adresleri engellenir.
+            </p>
         </section>
 
         <div class="pt-4 border-t border-divider flex justify-between items-center text-xs font-mono text-slate-500">

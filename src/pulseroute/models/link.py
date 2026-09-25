@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from pulseroute.core.database import Base
 
 if TYPE_CHECKING:
+    from pulseroute.models.abuse import AbuseReport
     from pulseroute.models.click import ClickEvent
     from pulseroute.models.domain import CustomDomain
     from pulseroute.models.workspace import Workspace
@@ -54,6 +55,9 @@ class ShortLink(Base):
     password_hash: Mapped[str | None] = mapped_column(String(255), nullable=True)
     public_stats: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_quarantined: Mapped[bool] = mapped_column(Boolean, default=False)
+    quarantine_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    abuse_reports_count: Mapped[int] = mapped_column(Integer, default=0)
 
     # UTM Parameters
     utm_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -66,3 +70,4 @@ class ShortLink(Base):
     workspace: Mapped["Workspace | None"] = relationship("Workspace", back_populates="links")
     custom_domain: Mapped["CustomDomain | None"] = relationship("CustomDomain", back_populates="links")
     clicks: Mapped[list["ClickEvent"]] = relationship("ClickEvent", back_populates="link", cascade="all, delete-orphan")
+    abuse_reports: Mapped[list["AbuseReport"]] = relationship("AbuseReport", back_populates="link", cascade="all, delete-orphan")

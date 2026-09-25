@@ -222,6 +222,13 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
             return templates.TemplateResponse(request=request, name="404.html", status_code=404)
         elif exc.status_code == 410:
             return templates.TemplateResponse(request=request, name="410.html", status_code=410)
+        elif exc.status_code == 451:
+            return templates.TemplateResponse(
+                request=request,
+                name="quarantine.html",
+                context={"detail": exc.detail},
+                status_code=451,
+            )
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
@@ -347,6 +354,19 @@ async def render_accessibility(request: Request):
         context={
             "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
             "operator_contact_codes": contact_codes,
+            "primary_domain": settings.PRIMARY_DOMAIN,
+        },
+    )
+
+
+@app.get("/abuse", response_class=HTMLResponse, tags=["Legal"])
+async def render_abuse(request: Request, slug: str | None = None, link: str | None = None):
+    prefill = slug or link or ""
+    return templates.TemplateResponse(
+        request=request,
+        name="abuse.html",
+        context={
+            "prefill_slug": prefill,
             "primary_domain": settings.PRIMARY_DOMAIN,
         },
     )

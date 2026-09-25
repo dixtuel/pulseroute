@@ -181,7 +181,11 @@ class RedirectService:
                 if not flight_lock.locked() and cache_key in _inflight_locks:
                     _inflight_locks.pop(cache_key, None)
 
-        # 4. Check Link Active
+        # 4. Check Quarantine & Link Active
+        if link_data.get("is_quarantined"):
+            reason = link_data.get("quarantine_reason") or "Abuse or phishing violation"
+            return None, 451, f"Security Warning: This link has been quarantined ({reason}).", None
+
         if not link_data.get("is_active", True):
             return None, 410, "This link has been deactivated.", None
 

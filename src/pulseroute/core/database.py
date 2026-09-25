@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
@@ -79,3 +80,13 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Ensure new columns exist on existing databases without requiring external migration tooling
+        for col_def in [
+            ("short_links", "is_quarantined", "BOOLEAN DEFAULT FALSE"),
+            ("short_links", "quarantine_reason", "VARCHAR(255)"),
+            ("short_links", "abuse_reports_count", "INTEGER DEFAULT 0"),
+        ]:
+            try:
+                await conn.execute(text(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}"))
+            except Exception:
+                pass

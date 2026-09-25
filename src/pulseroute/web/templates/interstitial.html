@@ -220,9 +220,9 @@
         <div class="flex items-center justify-center gap-3">
             <span>Güvenli İletim</span>
             <span>•</span>
-            <span>KVKK/GDPR Uyumlu Maskeleme</span>
+            <a href="/abuse{% if slug %}?slug={{ slug }}{% endif %}" class="hover:text-stamp underline transition">Şüpheli Bağlantı Bildir</a>
             <span>•</span>
-            <span>PulseRoute Telemetry</span>
+            <a href="/terms" class="hover:text-ink transition">Kullanım Şartları</a>
         </div>
     </footer>
 
@@ -246,6 +246,24 @@
             });
 
             function showError(code) {
+                if (code === 451) {
+                    statusTitle.textContent = 'Güvenlik Uyarısı: Bağlantı Askıya Alındı';
+                    statusSubtitle.textContent = 'Bu bağlantı oltalama (phishing) veya zararlı yazılım şüphesiyle 5651 Sayılı Kanun kapsamında karantinaya alınmıştır.';
+                    countdownNumber.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-stamp text-2xl"></i>';
+                    timerUnit.textContent = 'GÜVENLİK';
+                    destinationLabel.textContent = 'Erişim durduruldu (Karantina)';
+                    verificationBadge.textContent = 'Engellendi';
+                    verificationBadge.classList.remove('text-gold', 'bg-goldTint/70', 'border-gold/20');
+                    verificationBadge.classList.add('text-stamp', 'bg-stampTint', 'border-stamp/30');
+                    proceedButton.href = '/abuse' + (window.location.pathname ? '?slug=' + window.location.pathname.replace(/^\//, '') : '');
+                    proceedButton.removeAttribute('aria-disabled');
+                    proceedButton.removeAttribute('tabindex');
+                    proceedButton.classList.remove('cursor-not-allowed', 'text-inkSoft/70', 'bg-paperDeep');
+                    proceedButton.classList.add('bg-stamp', 'text-white', 'hover:bg-red-700');
+                    buttonText.textContent = 'Kötüye Kullanım / İhlal Bildir';
+                    buttonIcon.innerHTML = '<i class="fa-solid fa-shield-virus text-xs"></i>';
+                    return;
+                }
                 const missing = code === 404;
                 statusTitle.textContent = missing ? 'Bu bağlantı kayıtlı değil' :
                     code === 410 ? 'Bu bağlantı artık kullanılamıyor' :

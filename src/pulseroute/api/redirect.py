@@ -25,7 +25,7 @@ WAIT_SECONDS = 5
 RESERVED_SLUGS = {
     "favicon.ico", "robots.txt", "sitemap.xml", "BingSiteAuth.xml", "ads.txt",
     "docs", "redoc", "openapi.json", "dashboard", "api", "privacy", "terms",
-    "accessibility", "healthz", "healtalive",
+    "accessibility", "abuse", "report", "healthz", "healtalive",
 }
 
 
@@ -45,7 +45,7 @@ async def _resolve(request: Request, slug: str, password: Optional[str]):
 
 
 def _raise_resolution_error(status_code: int, message: str) -> None:
-    raise HTTPException(status_code=status_code if status_code in (401, 410) else 404, detail=message)
+    raise HTTPException(status_code=status_code if status_code in (401, 410, 451) else 404, detail=message)
 
 
 @router.get("/api/v1/redirect/resolve/{slug}")
@@ -129,6 +129,7 @@ async def redirect_short_url(slug: str, request: Request, password: Optional[str
             name="interstitial.html",
             context={
                 "start_ticket": start_ticket,
+                "slug": slug,
                 "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
                 "adsense_slot_id": settings.GLOBAL_ADSENSE_REDIRECT_SLOT_ID or settings.GLOBAL_ADSENSE_SLOT_ID,
             },
