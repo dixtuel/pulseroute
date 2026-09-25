@@ -87,6 +87,10 @@
             background-color: #F3ECDC;
             border: 1px dashed #D9CCA8;
         }
+        @media (prefers-reduced-motion: reduce) {
+            .ready-btn-active { animation: none; }
+            .circle-timer-path { transition: none; }
+        }
     </style>
     {% if adsense_client_id %}
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_client_id }}" crossorigin="anonymous"></script>
@@ -113,6 +117,7 @@
 
     <!-- Main Content Container -->
     <main class="max-w-xl mx-auto w-full my-auto py-4">
+        <noscript><p class="mb-4 text-center text-sm text-ink">Bağlantıyı doğrulamak için JavaScript etkin olmalı.</p></noscript>
         <div class="ticket-card rounded-ticket p-6 sm:p-8 space-y-6 relative">
             
             <!-- Top Status & Counter -->
