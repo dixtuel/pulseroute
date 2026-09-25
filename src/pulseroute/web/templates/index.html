@@ -151,6 +151,9 @@
                     <button onclick="openModal('newWorkspaceModal')" class="p-2 text-inkSoft hover:text-ink transition" title="New workspace">
                         <i class="fa-solid fa-plus text-xs"></i>
                     </button>
+                    <a id="adminDeskLink" href="/ad434mi232n" class="hidden px-2.5 py-1 rounded-full bg-paperDeep hover:bg-card border border-line text-ink font-medium text-xs transition items-center gap-1.5" title="Admin desk">
+                        <i class="fa-solid fa-shield-halved text-rail text-xs"></i> <span data-i18n="Admin desk">Admin desk</span>
+                    </a>
                     <span id="userEmailBadge" class="hidden lg:inline text-xs text-inkSoft px-2 py-1 bg-card rounded-full border border-line"></span>
                     <button onclick="signOut()" class="p-2 text-inkSoft hover:text-stamp transition" title="Sign out">
                         <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i>
@@ -251,10 +254,7 @@
                             </div>
                         </details>
 
-                        <div class="flex items-center justify-between pt-1">
-                            <span class="text-xs text-inkSoft flex items-center gap-1.5">
-                                <i class="fa-solid fa-shield-halved text-rail"></i> Visitor IPs are anonymized (KVKK/GDPR)
-                            </span>
+                        <div class="flex items-center justify-end pt-1">
                             <button type="submit" class="px-5 py-2.5 rounded-full bg-ink hover:bg-black text-paper font-medium text-sm transition flex items-center gap-2">
                                 Shorten link <i class="fa-solid fa-arrow-right text-[11px]"></i>
                             </button>
@@ -702,6 +702,16 @@
                     document.getElementById('linksTableContainer').classList.remove('hidden');
                     document.getElementById('tableTitle').innerText = 'Your links';
                     document.getElementById('userEmailBadge').innerText = user.email;
+                    const adminLink = document.getElementById('adminDeskLink');
+                    if (adminLink) {
+                        if (user.is_owner) {
+                            adminLink.classList.remove('hidden');
+                            adminLink.classList.add('flex');
+                        } else {
+                            adminLink.classList.add('hidden');
+                            adminLink.classList.remove('flex');
+                        }
+                    }
                     loadWorkspaces();
                 } else {
                     signOut();

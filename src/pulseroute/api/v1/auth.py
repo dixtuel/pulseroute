@@ -114,7 +114,18 @@ async def get_current_user_profile(
     db: AsyncSession = Depends(get_db),
 ):
     """Retrieve currently authenticated user profile."""
-    return user
+    is_owner = bool(
+        settings.MODERATION_OWNER_EMAIL
+        and user.email.casefold() == settings.MODERATION_OWNER_EMAIL.casefold()
+    )
+    return UserResponse(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_active=user.is_active,
+        is_superuser=user.is_superuser,
+        is_owner=is_owner,
+    )
 
 
 @router.delete("/me", response_model=AccountDeleteResponse)

@@ -15,7 +15,7 @@
         ['Send iPhone visitors to', 'iPhone ziyaretçilerini şuraya yönlendir'], ['Send Android visitors to', 'Android ziyaretçilerini şuraya yönlendir'],
         ['Tags', 'Etiketler'], ['Send visitors here once this link expires', 'Bağlantı süresi dolunca ziyaretçileri buraya yönlendir'],
         ['Visitors wait at least 5 seconds while the link is verified.', 'Bağlantı doğrulanırken ziyaretçiler en az 5 saniye bekler.'],
-        ['Visitor IPs are anonymized (KVKK/GDPR)', 'Ziyaretçi IP adresleri anonimleştirilir (KVKK/GDPR)'],
+        ['Admin desk', 'Yönetici masası'], ['Return to site', 'Siteye dön'],
         ['Shorten link', 'Bağlantıyı kısalt'], ['Your link is ready', 'Bağlantınız hazır'], ['destination', 'hedef'], ['short link', 'kısa bağlantı'],
         ['QR code', 'QR kodu'], ['Copy', 'Kopyala'], ['Anonymous links created in the last 24h', 'Son 24 saatte oluşturulan anonim bağlantılar'],
         ["Individual anonymous links aren't listed here, for privacy.", 'Gizlilik için anonim bağlantılar tek tek burada listelenmez.'],
