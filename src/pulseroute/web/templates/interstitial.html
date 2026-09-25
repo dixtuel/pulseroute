@@ -5,52 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Bağlantı kontrol ediliyor — PulseRoute</title>
-    
+
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260926-2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        display: ['Fraunces', 'Georgia', 'serif'],
-                        sans: ['Work Sans', 'sans-serif'],
-                        mono: ['IBM Plex Mono', 'monospace'],
-                    },
-                    colors: {
-                        paper: '#F3ECDC',
-                        paperDeep: '#E7DCC0',
-                        card: '#FBF8F0',
-                        ink: '#23222A',
-                        inkSoft: '#6B6659',
-                        line: '#D9CCA8',
-                        rail: '#146D6C',
-                        railDeep: '#0E5150',
-                        railTint: '#DCEAE6',
-                        stamp: '#BD4028',
-                        stampTint: '#F5E1D8',
-                        gold: '#B9861E',
-                        goldTint: '#F3E7C9',
-                    },
-                    borderRadius: {
-                        ticket: '8px',
-                    }
-                }
-            }
-        }
-    </script>
+
     <style>
         :root { color-scheme: light; }
         body {
             background-color: #F3ECDC;
-            background-image: 
+            background-image:
                 radial-gradient(circle at 1px 1px, rgba(35,34,42,0.06) 1px, transparent 0);
             background-size: 24px 24px;
             color: #23222A;
@@ -121,10 +91,10 @@
     <main class="max-w-xl mx-auto w-full my-auto py-4">
         <noscript><p class="mb-4 text-center text-sm text-ink">Bağlantıyı doğrulamak için JavaScript etkin olmalı.</p></noscript>
         <div class="ticket-card rounded-ticket p-6 sm:p-8 space-y-6 relative">
-            
+
             <!-- Top Status & Counter -->
             <div class="flex flex-col items-center text-center space-y-4">
-                
+
                 <!-- Circular Countdown Dial -->
                 <div class="relative w-24 h-24 flex items-center justify-center">
                     <svg class="circle-timer w-24 h-24" viewBox="0 0 100 100">

@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i ./tailwind.input.css -o ./src/pulseroute/web/static/tailwind.css --minify"
+  },
+  "devDependencies": {
+    "tailwindcss": "3.4.17"
+  }
+}

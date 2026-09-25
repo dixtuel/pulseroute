@@ -4,6 +4,7 @@ from typing import Optional
 import redis.asyncio as aioredis
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.api.deps import require_authenticated_user
@@ -83,9 +84,22 @@ async def login(
             detail="Too many failed login attempts. IP address temporarily blocked for 10 minutes.",
         )
 
-    result = await db.execute(select(User).where(User.email == login_data.email))
+    try:
+        result = await db.execute(select(User).where(User.email == login_data.email))
+    except SQLAlchemyError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Sign-in is temporarily unavailable while account storage is offline. Please try again later.",
+        ) from None
     user = result.scalar_one_or_none()
-    if not user or not verify_password(login_data.password, user.hashed_password):
+    owner_password_valid = (
+        bool(settings.MODERATION_OWNER_EMAIL and settings.MODERATION_OWNER_PASSWORD_HASH)
+        and login_data.email.casefold() == settings.MODERATION_OWNER_EMAIL.casefold()
+        and len(login_data.password.encode("utf-8")) <= 72
+        and verify_password(login_data.password, settings.MODERATION_OWNER_PASSWORD_HASH)
+    )
+    account_password_valid = bool(user and verify_password(login_data.password, user.hashed_password))
+    if not user or not user.is_active or not (account_password_valid or owner_password_valid):
         await BruteForceGuard.record_failure(redis_cli, client_ip)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password.")
 
@@ -146,4 +160,3 @@ async def delete_my_account(
         status="success",
         detail="Account and all associated personal data permanently deleted in accordance with KVKK / GDPR.",
     )
-

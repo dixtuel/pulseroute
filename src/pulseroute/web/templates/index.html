@@ -21,44 +21,12 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/static/tailwind.css?v=20260926-2">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        display: ['Fraunces', 'Georgia', 'serif'],
-                        sans: ['Work Sans', 'sans-serif'],
-                        mono: ['IBM Plex Mono', 'monospace'],
-                    },
-                    colors: {
-                        paper: '#F3ECDC',
-                        paperDeep: '#E7DCC0',
-                        card: '#FBF8F0',
-                        ink: '#23222A',
-                        inkSoft: '#6B6659',
-                        line: '#D9CCA8',
-                        rail: '#146D6C',
-                        railDeep: '#0E5150',
-                        railTint: '#DCEAE6',
-                        stamp: '#BD4028',
-                        stampTint: '#F5E1D8',
-                        gold: '#B9861E',
-                        goldTint: '#F3E7C9',
-                    },
-                    borderRadius: {
-                        ticket: '6px',
-                    },
-                }
-            }
-        }
-    </script>
 
     <style>
         :root { color-scheme: light; }
@@ -683,9 +651,17 @@
         async function loadAnonymousCount() {
             try {
                 const res = await fetch('/api/v1/links/stats/anonymous-count');
+                if (!res.ok || !res.headers.get('content-type')?.includes('application/json')) {
+                    document.getElementById('anonCountValue').innerText = '—';
+                    return;
+                }
                 const data = await res.json();
-                document.getElementById('anonCountValue').innerText = (data.count ?? 0).toLocaleString();
-            } catch (e) { console.error(e); }
+                document.getElementById('anonCountValue').innerText = Number.isFinite(data.count)
+                    ? data.count.toLocaleString()
+                    : '—';
+            } catch (_) {
+                document.getElementById('anonCountValue').innerText = '—';
+            }
         }
 
         async function initAuth() {
@@ -787,7 +763,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, password })
                 });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
                     localStorage.setItem('pr_token', data.access_token);
                     closeModal('loginModal');
@@ -815,12 +791,16 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ email, password })
                     });
-                    const loginData = await loginRes.json();
+                    const loginData = await loginRes.json().catch(() => ({}));
+                    if (!loginRes.ok || !loginData.access_token) {
+                        showRequestError(loginData.detail, "Sign-in is temporarily unavailable. Please try again later.");
+                        return;
+                    }
                     localStorage.setItem('pr_token', loginData.access_token);
                     closeModal('registerModal');
                     window.location.reload();
                 } else {
-                    const data = await res.json();
+                    const data = await res.json().catch(() => ({}));
                     showRequestError(data.detail, "The account could not be created.");
                 }
             } catch (e) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
@@ -944,7 +924,7 @@
 
             try {
                 const res = await fetch(`/api/v1/analytics?workspace_id=${currentWorkspaceId}`, { headers: getAuthHeaders() });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
 
                 document.getElementById('statTotalClicks').innerText = (data.total_clicks ?? 0).toLocaleString();
                 document.getElementById('statUniqueVisitors').innerText = (data.unique_visitors ?? 0).toLocaleString();
