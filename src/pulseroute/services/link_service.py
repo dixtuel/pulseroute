@@ -29,6 +29,27 @@ class LinkService:
         return result.scalar_one_or_none()
 
     @staticmethod
+    def serialize_cache_payload(link: ShortLink) -> dict:
+        """Serializes ShortLink to a JSON-compatible cache dictionary."""
+        return {
+            "id": link.id,
+            "destination_url": link.destination_url,
+            "title": link.title or "",
+            "ios_destination": link.ios_destination or "",
+            "android_destination": link.android_destination or "",
+            "geo_targets": link.geo_targets or {},
+            "interstitial_ad_html": link.interstitial_ad_html or "",
+            "interstitial_title": link.interstitial_title or "",
+            "adsense_client_id": link.adsense_client_id or "",
+            "adsense_slot_id": link.adsense_slot_id or "",
+            "expired_url": link.expired_url or "",
+            "has_password": bool(link.password_hash),
+            "public_stats": link.public_stats,
+            "is_active": link.is_active,
+            "expires_at": link.expires_at.isoformat() if link.expires_at else "",
+        }
+
+    @staticmethod
     async def create_link(
         db: AsyncSession,
         redis_cli: Optional[aioredis.Redis],
@@ -99,22 +120,7 @@ class LinkService:
             try:
                 domain_str = domain.domain if domain else None
                 cache_key = LinkService._build_cache_key(domain_str, slug)
-                cache_payload = {
-                    "id": link.id,
-                    "destination_url": link.destination_url,
-                    "ios_destination": link.ios_destination or "",
-                    "android_destination": link.android_destination or "",
-                    "geo_targets": link.geo_targets or {},
-                    "interstitial_ad_html": link.interstitial_ad_html or "",
-                    "interstitial_title": link.interstitial_title or "",
-                    "adsense_client_id": link.adsense_client_id or "",
-                    "adsense_slot_id": link.adsense_slot_id or "",
-                    "expired_url": link.expired_url or "",
-                    "has_password": bool(link.password_hash),
-                    "public_stats": link.public_stats,
-                    "is_active": link.is_active,
-                    "expires_at": link.expires_at.isoformat() if link.expires_at else "",
-                }
+                cache_payload = LinkService.serialize_cache_payload(link)
                 await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
             except Exception:
                 pass
@@ -169,22 +175,7 @@ class LinkService:
         if redis_cli:
             try:
                 cache_key = LinkService._build_cache_key(domain_name, link.slug)
-                cache_payload = {
-                    "id": link.id,
-                    "destination_url": link.destination_url,
-                    "ios_destination": link.ios_destination or "",
-                    "android_destination": link.android_destination or "",
-                    "geo_targets": link.geo_targets or {},
-                    "interstitial_ad_html": link.interstitial_ad_html or "",
-                    "interstitial_title": link.interstitial_title or "",
-                    "adsense_client_id": link.adsense_client_id or "",
-                    "adsense_slot_id": link.adsense_slot_id or "",
-                    "expired_url": link.expired_url or "",
-                    "has_password": bool(link.password_hash),
-                    "public_stats": link.public_stats,
-                    "is_active": link.is_active,
-                    "expires_at": link.expires_at.isoformat() if link.expires_at else "",
-                }
+                cache_payload = LinkService.serialize_cache_payload(link)
                 await redis_cli.set(cache_key, json.dumps(cache_payload), ex=settings.CACHE_DEFAULT_TTL)
             except Exception:
                 pass

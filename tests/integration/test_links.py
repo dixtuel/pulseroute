@@ -252,3 +252,25 @@ async def test_health_check(client: AsyncClient):
     data = res.json()
     assert data["status"] in ("healthy", "degraded")
     assert "version" in data
+
+
+@pytest.mark.asyncio
+async def test_authenticated_link_creation_without_workspace_id_assigns_default_workspace(
+    client: AsyncClient,
+):
+    """When an authenticated user creates a link without specifying workspace_id, it is assigned to their workspace."""
+    headers, workspace_id = await _register_and_get_workspace(client, "auto-workspace@company.com")
+    res = await client.post(
+        "/api/v1/links",
+        json={"destination_url": "https://example.com/assigned-target"},
+        headers=headers,
+    )
+    assert res.status_code == 201
+    created_id = res.json()["id"]
+
+    # Verify that the link appears in user's workspace
+    list_res = await client.get(f"/api/v1/links?workspace_id={workspace_id}", headers=headers)
+    assert list_res.status_code == 200
+    links = list_res.json()
+    assert any(lnk["id"] == created_id for lnk in links)
+

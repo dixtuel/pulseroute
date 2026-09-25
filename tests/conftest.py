@@ -4,12 +4,17 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 
 from pulseroute.core.config import settings
 from pulseroute.core.database import Base, get_db
+from pulseroute.core.redis import get_redis
 from pulseroute.main import app
 
 TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
 test_engine = create_async_engine(TEST_DATABASE_URL, connect_args={"check_same_thread": False})
 test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire_on_commit=False)
+
+
+async def override_get_redis():
+    return None
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -19,11 +24,14 @@ async def setup_db(monkeypatch):
     orig_email_check = settings.ENFORCE_EMAIL_DOMAIN_CHECK
     settings.ENFORCE_EMAIL_DOMAIN_CHECK = False
 
-    async def no_redis():
-        return None
+    from pulseroute.common.rate_limiter import _memory_limiter_store
+    from pulseroute.core.security_middleware import _memory_jail
+
+    _memory_limiter_store.clear()
+    _memory_jail.clear()
 
     monkeypatch.setattr("pulseroute.api.redirect.async_session_maker", test_session_maker)
-    monkeypatch.setattr("pulseroute.api.redirect.get_redis", no_redis)
+    monkeypatch.setattr("pulseroute.api.redirect.get_redis", override_get_redis)
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -40,6 +48,7 @@ async def override_get_db():
 
 
 app.dependency_overrides[get_db] = override_get_db
+app.dependency_overrides[get_redis] = override_get_redis
 
 
 @pytest_asyncio.fixture

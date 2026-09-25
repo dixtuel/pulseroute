@@ -14,6 +14,7 @@ from pulseroute.core.redis import get_redis
 from pulseroute.models.domain import CustomDomain
 from pulseroute.models.link import ShortLink
 from pulseroute.models.user import User
+from pulseroute.models.workspace import WorkspaceMember
 from pulseroute.schemas.link import LinkCreate, LinkResponse, LinkUpdate
 from pulseroute.services.link_service import LinkService
 
@@ -123,9 +124,20 @@ async def create_short_link(
     response.headers["X-RateLimit-Remaining"] = str(remaining)
 
     workspace_id = None
-    if current_user and link_data.workspace_id:
-        workspace = await verify_workspace_access(link_data.workspace_id, current_user, db)
-        workspace_id = workspace.id
+    if current_user:
+        if link_data.workspace_id:
+            workspace = await verify_workspace_access(link_data.workspace_id, current_user, db)
+            workspace_id = workspace.id
+        else:
+            first_ws = await db.execute(
+                select(WorkspaceMember.workspace_id)
+                .where(WorkspaceMember.user_id == current_user.id)
+                .order_by(WorkspaceMember.id.asc())
+                .limit(1)
+            )
+            ws_id = first_ws.scalar_one_or_none()
+            if ws_id:
+                workspace_id = ws_id
 
     try:
         link = await LinkService.create_link(db, redis_cli, link_data, workspace_id=workspace_id)

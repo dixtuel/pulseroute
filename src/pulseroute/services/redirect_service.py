@@ -1,3 +1,4 @@
+import asyncio
 import json
 import time
 from datetime import UTC, datetime
@@ -26,6 +27,10 @@ def is_primary_domain(host: str) -> bool:
 _l1_cache: dict[str, tuple[float, Optional[dict]]] = {}
 _L1_TTL = 5.0
 _L1_MAX_SIZE = 2000
+
+# Singleflight in-process coordination locks to avoid thundering herd on cache misses
+_inflight_locks: dict[str, asyncio.Lock] = {}
+_inflight_master_lock = asyncio.Lock()
 
 
 def get_l1_cached_link(key: str) -> tuple[bool, Optional[dict]]:
@@ -105,59 +110,74 @@ class RedirectService:
             except Exception:
                 pass
 
-        # 4. Cache Miss: Fallback to Database
+        # 4. Cache Miss: Fallback to Database with Singleflight Protection
         if not link_data:
-            query = select(ShortLink).where(ShortLink.slug == slug)
-            custom_domain_obj = None
-            if domain_name:
-                dom_query = select(CustomDomain).where(CustomDomain.domain == domain_name)
-                dom_res = await db.execute(dom_query)
-                custom_domain_obj = dom_res.scalar_one_or_none()
-                if custom_domain_obj:
-                    query = query.where(ShortLink.domain_id == custom_domain_obj.id)
-                else:
-                    # Fallback to default domain link if custom domain is not registered
-                    query = query.where(ShortLink.domain_id.is_(None))
-            else:
-                query = query.where(ShortLink.domain_id.is_(None))
+            async with _inflight_master_lock:
+                if cache_key not in _inflight_locks:
+                    _inflight_locks[cache_key] = asyncio.Lock()
+                flight_lock = _inflight_locks[cache_key]
 
-            result = await db.execute(query)
-            link = result.scalar_one_or_none()
-
-            if not link:
-                set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
-                if redis_cli:
+            async with flight_lock:
+                # Double-check L1 and Redis in case a concurrent flight resolved it
+                is_hit, l1_data = get_l1_cached_link(cache_key)
+                if is_hit:
+                    if l1_data is None:
+                        return None, 404, "Link not found", None
+                    link_data = l1_data
+                elif redis_cli:
                     try:
-                        await redis_cli.set(cache_key, "NULL", ex=settings.NEGATIVE_CACHE_TTL)
+                        cached_json = await redis_cli.get(cache_key)
+                        if cached_json == "NULL":
+                            set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
+                            return None, 404, "Link not found", None
+                        if cached_json:
+                            link_data = json.loads(cached_json)
+                            set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
                     except Exception:
                         pass
-                if custom_domain_obj and custom_domain_obj.custom_not_found_url:
-                    return custom_domain_obj.custom_not_found_url, 302, None, None
-                return None, 404, "Link not found", None
 
-            link_data = {
-                "id": link.id,
-                "destination_url": link.destination_url,
-                "ios_destination": link.ios_destination or "",
-                "android_destination": link.android_destination or "",
-                "geo_targets": link.geo_targets or {},
-                "interstitial_ad_html": link.interstitial_ad_html or "",
-                "interstitial_title": link.interstitial_title or "",
-                "adsense_client_id": link.adsense_client_id or "",
-                "adsense_slot_id": link.adsense_slot_id or "",
-                "expired_url": link.expired_url or "",
-                "has_password": bool(link.password_hash),
-                "public_stats": link.public_stats,
-                "is_active": link.is_active,
-                "expires_at": link.expires_at.isoformat() if link.expires_at else "",
-            }
+                if not link_data:
+                    query = select(ShortLink).where(ShortLink.slug == slug)
+                    custom_domain_obj = None
+                    if domain_name:
+                        dom_query = select(CustomDomain).where(CustomDomain.domain == domain_name)
+                        dom_res = await db.execute(dom_query)
+                        custom_domain_obj = dom_res.scalar_one_or_none()
+                        if custom_domain_obj:
+                            query = query.where(ShortLink.domain_id == custom_domain_obj.id)
+                        else:
+                            # Fallback to default domain link if custom domain is not registered
+                            query = query.where(ShortLink.domain_id.is_(None))
+                    else:
+                        query = query.where(ShortLink.domain_id.is_(None))
 
-            set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
-            if redis_cli:
-                try:
-                    await redis_cli.set(cache_key, json.dumps(link_data), ex=settings.CACHE_DEFAULT_TTL)
-                except Exception:
-                    pass
+                    result = await db.execute(query)
+                    link = result.scalar_one_or_none()
+
+                    if not link:
+                        set_l1_cached_link(cache_key, None, ttl=min(_L1_TTL, float(settings.NEGATIVE_CACHE_TTL)))
+                        if redis_cli:
+                            try:
+                                await redis_cli.set(cache_key, "NULL", ex=settings.NEGATIVE_CACHE_TTL)
+                            except Exception:
+                                pass
+                        if custom_domain_obj and custom_domain_obj.custom_not_found_url:
+                            return custom_domain_obj.custom_not_found_url, 302, None, None
+                        return None, 404, "Link not found", None
+
+                    from pulseroute.services.link_service import LinkService
+
+                    link_data = LinkService.serialize_cache_payload(link)
+                    set_l1_cached_link(cache_key, link_data, ttl=_L1_TTL)
+                    if redis_cli:
+                        try:
+                            await redis_cli.set(cache_key, json.dumps(link_data), ex=settings.CACHE_DEFAULT_TTL)
+                        except Exception:
+                            pass
+
+            async with _inflight_master_lock:
+                if not flight_lock.locked() and cache_key in _inflight_locks:
+                    _inflight_locks.pop(cache_key, None)
 
         # 4. Check Link Active
         if not link_data.get("is_active", True):

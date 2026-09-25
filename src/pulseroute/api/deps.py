@@ -41,7 +41,7 @@ async def require_authenticated_user(
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required. Please provide a valid Bearer token or API key.",
+            detail="Authentication required. Please provide a valid Bearer token.",
         )
     return current_user
 

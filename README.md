@@ -142,7 +142,7 @@ Note: there is no per-user API key feature — JWT (`Authorization: Bearer <toke
 
 ## Testing & Quality Assurance
 
-Run the comprehensive unit and integration test suite (34 passing tests):
+Run the comprehensive unit and integration test suite (60 passing tests):
 
 ```bash
 # Run tests with coverage

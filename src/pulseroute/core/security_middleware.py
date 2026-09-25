@@ -8,11 +8,27 @@ from starlette.responses import Response
 
 # Memory fallback jail for brute force: {ip: [fail_timestamps]}
 _memory_jail: dict[str, list[float]] = {}
+_MAX_MEMORY_JAIL_SIZE = 1000
+
+
+def _cleanup_memory_jail(now: float) -> None:
+    if len(_memory_jail) > _MAX_MEMORY_JAIL_SIZE:
+        expired = [ip for ip, timestamps in _memory_jail.items() if not timestamps or now - timestamps[-1] >= 600]
+        for ip in expired:
+            _memory_jail.pop(ip, None)
+        # If still over limit, drop oldest entries
+        if len(_memory_jail) > _MAX_MEMORY_JAIL_SIZE:
+            for ip in list(_memory_jail.keys())[: _MAX_MEMORY_JAIL_SIZE // 5]:
+                _memory_jail.pop(ip, None)
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
+        if request.url.path == "/healtalive":
+            # Render probes this tiny endpoint every few seconds. Browser-only
+            # security headers add hundreds of bytes to every probe response.
+            return response
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
@@ -39,6 +55,7 @@ class BruteForceGuard:
                 pass
 
         now = time.time()
+        _cleanup_memory_jail(now)
         failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 600]  # 10 minutes
         return len(failures) >= 10
 
@@ -57,6 +74,7 @@ class BruteForceGuard:
             except Exception:
                 pass
 
+        _cleanup_memory_jail(now)
         failures = [ts for ts in _memory_jail.get(ip, []) if now - ts < 600]
         failures.append(now)
         _memory_jail[ip] = failures
