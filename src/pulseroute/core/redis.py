@@ -29,7 +29,7 @@ async def get_redis() -> aioredis.Redis | None:
                 socket_connect_timeout=3.0,
                 retry_on_timeout=True,
                 health_check_interval=30,
-                max_connections=20,  # Upstash free tier allows up to 100 concurrent connections
+                max_connections=20,  # Bound this process's connection pool without relying on a plan limit.
             )
             await redis_client.ping()
         except Exception as e:

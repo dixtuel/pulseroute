@@ -22,6 +22,13 @@ class LinkService:
         return f"link:{domain_part}:{slug}"
 
     @staticmethod
+    async def _link_domain_name(db: AsyncSession, link: ShortLink) -> Optional[str]:
+        if link.domain_id is None:
+            return None
+        result = await db.execute(select(CustomDomain.domain).where(CustomDomain.id == link.domain_id))
+        return result.scalar_one_or_none()
+
+    @staticmethod
     async def create_link(
         db: AsyncSession,
         redis_cli: Optional[aioredis.Redis],
@@ -90,10 +97,7 @@ class LinkService:
         # Cache in Redis
         if redis_cli:
             try:
-                domain_str = None
-                if data.domain_id:
-                    dom_res = await db.execute(select(CustomDomain.domain).where(CustomDomain.id == data.domain_id))
-                    domain_str = dom_res.scalar_one_or_none()
+                domain_str = domain.domain if domain else None
                 cache_key = LinkService._build_cache_key(domain_str, slug)
                 cache_payload = {
                     "id": link.id,
@@ -140,6 +144,8 @@ class LinkService:
         if not link:
             return None
 
+        domain_name = await LinkService._link_domain_name(db, link)
+
         update_fields = data.model_dump(exclude_unset=True)
         if "destination_url" in update_fields and settings.ENFORCE_SAFE_BROWSING:
             safe, reason = is_url_safe(update_fields["destination_url"])
@@ -156,13 +162,13 @@ class LinkService:
         try:
             from pulseroute.services.redirect_service import RedirectService
 
-            RedirectService.invalidate_l1(None, link.slug)
+            RedirectService.invalidate_l1(domain_name, link.slug)
         except Exception:
             pass
 
         if redis_cli:
             try:
-                cache_key = LinkService._build_cache_key(None, link.slug)
+                cache_key = LinkService._build_cache_key(domain_name, link.slug)
                 cache_payload = {
                     "id": link.id,
                     "destination_url": link.destination_url,
@@ -232,16 +238,18 @@ class LinkService:
         if not link:
             return False
 
+        domain_name = await LinkService._link_domain_name(db, link)
+
         try:
             from pulseroute.services.redirect_service import RedirectService
 
-            RedirectService.invalidate_l1(None, link.slug)
+            RedirectService.invalidate_l1(domain_name, link.slug)
         except Exception:
             pass
 
         if redis_cli:
             try:
-                cache_key = LinkService._build_cache_key(None, link.slug)
+                cache_key = LinkService._build_cache_key(domain_name, link.slug)
                 await redis_cli.delete(cache_key)
             except Exception:
                 pass

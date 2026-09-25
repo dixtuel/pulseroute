@@ -1,3 +1,5 @@
+from unittest.mock import AsyncMock
+
 import pytest
 from httpx import AsyncClient
 
@@ -137,6 +139,36 @@ async def test_cannot_create_link_under_another_workspaces_domain(client: AsyncC
     )
     assert res.status_code == 400
     assert "Invalid or unverified" in res.json()["detail"]
+
+
+@pytest.mark.asyncio
+async def test_custom_domain_link_cache_is_refreshed_and_deleted_under_its_domain(db_session):
+    from pulseroute.models.domain import CustomDomain
+    from pulseroute.models.link import ShortLink
+    from pulseroute.schemas.link import LinkUpdate
+    from pulseroute.services.link_service import LinkService
+    from pulseroute.services.redirect_service import get_l1_cached_link, set_l1_cached_link
+
+    domain = CustomDomain(domain="links.example.com", verification_code="x", is_verified=True)
+    db_session.add(domain)
+    await db_session.flush()
+    link = ShortLink(domain_id=domain.id, slug="cache-check", destination_url="https://example.com/old")
+    db_session.add(link)
+    await db_session.commit()
+    await db_session.refresh(link)
+
+    cache_key = "link:links.example.com:cache-check"
+    redis_cli = AsyncMock()
+    set_l1_cached_link(cache_key, {"destination_url": "https://example.com/old"})
+
+    await LinkService.update_link(db_session, redis_cli, link.id, LinkUpdate(title="Updated"))
+    assert not get_l1_cached_link(cache_key)[0]
+    assert redis_cli.set.await_args.args[0] == cache_key
+
+    set_l1_cached_link(cache_key, {"destination_url": "https://example.com/old"})
+    await LinkService.delete_link(db_session, redis_cli, link.id)
+    assert not get_l1_cached_link(cache_key)[0]
+    redis_cli.delete.assert_awaited_once_with(cache_key)
 
 
 @pytest.mark.asyncio
