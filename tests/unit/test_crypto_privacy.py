@@ -180,3 +180,27 @@ def test_secure_payload_fallback_support():
     plain_json = '{"direct": true}'
     assert secure_decode_payload(plain_json) == {"direct": True}
 
+
+def test_get_client_preferences_server_side():
+    """Verify backend get_client_preferences decrypts and validates client pr_pref cookie."""
+    from unittest.mock import MagicMock
+
+    from pulseroute.api.deps import get_client_preferences
+
+    # 1. Valid cookie
+    valid_token = encrypt_compact_cookie({"c": 1, "t": 1727280000})
+    req = MagicMock()
+    req.cookies = {"pr_pref": valid_token}
+    res = get_client_preferences(req)
+    assert res is not None
+    assert res["c"] == 1
+
+    # 2. Tampered cookie
+    req.cookies = {"pr_pref": "v1_bad_token_bad"}
+    assert get_client_preferences(req) is None
+
+    # 3. Missing cookie
+    req.cookies = {}
+    assert get_client_preferences(req) is None
+
+

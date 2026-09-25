@@ -124,8 +124,14 @@
       var key = strToUtf8(secret || DEFAULT_SECRET);
       var plaintext = strToUtf8(JSON.stringify(data));
       var iv = [];
-      for (var i = 0; i < 4; i++) {
-        iv.push(Math.floor(Math.random() * 256));
+      if (typeof window !== "undefined" && window.crypto && window.crypto.getRandomValues) {
+        var randBuf = new Uint8Array(4);
+        window.crypto.getRandomValues(randBuf);
+        for (var r = 0; r < 4; r++) iv.push(randBuf[r]);
+      } else {
+        for (var i = 0; i < 4; i++) {
+          iv.push(Math.floor(Math.random() * 256));
+        }
       }
       var keystream = [];
       var blockNum = 0;
@@ -422,7 +428,8 @@
     save: function (cookieName, data, secret) {
       data.t = Math.floor(Date.now() / 1000);
       var encrypted = CompactCookie.encrypt(data, secret);
-      this.setCookie(cookieName, encrypted, 365);
+      // KVKK & GDPR / ePrivacy Directive: Consent cookies expire after 180 days (6 months)
+      this.setCookie(cookieName, encrypted, 180);
       if (typeof localStorage !== 'undefined') {
         try {
           localStorage.setItem(cookieName, JSON.stringify(data));

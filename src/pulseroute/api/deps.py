@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from fastapi import Depends, HTTPException, Security, status
+from fastapi import Depends, HTTPException, Request, Security, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from pulseroute.common.encryption import decrypt_compact_cookie
 from pulseroute.core.database import get_db
 from pulseroute.core.security import decode_access_token
 from pulseroute.models.user import User
@@ -70,3 +71,15 @@ async def verify_workspace_access(
         )
 
     return workspace
+
+
+def get_client_preferences(request: Request) -> Optional[Dict[str, Any]]:
+    """Safely extracts, verifies, and decrypts the client's preference/consent cookie ('pr_pref').
+
+    Returns None if missing, malformed, or tampered with.
+    """
+    raw_cookie = request.cookies.get("pr_pref")
+    if not raw_cookie:
+        return None
+    return decrypt_compact_cookie(raw_cookie)
+
