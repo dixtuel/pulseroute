@@ -15,7 +15,15 @@ from pulseroute.core.security import create_access_token, hash_password, verify_
 from pulseroute.core.security_middleware import BruteForceGuard
 from pulseroute.models.user import User
 from pulseroute.models.workspace import Workspace, WorkspaceMember
-from pulseroute.schemas.auth import LoginRequest, Token, UserCreate, UserResponse
+from pulseroute.schemas.auth import (
+    AccountDeleteRequest,
+    AccountDeleteResponse,
+    LoginRequest,
+    Token,
+    UserCreate,
+    UserResponse,
+)
+from pulseroute.services.workspace_service import WorkspaceService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -93,3 +101,49 @@ async def get_current_user_profile(
 ):
     """Retrieve currently authenticated user profile."""
     return user
+
+
+@router.delete("/me", response_model=AccountDeleteResponse)
+async def delete_my_account(
+    data: AccountDeleteRequest,
+    user: User = Depends(require_authenticated_user),
+    db: AsyncSession = Depends(get_db),
+    redis_cli: Optional[aioredis.Redis] = Depends(get_redis),
+):
+    """Permanently deletes the authenticated user's account and all personal data
+
+    in compliance with KVKK (Article 7) and GDPR (Article 17 - Right to Erasure).
+    Cascades all owned workspaces, short links, clicks, and associated secrets.
+    """
+    if data.confirmation.strip().upper() != "DELETE":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Confirmation text must be 'DELETE' to confirm irreversible account deletion.",
+        )
+
+    if not verify_password(data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect password. Account deletion aborted.",
+        )
+
+    # 1. Find and purge all workspaces where this user is the 'owner'
+    owned_ws_query = (
+        select(Workspace)
+        .join(WorkspaceMember, Workspace.id == WorkspaceMember.workspace_id)
+        .where(WorkspaceMember.user_id == user.id, WorkspaceMember.role == "owner")
+    )
+    owned_workspaces = list((await db.execute(owned_ws_query)).scalars().all())
+
+    for ws in owned_workspaces:
+        await WorkspaceService.delete_workspace(db, redis_cli, ws)
+
+    # 2. Delete user entity (cascade will delete remaining WorkspaceMember entries)
+    await db.delete(user)
+    await db.commit()
+
+    return AccountDeleteResponse(
+        status="success",
+        detail="Account and all associated personal data permanently deleted in accordance with KVKK / GDPR.",
+    )
+

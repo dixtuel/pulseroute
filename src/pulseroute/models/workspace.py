@@ -10,6 +10,7 @@ if TYPE_CHECKING:
     from pulseroute.models.domain import CustomDomain
     from pulseroute.models.link import ShortLink
     from pulseroute.models.user import User
+    from pulseroute.models.webhook import WebhookSubscription
 
 
 class Workspace(Base):
@@ -30,6 +31,9 @@ class Workspace(Base):
     )
     domains: Mapped[List["CustomDomain"]] = relationship(
         "CustomDomain", back_populates="workspace", cascade="all, delete-orphan"
+    )
+    webhooks: Mapped[List["WebhookSubscription"]] = relationship(
+        "WebhookSubscription", cascade="all, delete-orphan"
     )
 
 

@@ -25,3 +25,17 @@ class LoginRequest(BaseModel):
 class Token(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+class AccountDeleteRequest(BaseModel):
+    password: str = Field(description="Account password for confirmation")
+    confirmation: str = Field(
+        default="DELETE",
+        description="Confirmation text (must be 'DELETE') to prevent accidental deletions",
+    )
+
+
+class AccountDeleteResponse(BaseModel):
+    status: str = "success"
+    detail: str = "Account and all associated personal data permanently deleted in accordance with KVKK / GDPR."
+
