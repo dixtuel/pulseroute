@@ -63,10 +63,10 @@ async def test_render_privacy_and_terms(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_render_custom_404_html(client: AsyncClient):
-    res_404 = await client.get("/not-found-xyz-abc", headers={"Accept": "text/html"})
-    assert res_404.status_code == 404
-    assert "Short Link Not Found" in res_404.text
+async def test_unknown_link_shows_verification_shell_first(client: AsyncClient):
+    response = await client.get("/not-found-xyz-abc", headers={"Accept": "text/html"})
+    assert response.status_code == 200
+    assert "Bağlantı kontrol ediliyor" in response.text
 
 
 @pytest.mark.asyncio

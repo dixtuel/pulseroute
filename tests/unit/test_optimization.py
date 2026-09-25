@@ -86,6 +86,63 @@ async def test_dns_worker_idle_deep_sleep():
 
 
 @pytest.mark.asyncio
+async def test_dns_worker_waits_for_new_domain_without_polling(monkeypatch):
+    event = asyncio.Event()
+    monkeypatch.setattr("pulseroute.workers.dns_worker._pending_domain_event", event)
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = []
+    mock_session = AsyncMock()
+    mock_session.execute.return_value = mock_result
+    mock_session_maker = MagicMock()
+    mock_session_maker.return_value.__aenter__.return_value = mock_session
+
+    with patch("pulseroute.workers.dns_worker.async_session_maker", mock_session_maker):
+        task = asyncio.create_task(run_dns_verification_worker(idle_sleep_seconds=None))
+        try:
+            await asyncio.sleep(0.05)
+            assert mock_session.execute.await_count == 1
+            notify_unverified_domains_changed()
+            await asyncio.sleep(0.05)
+            assert mock_session.execute.await_count == 2
+        finally:
+            task.cancel()
+            await task
+
+
+@pytest.mark.asyncio
+async def test_dns_worker_batches_pending_domains_and_backs_off(monkeypatch):
+    monkeypatch.setattr("pulseroute.workers.dns_worker._pending_domain_event", asyncio.Event())
+    domains = [MagicMock(id=i, domain=f"domain-{i}.example") for i in range(5)]
+    mock_result = MagicMock()
+    mock_result.scalars.return_value.all.return_value = domains
+    mock_session = AsyncMock()
+    mock_session.execute.return_value = mock_result
+    mock_session_maker = MagicMock()
+    mock_session_maker.return_value.__aenter__.return_value = mock_session
+
+    with (
+        patch("pulseroute.workers.dns_worker.async_session_maker", mock_session_maker),
+        patch("pulseroute.workers.dns_worker.DomainService.verify_domain_dns", new_callable=AsyncMock) as verify,
+    ):
+        verify.return_value = (False, "pending")
+        task = asyncio.create_task(
+            run_dns_verification_worker(interval_seconds=0.02, max_pending_interval_seconds=0.06)
+        )
+        try:
+            await asyncio.sleep(0.11)
+            passes = mock_session.execute.await_count
+            assert 2 <= passes <= 4
+            assert verify.await_count == passes * len(domains)
+            assert all(call.kwargs.get("preloaded_domain") is not None for call in verify.await_args_list)
+            notify_unverified_domains_changed()
+            await asyncio.sleep(0.02)
+            assert mock_session.execute.await_count > passes
+        finally:
+            task.cancel()
+            await task
+
+
+@pytest.mark.asyncio
 async def test_analytics_worker_adaptive_idle_backoff():
     """Test that analytics worker backs off when stream is empty without burning requests."""
     _new_click_event.clear()
@@ -157,4 +214,3 @@ async def test_rate_limiter_unique_member():
     # Verify 4th argument (unique member) was passed
     call_args = mock_redis.eval.call_args[0]
     assert len(call_args) >= 7  # script, numkeys, key, now, window, limit, unique_member
-

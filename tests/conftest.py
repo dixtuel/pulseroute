@@ -13,11 +13,17 @@ test_session_maker = async_sessionmaker(test_engine, class_=AsyncSession, expire
 
 
 @pytest_asyncio.fixture(autouse=True)
-async def setup_db():
+async def setup_db(monkeypatch):
     # Registration tests use made-up domains (company.com, competitor.com, ...) -- don't hit
     # real DNS in the test suite; the email-domain-check logic itself is unit-tested separately.
     orig_email_check = settings.ENFORCE_EMAIL_DOMAIN_CHECK
     settings.ENFORCE_EMAIL_DOMAIN_CHECK = False
+
+    async def no_redis():
+        return None
+
+    monkeypatch.setattr("pulseroute.api.redirect.async_session_maker", test_session_maker)
+    monkeypatch.setattr("pulseroute.api.redirect.get_redis", no_redis)
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

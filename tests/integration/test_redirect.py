@@ -1,7 +1,18 @@
+import json
+import re
+import time
 from datetime import UTC, datetime, timedelta
 
 import pytest
 from httpx import AsyncClient
+
+from pulseroute.common.redirect_ticket import issue_ticket
+
+
+def _start_ticket(html: str) -> str:
+    match = re.search(r"const startTicket = (\"[^\"]+\");", html)
+    assert match is not None
+    return json.loads(match.group(1))
 
 
 @pytest.mark.asyncio
@@ -39,7 +50,7 @@ async def test_redirect_interstitial_page_with_adsense(client: AsyncClient):
     settings.GLOBAL_ADSENSE_CLIENT_ID = "ca-pub-1234567890"
     settings.GLOBAL_ADSENSE_SLOT_ID = "9876543210"
     try:
-        # Create link with a 5s interstitial delay (no per-link ad fields exist anymore)
+        # The browser countdown is platform-controlled, regardless of legacy fields.
         create_res = await client.post(
             "/api/v1/links",
             json={
@@ -57,6 +68,7 @@ async def test_redirect_interstitial_page_with_adsense(client: AsyncClient):
         assert "ca-pub-1234567890" in browser_res.text
         assert "9876543210" in browser_res.text
         assert "adsbygoogle" in browser_res.text
+        assert "interstitialDelay" not in browser_res.text
     finally:
         settings.GLOBAL_ADSENSE_CLIENT_ID = orig_client
         settings.GLOBAL_ADSENSE_SLOT_ID = orig_slot
@@ -85,3 +97,62 @@ async def test_redirect_expired_fallback(client: AsyncClient):
 async def test_redirect_not_found(client: AsyncClient):
     res = await client.get("/non-existent-slug-xyz", follow_redirects=False)
     assert res.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_browser_shell_does_not_contact_backends(client: AsyncClient, monkeypatch):
+    def unexpected_db():
+        raise AssertionError("browser shell contacted the database")
+
+    monkeypatch.setattr("pulseroute.api.redirect.async_session_maker", unexpected_db)
+    response = await client.get("/any-slug", headers={"Accept": "text/html"})
+    assert response.status_code == 200
+    assert "Bağlantı kontrol ediliyor" in response.text
+    assert "no-store" in response.headers["cache-control"]
+
+
+@pytest.mark.asyncio
+async def test_browser_link_validation_and_minimum_wait(client: AsyncClient):
+    created = await client.post(
+        "/api/v1/links",
+        json={"destination_url": "https://example.com/verified", "slug": "wait-five", "interstitial_delay": 0},
+    )
+    assert created.status_code == 201
+    assert "interstitial_delay" not in created.json()
+
+    shell = await client.get("/wait-five", headers={"Accept": "text/html"})
+    ticket = _start_ticket(shell.text)
+    checked = await client.get(f"/api/v1/redirect/resolve/wait-five?ticket={ticket}")
+    assert checked.status_code == 200
+    assert 0 < checked.json()["wait_ms"] <= 5000
+    assert "target_url" not in checked.json()
+
+    early = await client.post("/api/v1/redirect/complete", json={"ticket": checked.json()["ticket"]})
+    assert early.status_code == 425
+
+
+@pytest.mark.asyncio
+async def test_browser_long_validation_skips_countdown(client: AsyncClient):
+    created = await client.post(
+        "/api/v1/links", json={"destination_url": "https://example.com/slow", "slug": "slow-check"}
+    )
+    assert created.status_code == 201
+    ticket = issue_ticket(
+        {"kind": "start", "host": "testserver", "slug": "slow-check", "started_at": time.time() - 6}
+    )
+    checked = await client.get(f"/api/v1/redirect/resolve/slow-check?ticket={ticket}")
+    assert checked.status_code == 200
+    assert checked.json()["wait_ms"] == 0
+    completed = await client.post("/api/v1/redirect/complete", json={"ticket": checked.json()["ticket"]})
+    assert completed.status_code == 200
+    assert completed.json()["target_url"] == "https://example.com/slow"
+
+
+@pytest.mark.asyncio
+async def test_browser_missing_link_returns_not_found_after_shell(client: AsyncClient):
+    shell = await client.get("/92837272", headers={"Accept": "text/html"})
+    assert shell.status_code == 200
+    ticket = _start_ticket(shell.text)
+    result = await client.get(f"/api/v1/redirect/resolve/92837272?ticket={ticket}")
+    assert result.status_code == 404
+    assert result.json()["detail"] == "Link not found"

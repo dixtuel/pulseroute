@@ -141,7 +141,6 @@ class RedirectService:
                 "ios_destination": link.ios_destination or "",
                 "android_destination": link.android_destination or "",
                 "geo_targets": link.geo_targets or {},
-                "interstitial_delay": link.interstitial_delay,
                 "interstitial_ad_html": link.interstitial_ad_html or "",
                 "interstitial_title": link.interstitial_title or "",
                 "adsense_client_id": link.adsense_client_id or "",
@@ -247,10 +246,8 @@ class RedirectService:
             except Exception:
                 pass
 
-        # 10. Interstitial / Ad delay check
+        # 10. Browser interstitial metadata (timing is enforced by the redirect router)
         interstitial_data = None
-        link_delay = link_data.get("interstitial_delay", 0)
-        effective_delay = link_delay if link_delay > 0 else settings.DEFAULT_INTERSTITIAL_DELAY
         adsense_client = link_data.get("adsense_client_id") or settings.GLOBAL_ADSENSE_CLIENT_ID
         adsense_slot = (
             link_data.get("adsense_slot_id")
@@ -258,9 +255,8 @@ class RedirectService:
             or settings.GLOBAL_ADSENSE_SLOT_ID
         )
 
-        if (effective_delay > 0 or adsense_client) and not is_bot:
+        if not is_bot:
             interstitial_data = {
-                "delay": effective_delay if effective_delay > 0 else 5,
                 "target_url": target_url,
                 "ad_html": link_data.get("interstitial_ad_html"),
                 "title": link_data.get("interstitial_title") or link_data.get("title"),

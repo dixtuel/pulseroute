@@ -39,7 +39,6 @@ def _serialize_link(link: ShortLink, request: Optional[Request], domain_name: Op
         "destination_url": link.destination_url,
         "title": link.title,
         "tags": link.tags,
-        "interstitial_delay": link.interstitial_delay,
         "short_url": build_short_url(request, link.slug, custom_domain=domain_name),
         "total_clicks": link.total_clicks,
         "public_stats": link.public_stats,

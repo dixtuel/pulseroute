@@ -29,7 +29,8 @@ graph TD
         FastAPI -.->|Cache Miss| PG[(PostgreSQL / SQLite)]
     end
 
-    FastAPI -->|HTTP 307 Redirect| Client
+    FastAPI -->|Browser: verification screen, then 5s minimum| Client
+    FastAPI -->|Bots and API clients: HTTP 307| Client
 
     subgraph "Non-Blocking Analytics Pipeline"
         FastAPI -->|2. Push Click Event| RedisStream[(Redis Stream `events:clicks`)]
@@ -38,6 +39,8 @@ graph TD
         Worker -->|5. Bulk Insert| DBStore[(PostgreSQL Click Events)]
     end
 ```
+
+Browser visitors see the verification screen immediately. The link is resolved in a separate request; the countdown begins only after validation and counts toward a fixed five-second minimum from the initial request. If validation itself takes longer, the continue button becomes available immediately. Unknown links show a clear not-found state. Link creators cannot change the delay. A short-lived encrypted ticket prevents the browser completion endpoint from revealing the destination early.
 
 ---
 

@@ -272,16 +272,12 @@
                                     <input type="text" id="linkTags" placeholder="campaign, social" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
                                 </div>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 px-3.5 pb-3.5">
-                                <div>
-                                    <label for="interstitialDelay" class="block text-[11px] text-inkSoft mb-1">Show a countdown page first, for</label>
-                                    <input type="number" id="interstitialDelay" min="0" max="30" value="0" placeholder="0 = go straight there" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
-                                    <span class="text-[10px] text-inkSoft">seconds (0 disables it)</span>
-                                </div>
+                            <div class="px-3.5 pb-3.5">
                                 <div>
                                     <label for="expiredUrl" class="block text-[11px] text-inkSoft mb-1">Send visitors here once this link expires</label>
                                     <input type="url" id="expiredUrl" placeholder="https://example.com/campaign-ended" class="w-full px-3 py-2 rounded bg-card border border-line text-xs">
                                 </div>
+                                <p class="mt-2 text-[10px] text-inkSoft">Visitors wait at least 5 seconds while the link is verified.</p>
                             </div>
                         </details>
 
@@ -1061,7 +1057,6 @@
 
         document.getElementById('shortenForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const delayVal = parseInt(document.getElementById('interstitialDelay').value) || 0;
             const domainVal = document.getElementById('linkDomainSelect').value;
             const destUrl = document.getElementById('destUrl').value;
             const payload = {
@@ -1070,7 +1065,6 @@
                 ios_destination: document.getElementById('iosUrl').value || null,
                 android_destination: document.getElementById('androidUrl').value || null,
                 tags: document.getElementById('linkTags').value || null,
-                interstitial_delay: delayVal,
                 expired_url: document.getElementById('expiredUrl').value || null,
                 workspace_id: (getToken() && currentWorkspaceId) ? parseInt(currentWorkspaceId, 10) : null,
                 domain_id: domainVal ? parseInt(domainVal, 10) : null,

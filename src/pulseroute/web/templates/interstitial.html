@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title or "Hedef Sayfaya Yönlendiriliyorsunuz" }} — PulseRoute</title>
+    <title>Bağlantı kontrol ediliyor — PulseRoute</title>
     
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
     <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
@@ -126,15 +126,15 @@
                     </svg>
                     <div class="absolute inset-0 flex flex-col items-center justify-center">
                         <span id="countdownNumber" class="text-3xl font-display font-bold text-ink transition-transform duration-200">
-                            {{ delay or 5 }}
+                            ···
                         </span>
-                        <span class="text-[9px] uppercase font-mono tracking-widest text-inkSoft" id="timerUnit">SANİYE</span>
+                        <span class="text-[9px] uppercase font-mono tracking-widest text-inkSoft" id="timerUnit">KONTROL</span>
                     </div>
                 </div>
 
                 <!-- Status Heading -->
                 <div class="space-y-1">
-                    <h1 id="statusTitle" class="text-lg sm:text-xl font-display font-bold text-ink">
+                    <h1 id="statusTitle" aria-live="polite" class="text-lg sm:text-xl font-display font-bold text-ink">
                         Hedef Sayfa Hazırlanıyor...
                     </h1>
                     <p id="statusSubtitle" class="text-xs text-inkSoft">
@@ -147,16 +147,16 @@
                     <div class="flex items-center gap-2 min-w-0 text-left">
                         <i class="fa-solid fa-lock text-[11px] text-rail"></i>
                         <span class="text-inkSoft font-mono text-[11px] shrink-0">HEDEF:</span>
-                        <span class="font-mono text-ink text-[11px] truncate" title="{{ target_url }}">{{ target_url }}</span>
+                        <span id="destinationLabel" class="font-mono text-ink text-[11px] truncate">Bağlantı kontrol ediliyor</span>
                     </div>
-                    <span class="shrink-0 text-[10px] font-mono text-rail bg-railTint/70 px-2 py-0.5 rounded border border-rail/20">
-                        Doğrulandı
+                    <span id="verificationBadge" class="shrink-0 text-[10px] font-mono text-gold bg-goldTint/70 px-2 py-0.5 rounded border border-gold/20">
+                        Bekleniyor
                     </span>
                 </div>
             </div>
 
             <!-- AdSense / Sponsor Banner Slot -->
-            <div class="space-y-2">
+            <div id="sponsorSection" class="space-y-2 hidden">
                 <div class="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-inkSoft px-1">
                     <span class="flex items-center gap-1.5">
                         <i class="fa-solid fa-rectangle-ad text-inkSoft/80"></i>
@@ -198,11 +198,12 @@
             <!-- Action Button ("Tıkla ve İlerle") -->
             <div class="pt-2">
                 <a id="proceedButton"
-                   href="javascript:void(0)"
+                   href="#"
                    aria-disabled="true"
+                   tabindex="-1"
                    class="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-md bg-paperDeep text-inkSoft/70 font-semibold text-sm border border-line cursor-not-allowed transition-all duration-200 select-none shadow-sm">
                     <span id="buttonIcon"><i class="fa-solid fa-hourglass-half text-xs"></i></span>
-                    <span id="buttonText">Lütfen Bekleyin ({{ delay or 5 }}s)</span>
+                    <span id="buttonText">Bağlantı kontrol ediliyor</span>
                 </a>
             </div>
 
@@ -223,80 +224,129 @@
     <!-- Interactive Script -->
     <script>
         (function() {
-            var initialDelay = parseInt("{{ delay }}", 10) || 5;
-            var timeLeft = initialDelay;
-            var targetUrl = "{{ target_url | safe }}";
+            const startTicket = {{ start_ticket | tojson }};
+            const countdownNumber = document.getElementById('countdownNumber');
+            const timerUnit = document.getElementById('timerUnit');
+            const timerPath = document.getElementById('timerPath');
+            const statusTitle = document.getElementById('statusTitle');
+            const statusSubtitle = document.getElementById('statusSubtitle');
+            const destinationLabel = document.getElementById('destinationLabel');
+            const verificationBadge = document.getElementById('verificationBadge');
+            const proceedButton = document.getElementById('proceedButton');
+            const buttonText = document.getElementById('buttonText');
+            const buttonIcon = document.getElementById('buttonIcon');
 
-            var countdownNumber = document.getElementById("countdownNumber");
-            var timerUnit = document.getElementById("timerUnit");
-            var timerPath = document.getElementById("timerPath");
-            var statusTitle = document.getElementById("statusTitle");
-            var statusSubtitle = document.getElementById("statusSubtitle");
-            var proceedButton = document.getElementById("proceedButton");
-            var buttonText = document.getElementById("buttonText");
-            var buttonIcon = document.getElementById("buttonIcon");
+            proceedButton.addEventListener('click', function(event) {
+                if (proceedButton.getAttribute('aria-disabled') === 'true') event.preventDefault();
+            });
 
-            var circumference = 283; // 2 * pi * 45
-
-            function updateProgress(remaining) {
-                if (!timerPath) return;
-                var fraction = (initialDelay - remaining) / initialDelay;
-                var offset = circumference * fraction;
-                timerPath.style.strokeDashoffset = offset;
+            function showError(code) {
+                const missing = code === 404;
+                statusTitle.textContent = missing ? 'Bu bağlantı kayıtlı değil' :
+                    code === 410 ? 'Bu bağlantı artık kullanılamıyor' :
+                    code === 401 ? 'Bu bağlantı şifre gerektiriyor' : 'Bağlantı şu anda doğrulanamıyor';
+                statusSubtitle.textContent = missing ? 'Adresi kontrol edip yeniden deneyin.' :
+                    'Daha sonra tekrar deneyebilirsiniz.';
+                countdownNumber.textContent = '!';
+                timerUnit.textContent = 'DURUM';
+                destinationLabel.textContent = missing ? 'Bağlantı bulunamadı' : 'Yönlendirme yapılamadı';
+                verificationBadge.textContent = 'Doğrulanamadı';
+                proceedButton.href = missing ? 'https://ps.sely.tr/' : window.location.href;
+                proceedButton.removeAttribute('aria-disabled');
+                proceedButton.removeAttribute('tabindex');
+                proceedButton.classList.remove('cursor-not-allowed', 'text-inkSoft/70');
+                buttonText.textContent = missing ? 'Ana sayfaya dön' : 'Yeniden dene';
+                buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-left text-xs"></i>';
             }
 
-            function activateProceedButton() {
-                if (!proceedButton) return;
+            function markVerified() {
+                document.getElementById('sponsorSection').classList.remove('hidden');
+                statusTitle.textContent = 'Bağlantı doğrulandı';
+                statusSubtitle.textContent = 'Kısa bir beklemeden sonra ilerleyebilirsiniz.';
+                destinationLabel.textContent = 'Hedef hazırlanıyor';
+                verificationBadge.textContent = 'Doğrulandı';
+                verificationBadge.classList.remove('text-gold', 'bg-goldTint/70', 'border-gold/20');
+                verificationBadge.classList.add('text-rail', 'bg-railTint/70', 'border-rail/20');
+                timerUnit.textContent = 'SANİYE';
+            }
+
+            function activateProceedButton(targetUrl) {
                 proceedButton.href = targetUrl;
-                proceedButton.removeAttribute("aria-disabled");
-                proceedButton.classList.remove(
-                    "bg-paperDeep", "text-inkSoft/70", "cursor-not-allowed", "border-line"
-                );
-                proceedButton.classList.add(
-                    "bg-rail", "hover:bg-railDeep", "active:scale-[0.98]", "text-card", "shadow-md", "ready-btn-active", "border-rail"
-                );
-                
-                if (buttonIcon) {
-                    buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-right text-xs"></i>';
-                }
-                if (buttonText) {
-                    buttonText.innerText = "Tıkla ve İlerle";
-                }
-                if (statusTitle) {
-                    statusTitle.innerText = "Bağlantınız Hazır!";
-                }
-                if (statusSubtitle) {
-                    statusSubtitle.innerText = "Hedef sayfaya geçmek için aşağıdaki butona tıklayın.";
-                }
-                if (countdownNumber) {
-                    countdownNumber.innerHTML = '<i class="fa-solid fa-check text-2xl text-rail"></i>';
-                }
-                if (timerUnit) {
-                    timerUnit.innerText = "HAZIR";
-                }
-                if (timerPath) {
-                    timerPath.style.stroke = "#146D6C";
-                    timerPath.style.strokeDashoffset = circumference;
-                }
+                proceedButton.removeAttribute('aria-disabled');
+                proceedButton.removeAttribute('tabindex');
+                proceedButton.classList.remove('bg-paperDeep', 'text-inkSoft/70', 'cursor-not-allowed', 'border-line');
+                proceedButton.classList.add('bg-rail', 'hover:bg-railDeep', 'text-card', 'shadow-md', 'ready-btn-active', 'border-rail');
+                buttonIcon.innerHTML = '<i class="fa-solid fa-arrow-right text-xs"></i>';
+                buttonText.textContent = 'Tıkla ve İlerle';
+                statusTitle.textContent = 'Bağlantınız hazır';
+                statusSubtitle.textContent = 'Hedef sayfaya geçmek için butona tıklayın.';
+                countdownNumber.innerHTML = '<i class="fa-solid fa-check text-2xl text-rail"></i>';
+                timerUnit.textContent = 'HAZIR';
+                timerPath.style.strokeDashoffset = 283;
+                try { destinationLabel.textContent = new URL(targetUrl).hostname; }
+                catch (_) { destinationLabel.textContent = 'Hedef sayfa'; }
             }
 
-            if (timeLeft <= 0) {
-                activateProceedButton();
-            } else {
-                updateProgress(timeLeft);
-                var interval = setInterval(function() {
-                    timeLeft--;
-                    if (timeLeft > 0) {
-                        if (countdownNumber) countdownNumber.innerText = timeLeft;
-                        if (buttonText) buttonText.innerText = "Lütfen Bekleyin (" + timeLeft + "s)";
-                        updateProgress(timeLeft);
-                    } else {
-                        clearInterval(interval);
-                        updateProgress(0);
-                        activateProceedButton();
+            async function finish(ticket) {
+                for (let attempt = 0; attempt < 6; attempt++) {
+                    const response = await fetch('/api/v1/redirect/complete', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                        body: JSON.stringify({ ticket }),
+                        cache: 'no-store',
+                    });
+                    if (response.status === 425) {
+                        await new Promise(resolve => setTimeout(resolve, 250));
+                        continue;
                     }
-                }, 1000);
+                    if (!response.ok) throw new Error('complete failed');
+                    const data = await response.json();
+                    activateProceedButton(data.target_url);
+                    return;
+                }
+                throw new Error('countdown did not complete');
             }
+
+            function startCountdown(waitMs, ticket) {
+                if (waitMs <= 0) {
+                    buttonText.textContent = 'Bağlantı hazırlanıyor';
+                    finish(ticket).catch(() => showError(503));
+                    return;
+                }
+                const deadline = performance.now() + waitMs;
+                function tick() {
+                    const remaining = Math.max(0, deadline - performance.now());
+                    const seconds = Math.ceil(remaining / 1000);
+                    countdownNumber.textContent = String(seconds);
+                    buttonText.textContent = 'Lütfen bekleyin (' + seconds + 's)';
+                    timerPath.style.strokeDashoffset = String(283 * (1 - remaining / 5000));
+                    if (remaining <= 0) {
+                        clearInterval(interval);
+                        buttonText.textContent = 'Bağlantı hazırlanıyor';
+                        finish(ticket).catch(() => showError(503));
+                    }
+                }
+                const interval = setInterval(tick, 100);
+                tick();
+            }
+
+            async function verify() {
+                const params = new URLSearchParams(window.location.search);
+                params.set('ticket', startTicket);
+                const response = await fetch(
+                    '/api/v1/redirect/resolve' + window.location.pathname + '?' + params.toString(),
+                    { headers: { 'Accept': 'application/json' }, cache: 'no-store' }
+                );
+                if (!response.ok) {
+                    showError(response.status);
+                    return;
+                }
+                const data = await response.json();
+                markVerified();
+                startCountdown(data.wait_ms, data.ticket);
+            }
+
+            verify().catch(() => showError(503));
         })();
     </script>
     {% include "_cookie_banner.html" %}

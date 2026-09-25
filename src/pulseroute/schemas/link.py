@@ -16,8 +16,7 @@ class LinkCreate(BaseModel):
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
 
-    # Interstitial countdown (ad content itself is platform-wide only, see GLOBAL_ADSENSE_* settings)
-    interstitial_delay: int = 0
+    # Interstitial timing is fixed by the platform, not chosen per link.
     interstitial_title: str | None = None
 
     # Fallbacks & Social
@@ -42,7 +41,6 @@ class LinkUpdate(BaseModel):
     ios_destination: str | None = None
     android_destination: str | None = None
     geo_targets: dict[str, str] | None = None
-    interstitial_delay: int | None = None
     interstitial_title: str | None = None
     expires_at: datetime | None = None
     expired_url: str | None = None
@@ -57,7 +55,6 @@ class LinkResponse(BaseModel):
     destination_url: str
     title: str | None = None
     tags: str | None = None
-    interstitial_delay: int = 0
     short_url: str
     total_clicks: int
     public_stats: bool

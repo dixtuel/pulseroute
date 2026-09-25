@@ -81,9 +81,13 @@ class DomainService:
         return domain_obj
 
     @staticmethod
-    async def verify_domain_dns(db: AsyncSession, domain_id: int) -> Tuple[bool, str]:
-        result = await db.execute(select(CustomDomain).where(CustomDomain.id == domain_id))
-        domain_obj = result.scalar_one_or_none()
+    async def verify_domain_dns(
+        db: AsyncSession, domain_id: int, *, preloaded_domain: Optional[CustomDomain] = None
+    ) -> Tuple[bool, str]:
+        domain_obj = preloaded_domain
+        if domain_obj is None:
+            result = await db.execute(select(CustomDomain).where(CustomDomain.id == domain_id))
+            domain_obj = result.scalar_one_or_none()
         if not domain_obj:
             return False, "Domain not found"
 
