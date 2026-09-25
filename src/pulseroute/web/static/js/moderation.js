@@ -65,6 +65,6 @@
   $('#logout').addEventListener('click',async()=>{try{await request(`${api}/session`,{method:'DELETE'});showLogin()}catch(_){window.alert(tr('signout'))}});
   document.querySelectorAll('.queue-tab').forEach((button)=>button.addEventListener('click',()=>{queue=button.dataset.queue;selected=null;document.querySelectorAll('.queue-tab').forEach(x=>x.classList.toggle('active',x===button));$('#detail-card').hidden=true;$('#empty-detail').hidden=false;loadQueue(true)}));
   $('#load-more').addEventListener('click',()=>loadQueue(false));
-  window.addEventListener('pulseroute:localechange',(event)=>{locale=event.detail.locale; if(!$('#desk-view').hidden)loadQueue(true)});
+  window.addEventListener('pulseroute:localechange',(event)=>{ if(locale === event.detail.locale) return; locale=event.detail.locale; if(!$('#desk-view').hidden)loadQueue(true); });
   checkSession();
 })();

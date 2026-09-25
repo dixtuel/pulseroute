@@ -1,4 +1,6 @@
 (() => {
+    if (window.__pulseroute_i18n_loaded) return;
+    window.__pulseroute_i18n_loaded = true;
     const pairs = [
         ['PulseRoute — URL Shortener', 'PulseRoute — Bağlantı Kısaltıcı'],
         ['Self-hosted, open-source URL shortener with custom domains, click analytics, QR codes and webhooks.', 'Özel alan adları, tıklama analitiği, QR kodları ve webhook destekli açık kaynak bağlantı kısaltıcı.'],
@@ -301,7 +303,10 @@
             if (!parent || parent.closest('script,style,noscript,code,pre,[data-no-i18n]')) return;
             if (!originalText.has(node)) originalText.set(node, node.nodeValue);
             const source = originalText.get(node);
-            node.nodeValue = translate(source, target);
+            const translated = translate(source, target);
+            if (node.nodeValue !== translated) {
+                node.nodeValue = translated;
+            }
             return;
         }
         if (node.nodeType !== Node.ELEMENT_NODE) return;
@@ -314,7 +319,12 @@
             }
             originalAttributes.set(node, originals);
         }
-        for (const [name, source] of originals) node.setAttribute(name, translate(source, target));
+        for (const [name, source] of originals) {
+            const translated = translate(source, target);
+            if (node.getAttribute(name) !== translated) {
+                node.setAttribute(name, translated);
+            }
+        }
         for (const child of node.childNodes) translateNode(child, target);
     }
 
@@ -338,7 +348,8 @@
         if (observer) observer.disconnect();
         if (document.body) translateNode(document.body, locale);
         for (const meta of document.querySelectorAll('meta[name="description"]')) translateNode(meta, locale);
-        document.title = translate(document.title, locale);
+        const newTitle = translate(document.title, locale);
+        if (document.title !== newTitle) document.title = newTitle;
         updateButtons(locale);
         window.dispatchEvent(new CustomEvent('pulseroute:localechange', { detail: { locale } }));
         document.documentElement.classList.remove('i18n-pending');
@@ -354,9 +365,11 @@
                     if (record.type === 'characterData') translateNode(record.target, locale);
                     for (const node of record.addedNodes || []) translateNode(node, locale);
                 }
+                observer.takeRecords();
                 observer.observe(document.body, { childList: true, subtree: true, characterData: true });
             });
         }
+        observer.takeRecords();
         observer.observe(document.body, { childList: true, subtree: true, characterData: true });
     }
 
