@@ -1,5 +1,11 @@
 version: '3.8'
 
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   app:
     build:
@@ -7,6 +13,7 @@ services:
       dockerfile: Dockerfile
     container_name: pulseroute-app
     restart: unless-stopped
+    logging: *default-logging
     environment:
       - APP_MODE=private
       - DATABASE_URL=postgresql+asyncpg://pulseroute:pulsepass@postgres:5432/pulseroutedb
@@ -24,6 +31,7 @@ services:
     image: postgres:16-alpine
     container_name: pulseroute-postgres
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_USER: pulseroute
       POSTGRES_PASSWORD: pulsepass
@@ -40,6 +48,7 @@ services:
     image: redis:7-alpine
     container_name: pulseroute-redis
     restart: unless-stopped
+    logging: *default-logging
     volumes:
       - redisdata:/data
     healthcheck:
@@ -52,6 +61,7 @@ services:
     image: caddy:2-alpine
     container_name: pulseroute-caddy
     restart: unless-stopped
+    logging: *default-logging
     ports:
       - "80:80"
       - "443:443"

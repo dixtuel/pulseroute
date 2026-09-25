@@ -56,5 +56,9 @@ class Settings(BaseSettings):
     DEFAULT_REDIRECT_STATUS: int = 307  # 307 Temporary Redirect
     ENABLE_BOT_FILTERING: bool = True
 
+    # Data Retention & Privacy (KVKK / GDPR Compliance & Database Storage Protection)
+    ANALYTICS_RETENTION_DAYS: int = 90  # Purge raw ClickEvent logs older than 90 days; total_clicks aggregate remains permanent
+
+
 
 settings = Settings()

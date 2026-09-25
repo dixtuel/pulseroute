@@ -213,3 +213,105 @@ def test_serialize_cache_payload_integrity():
     assert payload["destination_url"] == "https://example.com/target"
     assert payload["interstitial_title"] == "Interstitial Head"
     assert payload["is_active"] is True
+
+
+def test_healthcheck_access_log_filter():
+    """Verify that automated recurring health checks are filtered out from access logs."""
+    import logging
+
+    from pulseroute.core.logging import HealthCheckAccessLogFilter
+
+    log_filter = HealthCheckAccessLogFilter()
+
+    # Recurring liveness checks must be suppressed
+    rec_alive = logging.LogRecord(
+        name="uvicorn.access",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg='127.0.0.1:54321 - "GET /healtalive HTTP/1.1" 200 OK',
+        args=(),
+        exc_info=None,
+    )
+    assert log_filter.filter(rec_alive) is False
+
+    rec_health = logging.LogRecord(
+        name="uvicorn.access",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg='127.0.0.1:54321 - "GET /healthz HTTP/1.1" 200 OK',
+        args=(),
+        exc_info=None,
+    )
+    assert log_filter.filter(rec_health) is False
+
+    # Normal application traffic must NOT be filtered
+    rec_api = logging.LogRecord(
+        name="uvicorn.access",
+        level=logging.INFO,
+        pathname="",
+        lineno=0,
+        msg='127.0.0.1:54321 - "GET /api/v1/links HTTP/1.1" 200 OK',
+        args=(),
+        exc_info=None,
+    )
+    assert log_filter.filter(rec_api) is True
+
+
+def test_logging_sensitive_data_masking():
+    """Verify that structlog processor masks passwords, tokens, and emails (KVKK/GDPR)."""
+    from pulseroute.core.logging import mask_sensitive_data
+
+    event = {
+        "event": "user_action",
+        "user_password": "PlainPassword123!",
+        "access_token": "jwt.header.payload.signature",
+        "secret_key": "supersecretkey",
+        "reporter_email": "john.doe@example.com",
+        "normal_field": "safe_value",
+    }
+    sanitized = mask_sensitive_data(None, "info", event)
+    assert sanitized["user_password"] == "[REDACTED]"
+    assert sanitized["access_token"] == "[REDACTED]"
+    assert sanitized["secret_key"] == "[REDACTED]"
+    assert sanitized["reporter_email"] == "j***@example.com"
+    assert sanitized["normal_field"] == "safe_value"
+
+
+@pytest.mark.asyncio
+async def test_purge_expired_click_events(db_session, monkeypatch):
+    """Verify that ClickEvents older than retention threshold are purged while new events remain."""
+    from datetime import UTC, datetime, timedelta
+
+    from sqlalchemy import select
+
+    from pulseroute.models.click import ClickEvent
+    from pulseroute.models.link import ShortLink
+    from pulseroute.workers.analytics_worker import purge_expired_click_events
+
+    link = ShortLink(slug="retention-test", destination_url="https://example.com")
+    db_session.add(link)
+    await db_session.commit()
+    await db_session.refresh(link)
+
+    now = datetime.now(UTC)
+    old_event = ClickEvent(link_id=link.id, clicked_at=now - timedelta(days=95))
+    recent_event = ClickEvent(link_id=link.id, clicked_at=now - timedelta(days=10))
+
+    db_session.add_all([old_event, recent_event])
+    await db_session.commit()
+
+    # Monkeypatch worker's session maker to use our test session maker
+
+    monkeypatch.setattr("pulseroute.workers.analytics_worker.async_session_maker", lambda: db_session)
+
+    deleted_count = await purge_expired_click_events(retention_days=90)
+    assert deleted_count == 1
+
+    remaining = await db_session.execute(select(ClickEvent).where(ClickEvent.link_id == link.id))
+    rows = remaining.scalars().all()
+    assert len(rows) == 1
+    assert rows[0].clicked_at.date() == recent_event.clicked_at.date()
+
+

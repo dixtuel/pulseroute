@@ -1,9 +1,11 @@
 import asyncio
-from datetime import UTC, datetime
+import time
+from datetime import UTC, datetime, timedelta
 
 import structlog
-from sqlalchemy import func, select, update
+from sqlalchemy import delete, func, select, update
 
+from pulseroute.core.config import settings
 from pulseroute.core.database import async_session_maker
 from pulseroute.core.redis import get_redis
 from pulseroute.models.click import ClickEvent
@@ -21,6 +23,29 @@ def notify_click_event_published():
     _new_click_event.set()
 
 
+async def purge_expired_click_events(retention_days: int) -> int:
+    """
+    Purges granular ClickEvent records older than 'retention_days' to comply with
+    KVKK/GDPR storage limitation principles and protect database storage quotas.
+    Aggregate counters (ShortLink.total_clicks) remain permanent and intact.
+    """
+    if retention_days <= 0:
+        return 0
+
+    cutoff_date = datetime.now(UTC) - timedelta(days=retention_days)
+    try:
+        async with async_session_maker() as db:
+            result = await db.execute(delete(ClickEvent).where(ClickEvent.clicked_at < cutoff_date))
+            await db.commit()
+            deleted = result.rowcount or 0
+            if deleted > 0:
+                logger.info("expired_click_events_purged", count=deleted, retention_days=retention_days)
+            return deleted
+    except Exception as e:
+        logger.error("analytics_retention_purge_failed", error=str(e))
+        return 0
+
+
 async def run_analytics_batch_worker(
     batch_size: int = 100,
     interval_seconds: float = 2.0,
@@ -31,6 +56,7 @@ async def run_analytics_batch_worker(
     Optimized for serverless Redis (Upstash request limits):
     - Uses adaptive backoff up to 60s when idle to avoid burning API requests/quotas.
     - Wakes up immediately when notify_click_event_published() is called on incoming clicks.
+    - Runs a lightweight daily retention pass to purge expired granular click telemetry.
     """
     redis_cli = await get_redis()
     if not redis_cli:
@@ -49,9 +75,16 @@ async def run_analytics_batch_worker(
     logger.info("analytics_batch_worker_started", stream=stream_name)
 
     current_idle = interval_seconds
+    last_retention_purge_ts = 0.0
 
     while True:
         try:
+            # Daily retention cleanup (KVKK / GDPR storage minimization)
+            now_ts = time.time()
+            if now_ts - last_retention_purge_ts >= 86400:
+                last_retention_purge_ts = now_ts
+                await purge_expired_click_events(settings.ANALYTICS_RETENTION_DAYS)
+
             _new_click_event.clear()
             entries = await redis_cli.xreadgroup(
                 groupname=group_name,

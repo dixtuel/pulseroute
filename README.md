@@ -133,6 +133,7 @@ Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). T
 | `ENFORCE_SAFE_BROWSING` | `true` | Rejects known-malicious/phishing destination URLs at link-creation time. |
 | `ENFORCE_EMAIL_DOMAIN_CHECK` | `true` | Rejects registration if the email's domain has no MX/A record at all (catches typo/garbage domains). Fails open on DNS timeouts. |
 | `OPERATOR_CONTACT_EMAIL` | unset | Shown (bot-obfuscated) on `/privacy` as the data-controller contact for this instance. |
+| `ANALYTICS_RETENTION_DAYS` | `90` | Purge granular click telemetry logs older than N days (KVKK/GDPR storage minimization). Aggregate click totals remain intact. |
 | `GLOBAL_ADSENSE_CLIENT_ID` / `GLOBAL_ADSENSE_SLOT_ID` | unset | The single, server-wide Google AdSense unit shown on interstitial pages (see Security & Privacy above — this is not per-user). |
 | `SECRET_KEY` | insecure placeholder | **Change this** in any real deployment — signs JWTs. |
 
@@ -142,7 +143,7 @@ Note: there is no per-user API key feature — JWT (`Authorization: Bearer <toke
 
 ## Testing & Quality Assurance
 
-Run the comprehensive unit and integration test suite (60 passing tests):
+Run the comprehensive unit and integration test suite (63 passing tests):
 
 ```bash
 # Run tests with coverage

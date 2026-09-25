@@ -25,8 +25,8 @@ def _cleanup_memory_jail(now: float) -> None:
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
-        if request.url.path == "/healtalive":
-            # Render probes this tiny endpoint every few seconds. Browser-only
+        if request.url.path in ("/healtalive", "/healthz"):
+            # Automated health probes occur every few seconds. Browser-only
             # security headers add hundreds of bytes to every probe response.
             return response
         response.headers["X-Content-Type-Options"] = "nosniff"

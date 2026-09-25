@@ -35,6 +35,9 @@ async def test_health_check(client: AsyncClient):
     data = res.json()
     assert data["status"] in ("healthy", "degraded")
     assert "version" in data
+    # Automated health checks should not receive browser-only security headers
+    assert "Content-Security-Policy" not in res.headers
+    assert "X-Frame-Options" not in res.headers
 
 
 @pytest.mark.asyncio
@@ -48,6 +51,9 @@ async def test_keepalive_never_checks_external_services(client: AsyncClient, mon
     assert res.status_code == 200
     assert res.text == "alive\n"
     assert res.headers["cache-control"] == "no-store"
+    # Automated keepalive should not receive browser-only security headers
+    assert "Content-Security-Policy" not in res.headers
+    assert "X-Frame-Options" not in res.headers
 
 
 @pytest.mark.asyncio
