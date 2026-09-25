@@ -9,6 +9,8 @@ from pulseroute.common.encryption import (
     decrypt_secret,
     encrypt_compact_cookie,
     encrypt_secret,
+    secure_decode_payload,
+    secure_encode_payload,
 )
 from pulseroute.common.privacy import anonymize_ip, generate_pseudonymous_visitor_id
 
@@ -117,3 +119,64 @@ def test_cross_platform_parity():
     token = f"v1_{fixed_iv.hex()}_{ciphertext.hex()}_{tag.hex()}"
     decrypted = decrypt_compact_cookie(token, secret=secret)
     assert decrypted == {"c": 1}
+
+
+# --- AES-256-GCM Smart Compression & AEAD Tampering Protection (Render Free-Tier Optimized) ---
+
+def test_secure_payload_small_not_compressed():
+    """Small payloads (<1KB) MUST NOT be compressed to prevent negative expansion and save CPU."""
+    data = {"user_id": 42, "role": "owner", "workspace": "pulse"}
+    encoded = secure_encode_payload(data)
+    assert encoded.startswith("v2.")
+    parts = encoded.split(".")
+    assert len(parts) == 4
+    # Flag 0 = uncompressed
+    assert parts[1] == "0"
+
+    decoded = secure_decode_payload(encoded)
+    assert decoded == data
+
+
+def test_secure_payload_large_is_compressed():
+    """Large payloads (>=1KB) are compressed with zlib level-3 before AES-256-GCM encryption."""
+    large_data = {
+        "workspace_id": 1,
+        "logs": ["click event registered for domain test.com with geo TR and chrome" for _ in range(50)],
+        "meta": {"created_at": "2026-09-25T18:00:00Z"},
+    }
+    raw_size = len(orjson.dumps(large_data))
+    assert raw_size > 1024
+
+    encoded = secure_encode_payload(large_data)
+    parts = encoded.split(".")
+    # Flag 1 = compressed
+    assert parts[1] == "1"
+
+    decoded = secure_decode_payload(encoded)
+    assert decoded == large_data
+
+
+def test_secure_payload_tamper_detection():
+    """Any modification in ciphertext or tag must cause secure_decode_payload to safely return None."""
+    data = {"secret_note": "top_secret_information"}
+    encoded = secure_encode_payload(data)
+    parts = encoded.split(".")
+
+    # Tamper ciphertext
+    tampered = f"v2.{parts[1]}.{parts[2]}.aW52YWxpZA=="
+    assert secure_decode_payload(tampered) is None
+
+    # Tamper with wrong custom secret key
+    assert secure_decode_payload(encoded, secret="wrong-secret-key-123") is None
+
+
+def test_secure_payload_fallback_support():
+    """Must safely handle raw json and malformed inputs without crashing."""
+    assert secure_decode_payload("") is None
+    assert secure_decode_payload(None) is None
+    assert secure_decode_payload("not_a_valid_token") == "not_a_valid_token"
+
+    # Plain JSON string
+    plain_json = '{"direct": true}'
+    assert secure_decode_payload(plain_json) == {"direct": True}
+
