@@ -1,5 +1,9 @@
+import asyncio
+
 import pytest
 from httpx import AsyncClient
+
+from pulseroute.main import app
 
 
 @pytest.mark.asyncio
@@ -11,6 +15,40 @@ async def test_render_root_and_dashboard(client: AsyncClient):
     res_dash = await client.get("/dashboard", headers={"Accept": "text/html"})
     assert res_dash.status_code == 200
     assert "PulseRoute" in res_dash.text
+
+
+@pytest.mark.asyncio
+async def test_keepalive_never_checks_external_services(client: AsyncClient, monkeypatch):
+    async def unexpected_call(*args, **kwargs):
+        raise AssertionError("keepalive must not access external services")
+
+    monkeypatch.setattr("pulseroute.main.get_redis", unexpected_call)
+    monkeypatch.setattr("pulseroute.main.async_session_maker", unexpected_call)
+    res = await client.get("/healtalive")
+    assert res.status_code == 200
+    assert res.text == "alive\n"
+    assert res.headers["cache-control"] == "no-store"
+
+
+@pytest.mark.asyncio
+async def test_app_starts_when_database_is_unavailable(client: AsyncClient, monkeypatch):
+    async def db_unavailable():
+        raise ConnectionError("database is unavailable")
+
+    async def idle_worker():
+        await asyncio.Event().wait()
+
+    async def close_redis():
+        pass
+
+    monkeypatch.setattr("pulseroute.main.init_db", db_unavailable)
+    monkeypatch.setattr("pulseroute.main.run_analytics_batch_worker", idle_worker)
+    monkeypatch.setattr("pulseroute.main.run_dns_verification_worker", idle_worker)
+    monkeypatch.setattr("pulseroute.main.close_redis", close_redis)
+
+    async with app.router.lifespan_context(app):
+        response = await client.get("/healtalive")
+        assert response.status_code == 200
 
 
 @pytest.mark.asyncio
@@ -48,4 +86,3 @@ async def test_static_cache_control_and_gzip(client: AsyncClient):
     res_gzip = await client.get("/", headers={"Accept-Encoding": "gzip", "Accept": "text/html"})
     assert res_gzip.status_code == 200
     assert res_gzip.headers.get("content-encoding") == "gzip"
-

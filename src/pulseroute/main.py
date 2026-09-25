@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -41,7 +42,14 @@ STATIC_DIR = BASE_DIR / "web" / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging(debug=settings.DEBUG)
-    await init_db()
+    try:
+        await init_db()
+    except Exception as exc:
+        # Keep the web process available when the external database is suspended
+        # or its quota is exhausted. Database-backed routes still report errors.
+        logging.getLogger(__name__).warning(
+            "database_initialization_failed: %s", type(exc).__name__
+        )
 
     worker_tasks = []
     worker_tasks.append(asyncio.create_task(run_analytics_batch_worker()))
@@ -154,6 +162,12 @@ templates = Jinja2Templates(directory=str(TEMPLATES_DIR))
 
 
 # Health & Diagnostics
+@app.get("/healtalive", response_class=PlainTextResponse, tags=["Diagnostics"])
+async def keepalive():
+    """Process liveness probe; never connects to Postgres or Redis."""
+    return PlainTextResponse("alive\n", headers={"Cache-Control": "no-store"})
+
+
 @app.get("/healthz", tags=["Diagnostics"])
 async def health_check():
     start_time = time.time()
