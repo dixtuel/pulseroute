@@ -70,11 +70,18 @@
             <h2 class="text-sm font-display font-bold text-white">1. Scope &amp; Data Controller</h2>
             <p>PulseRoute is open-source link-shortening software built with privacy as a foundational principle. This document outlines data handling at both the application and infrastructure level. The operator of this instance acts as the data controller under the Turkish Personal Data Protection Law (KVKK No. 6698) and the European General Data Protection Regulation (GDPR):</p>
             <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300">
-                {% if operator_contact_codes %}
-                Data Controller Contact: <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                {% else %}
-                Data Controller Contact: <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                {% endif %}
+                Data Controller Contact: 
+                <span class="protected-contact-link cursor-pointer hover:underline text-amber-400 font-mono inline-flex items-center gap-1"
+                      data-email="{{ operator_email }}"
+                      title="E-posta göndermek ve adresi kopyalamak için tıklayın"
+                      role="button" tabindex="0">
+                    <span class="protected-user">{{ operator_user }}</span>
+                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-anti-bot-harvest-</span>
+                    <span class="protected-at" aria-hidden="true">&#64;</span>
+                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-do-not-scrape-</span>
+                    <span class="protected-domain">{{ operator_domain }}</span>
+                    <i class="fa-solid fa-copy text-[10px] opacity-70 ml-1"></i>
+                </span>
             </div>
         </section>
 

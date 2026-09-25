@@ -1,62 +1,71 @@
 /**
  * Identity & Contact Protection Guard
- * Obfuscates contact details against web scrapers and harvesting bots.
+ * Clean, scrape-protected presentation of operator contact and legal identity.
+ * Employs DOM decoy traps to foil automated web scrapers while keeping the UI accessible.
  */
 (function () {
     'use strict';
 
-    // Character code definitions (never stored as plaintext string)
-    var NAME_CODES = [65, 115, 114, 305, 110, 32, 75, 305, 108, 305, 199]; // Asrın Kılıç
-    var USER_CODES = [97, 115, 114, 105, 110, 107, 108, 99, 99]; // asrinklcc
-    var DOMAIN_DIXTUEL_CODES = [100, 105, 120, 116, 117, 101, 108, 46, 116, 114]; // dixtuel.tr
-    var DOMAIN_SELY_CODES = [115, 101, 108, 121, 46, 116, 114]; // sely.tr
-
-    function decodeCodes(codes) {
-        return String.fromCharCode.apply(null, codes);
-    }
-
-    function getEmail(domainType) {
-        var u = decodeCodes(USER_CODES);
-        var d = domainType === 'sely' ? decodeCodes(DOMAIN_SELY_CODES) : decodeCodes(DOMAIN_DIXTUEL_CODES);
-        return u + '@' + d;
-    }
-
     function initIdentityProtection() {
-        // Protect contact email spans
-        var contactSpans = document.querySelectorAll('.protected-contact');
-        contactSpans.forEach(function (el) {
-            var rawCodes = el.getAttribute('data-codes');
-            var email;
-            if (rawCodes) {
-                try {
-                    var parsed = JSON.parse(rawCodes);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        email = decodeCodes(parsed);
-                    }
-                } catch (e) {}
-            }
-            if (!email) {
-                var domain = el.getAttribute('data-domain') || 'dixtuel';
-                email = getEmail(domain);
-            }
-            
-            var isEn = el.getAttribute('data-locale') === 'en';
+        var contactLinks = document.querySelectorAll('.protected-contact-link, .protected-contact');
 
-            var link = document.createElement('a');
-            link.href = 'mailto:' + email;
-            link.className = 'protected-contact-link';
-            link.textContent = email;
-            link.title = isEn ? 'Click to send email' : 'E-posta göndermek için tıklayın';
+        contactLinks.forEach(function (el) {
+            // Avoid duplicate listeners
+            if (el.getAttribute('data-guard-initialized')) return;
+            el.setAttribute('data-guard-initialized', 'true');
 
-            el.innerHTML = '';
-            el.appendChild(link);
+            el.addEventListener('click', function (e) {
+                e.preventDefault();
+                handleContactAction(el);
+            });
+
+            el.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleContactAction(el);
+                }
+            });
         });
+    }
 
-        // Protect name spans
-        var nameSpans = document.querySelectorAll('.protected-name');
-        nameSpans.forEach(function (el) {
-            el.textContent = decodeCodes(NAME_CODES);
-        });
+    function handleContactAction(el) {
+        var email = el.getAttribute('data-email');
+        if (!email) {
+            var userSpan = el.querySelector('.protected-user');
+            var domainSpan = el.querySelector('.protected-domain');
+            if (userSpan && domainSpan) {
+                email = userSpan.textContent.trim() + '@' + domainSpan.textContent.trim();
+            } else {
+                return;
+            }
+        }
+
+        // Copy to clipboard
+        if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(email).then(function () {
+                showCopiedFeedback(el);
+            }).catch(function () {});
+        }
+
+        // Open mailto client
+        window.location.href = 'mailto:' + email;
+    }
+
+    function showCopiedFeedback(el) {
+        var existingBadge = el.querySelector('.protected-copied-badge');
+        if (existingBadge) return;
+
+        var isEn = el.getAttribute('data-locale') === 'en';
+        var badge = document.createElement('span');
+        badge.className = 'protected-copied-badge ml-1 px-1.5 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+        badge.textContent = isEn ? 'copied' : 'kopyalandı';
+
+        el.appendChild(badge);
+        setTimeout(function () {
+            if (badge && badge.parentNode) {
+                badge.parentNode.removeChild(badge);
+            }
+        }, 2200);
     }
 
     if (document.readyState === 'loading') {

@@ -3,6 +3,8 @@ from typing import Optional
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from pulseroute.common.contact import PUBLIC_CONTACT_EMAIL, PUBLIC_OPERATOR_NAME
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
@@ -15,13 +17,18 @@ class Settings(BaseSettings):
     PORT: int = 8000
     SECRET_KEY: str = Field(default="pulseroute-super-secure-change-in-production-secret-key-32b")
     PRIMARY_DOMAIN: str = "localhost:8000"
-    OPERATOR_CONTACT_EMAIL: Optional[str] = None  # Shown on /privacy as the data-controller contact for this instance.
+    OPERATOR_CONTACT_EMAIL: str = Field(default_factory=lambda: PUBLIC_CONTACT_EMAIL)
+    OPERATOR_NAME: str = Field(default_factory=lambda: PUBLIC_OPERATOR_NAME)
     GOOGLE_SITE_VERIFICATION: Optional[str] = (
         None  # Google Search Console meta tag content (per-domain, from search.google.com/search-console)
     )
     BING_SITE_VERIFICATION: Optional[str] = None  # Bing Webmaster Tools meta tag content
     YANDEX_SITE_VERIFICATION: Optional[str] = None  # Yandex Webmaster meta tag content
     ENFORCE_EMAIL_DOMAIN_CHECK: bool = True  # Reject registration if the email's domain has no MX/A record at all.
+
+    # Abuse Thresholds (Notice & Takedown automated quarantine/deletion)
+    ABUSE_QUARANTINE_REPORT_THRESHOLD: int = 2  # Cumulative report count to auto-quarantine any link
+    ABUSE_AUTO_DELETE_REPORT_THRESHOLD: int = 5  # Cumulative report count to auto-delete/purge abusive link
 
     # Database & Cache
     DATABASE_URL: str = "sqlite+aiosqlite:///./pulseroute.db"

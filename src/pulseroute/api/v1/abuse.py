@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from pulseroute.common.privacy import anonymize_ip
 from pulseroute.common.rate_limiter import SlidingWindowRateLimiter
+from pulseroute.core.config import settings
 from pulseroute.core.database import get_db
 from pulseroute.core.redis import get_redis
 from pulseroute.models.abuse import AbuseReport
@@ -101,16 +102,40 @@ async def report_abuse(
     )
     db.add(report)
 
-    # 3. High-Priority Automated Quarantine:
-    # If reported for Phishing or Malware, or if cumulative report count reaches threshold (>= 2)
-    # Immediately disable redirection, purge caches, and mark link as quarantined.
+    # 3. High-Priority Automated Quarantine & Deletion Policy:
+    # If cumulative report count reaches deletion threshold, permanently remove link.
+    # If reported for Phishing/Malware or cumulative report count reaches quarantine threshold, immediately quarantine.
     current_reports = (link.abuse_reports_count or 0) + 1
     link.abuse_reports_count = current_reports
+    await db.flush()
+
+    if current_reports >= settings.ABUSE_AUTO_DELETE_REPORT_THRESHOLD:
+        report.status = "deleted"
+        await db.commit()
+        await LinkService.delete_link(db, redis_cli, link.id)
+        logger.critical(
+            "abuse_link_automatically_deleted",
+            slug=slug,
+            reports_count=current_reports,
+            reason=payload.reason.value,
+        )
+        return {
+            "status": "deleted",
+            "slug": slug,
+            "action_taken": "Link has been permanently removed due to exceeding the maximum abuse report threshold.",
+            "message": "Bağlantı çok sayıda şikayet alması nedeniyle sistemden kalıcı olarak silinmiştir.",
+        }
 
     is_quarantined = False
-    if payload.reason in (AbuseReason.PHISHING, AbuseReason.MALWARE) or current_reports >= 2:
+    action_status = "received"
+    if (
+        payload.reason in (AbuseReason.PHISHING, AbuseReason.MALWARE)
+        or current_reports >= settings.ABUSE_QUARANTINE_REPORT_THRESHOLD
+    ):
         is_quarantined = True
-        quarantine_reason = f"Notice-and-takedown quarantine: reported as {payload.reason.value}"
+        action_status = "quarantined"
+        report.status = "quarantined"
+        quarantine_reason = f"Notice-and-takedown quarantine: reported as {payload.reason.value} ({current_reports} reports)"
         await LinkService.quarantine_link(db, redis_cli, slug=link.slug, reason=quarantine_reason)
         logger.error(
             "abuse_link_automatically_quarantined",
@@ -130,7 +155,7 @@ async def report_abuse(
         )
 
     return {
-        "status": "quarantined" if is_quarantined else "received",
+        "status": action_status,
         "slug": link.slug,
         "action_taken": (
             "Link has been quarantined immediately and redirection halted pending formal review."

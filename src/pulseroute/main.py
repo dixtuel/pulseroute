@@ -22,6 +22,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from pulseroute.api.internal.caddy import router as caddy_router
 from pulseroute.api.redirect import router as redirect_router
 from pulseroute.api.v1 import api_v1_router
+from pulseroute.common.contact import PUBLIC_CONTACT_EMAIL, PUBLIC_OPERATOR_NAME
 from pulseroute.core.config import settings
 from pulseroute.core.database import async_session_maker, init_db
 from pulseroute.core.logging import setup_logging
@@ -314,62 +315,58 @@ async def render_dashboard(request: Request):
     )
 
 
+def _get_operator_context() -> dict:
+    email = settings.OPERATOR_CONTACT_EMAIL or PUBLIC_CONTACT_EMAIL
+    parts = email.split("@") if email else ["", ""]
+    user = parts[0]
+    domain = parts[1] if len(parts) > 1 else ""
+    return {
+        "operator_email": email,
+        "operator_user": user,
+        "operator_domain": domain,
+        "operator_name": settings.OPERATOR_NAME or PUBLIC_OPERATOR_NAME,
+    }
+
+
 @app.get("/privacy", response_class=HTMLResponse, tags=["Legal"])
 async def render_privacy(request: Request):
-    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
-    contact_codes = [ord(c) for c in contact_email] if contact_email else None
-    return templates.TemplateResponse(
-        request=request,
-        name="privacy.html",
-        context={
-            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-            "operator_contact_codes": contact_codes,
-            "primary_domain": settings.PRIMARY_DOMAIN,
-        },
-    )
+    ctx = {
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "primary_domain": settings.PRIMARY_DOMAIN,
+        **_get_operator_context(),
+    }
+    return templates.TemplateResponse(request=request, name="privacy.html", context=ctx)
 
 
 @app.get("/terms", response_class=HTMLResponse, tags=["Legal"])
 async def render_terms(request: Request):
-    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
-    contact_codes = [ord(c) for c in contact_email] if contact_email else None
-    return templates.TemplateResponse(
-        request=request,
-        name="terms.html",
-        context={
-            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-            "operator_contact_codes": contact_codes,
-            "primary_domain": settings.PRIMARY_DOMAIN,
-        },
-    )
+    ctx = {
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "primary_domain": settings.PRIMARY_DOMAIN,
+        **_get_operator_context(),
+    }
+    return templates.TemplateResponse(request=request, name="terms.html", context=ctx)
 
 
 @app.get("/accessibility", response_class=HTMLResponse, tags=["Legal"])
 async def render_accessibility(request: Request):
-    contact_email = settings.OPERATOR_CONTACT_EMAIL or "your-email@example.com"
-    contact_codes = [ord(c) for c in contact_email] if contact_email else None
-    return templates.TemplateResponse(
-        request=request,
-        name="accessibility.html",
-        context={
-            "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
-            "operator_contact_codes": contact_codes,
-            "primary_domain": settings.PRIMARY_DOMAIN,
-        },
-    )
+    ctx = {
+        "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
+        "primary_domain": settings.PRIMARY_DOMAIN,
+        **_get_operator_context(),
+    }
+    return templates.TemplateResponse(request=request, name="accessibility.html", context=ctx)
 
 
 @app.get("/abuse", response_class=HTMLResponse, tags=["Legal"])
 async def render_abuse(request: Request, slug: str | None = None, link: str | None = None):
     prefill = slug or link or ""
-    return templates.TemplateResponse(
-        request=request,
-        name="abuse.html",
-        context={
-            "prefill_slug": prefill,
-            "primary_domain": settings.PRIMARY_DOMAIN,
-        },
-    )
+    ctx = {
+        "prefill_slug": prefill,
+        "primary_domain": settings.PRIMARY_DOMAIN,
+        **_get_operator_context(),
+    }
+    return templates.TemplateResponse(request=request, name="abuse.html", context=ctx)
 
 
 @app.get("/", response_class=HTMLResponse, tags=["Web Dashboard"])

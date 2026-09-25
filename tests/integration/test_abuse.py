@@ -119,3 +119,57 @@ async def test_abuse_web_page_renders_successfully(client: AsyncClient):
     assert res.status_code == 200
     assert "Kötüye Kullanım" in res.text
     assert "sample-slug" in res.text
+
+
+@pytest.mark.asyncio
+async def test_abuse_threshold_quarantine_and_auto_delete(client: AsyncClient):
+    _, slug = await _register_and_create_link(
+        client, "threshold_user@domain.com", "thresh-slug-1", "https://suspicious-threshold.com"
+    )
+
+    # 1. First report (spam - threshold not yet reached)
+    r1 = await client.post(
+        "/api/v1/abuse/report",
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r1@test.com"},
+    )
+    assert r1.status_code == 202
+    assert r1.json()["status"] == "received"
+
+    # Link is still active
+    check1 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
+    assert check1.status_code in [200, 307]
+
+    # 2. Second report (spam - hits threshold 2 -> quarantined)
+    r2 = await client.post(
+        "/api/v1/abuse/report",
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r2@test.com"},
+    )
+    assert r2.status_code == 202
+    assert r2.json()["status"] == "quarantined"
+
+    # Redirection now returns 451
+    check2 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
+    assert check2.status_code == 451
+
+    # 3. Third and fourth reports
+    await client.post(
+        "/api/v1/abuse/report",
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r3@test.com"},
+    )
+    await client.post(
+        "/api/v1/abuse/report",
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r4@test.com"},
+    )
+
+    # 4. Fifth report (hits threshold 5 -> auto deleted)
+    r5 = await client.post(
+        "/api/v1/abuse/report",
+        json={"short_url_or_slug": slug, "reason": "spam", "reporter_email": "r5@test.com"},
+    )
+    assert r5.status_code == 202
+    assert r5.json()["status"] == "deleted"
+
+    # Now the link is deleted -> 404
+    check5 = await client.get(f"/{slug}", headers={"Accept": "application/json"})
+    assert check5.status_code == 404
+

@@ -119,11 +119,17 @@
                 </a>
                 <div class="p-3 bg-panel border border-divider rounded-lg font-mono text-[11px] text-slate-300 flex flex-col justify-center">
                     <span class="text-[10px] text-slate-500 uppercase tracking-wider">Doğrudan İletişim:</span>
-                    {% if operator_contact_codes %}
-                    <span class="protected-contact" data-codes="{{ operator_contact_codes | tojson }}" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                    {% else %}
-                    <span class="protected-contact" data-domain="dixtuel" data-locale="en"><span class="bot-decoy">abuse-trap-do-not-harvest@security-bot-trap.invalid</span><span class="text-slate-400">[email protected]</span></span>
-                    {% endif %}
+                    <span class="protected-contact-link cursor-pointer hover:underline text-amber-400 font-mono inline-flex items-center gap-1 mt-0.5"
+                          data-email="{{ operator_email }}"
+                          title="E-posta göndermek ve adresi kopyalamak için tıklayın"
+                          role="button" tabindex="0">
+                        <span class="protected-user">{{ operator_user }}</span>
+                        <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-anti-bot-harvest-</span>
+                        <span class="protected-at" aria-hidden="true">&#64;</span>
+                        <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-do-not-scrape-</span>
+                        <span class="protected-domain">{{ operator_domain }}</span>
+                        <i class="fa-solid fa-copy text-[10px] opacity-70 ml-1"></i>
+                    </span>
                 </div>
             </div>
             <p class="text-[11px] text-slate-400 pt-1">

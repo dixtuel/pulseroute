@@ -114,6 +114,20 @@
             <p>
                 <strong>5651 Sayılı Kanun Uyarınca Yer Sağlayıcı Bilgilendirmesi:</strong> PulseRoute yönlendirme altyapısı bir yer sağlayıcıdır. Hukuka aykırı içeriğin bildirilmesi halinde ilgili bağlantı derhal karantinaya alınır ve hedef sayfaya yönlendirme engellenir. Mükerrer ihlal gerçekleştiren kullanıcı hesapları kalıcı olarak sonlandırılır.
             </p>
+            <div class="pt-2 flex items-center justify-between text-xs font-mono text-slate-400 border-t border-divider/60">
+                <span>Acil Güvenlik / Yetkili İletişim:</span>
+                <span class="protected-contact-link cursor-pointer hover:underline text-amber-400 font-mono inline-flex items-center gap-1"
+                      data-email="{{ operator_email }}"
+                      title="E-posta göndermek ve adresi kopyalamak için tıklayın"
+                      role="button" tabindex="0">
+                    <span class="protected-user">{{ operator_user }}</span>
+                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-anti-bot-harvest-</span>
+                    <span class="protected-at" aria-hidden="true">&#64;</span>
+                    <span class="bot-decoy select-none" style="display:none;" aria-hidden="true">-do-not-scrape-</span>
+                    <span class="protected-domain">{{ operator_domain }}</span>
+                    <i class="fa-solid fa-copy text-[10px] opacity-70 ml-1"></i>
+                </span>
+            </div>
         </div>
     </div>
 
@@ -123,6 +137,7 @@
         <a href="/privacy" class="hover:text-amber-400 transition">Gizlilik Politikası</a>
         <a href="/dashboard" class="hover:text-amber-400 transition">Konsol</a>
     </footer>
+    <script src="/static/js/identity-guard.js"></script>
 
     <script>
         document.getElementById('abuseForm').addEventListener('submit', async function(e) {

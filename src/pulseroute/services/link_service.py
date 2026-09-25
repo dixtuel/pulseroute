@@ -276,6 +276,7 @@ class LinkService:
         redis_cli: Optional[aioredis.Redis],
         slug: str,
         reason: str,
+        increment_abuse_count: bool = False,
     ) -> Optional[ShortLink]:
         """
         Immediately halts redirection to a link under 5651 Sayılı Kanun and Safe Harbor notice-and-takedown.
@@ -290,7 +291,8 @@ class LinkService:
         link.is_active = False
         link.is_quarantined = True
         link.quarantine_reason = reason
-        link.abuse_reports_count = (link.abuse_reports_count or 0) + 1
+        if increment_abuse_count:
+            link.abuse_reports_count = (link.abuse_reports_count or 0) + 1
         await db.commit()
         await db.refresh(link)
 
