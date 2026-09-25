@@ -121,7 +121,7 @@ PulseRoute also ships with fallback drivers for a zero-infra local run: without 
 
 ## ⚙️ Configuration Reference
 
-Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). The ones you're most likely to actually touch:
+Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). Abuse deduplication and automated moderation thresholds are fixed in code; they are not environment settings. Links disabled by the report policy retain their moderation and appeal record rather than being immediately hard-deleted. The ones you're most likely to actually touch:
 
 | Variable | Default | What it does |
 | :--- | :--- | :--- |
@@ -129,14 +129,13 @@ Full list with defaults lives in [`deploy/.env.example`](deploy/.env.example). T
 | `REDIS_URL` | `redis://127.0.0.1:6379/0` | Cache + click-stream backend; omit entirely to run in zero-Redis fallback mode. |
 | `ANALYTICS_REDIS_URL` | same as `REDIS_URL` | Optional dedicated Redis-compatible click-stream backend. Useful for a separate temporary queue; unset keeps the current single-Redis behavior. A provider restart can lose queued events if it has no persistence. |
 | `ANALYTICS_STREAM_MAXLEN` | `2000` | Approximate maximum click events retained in the Redis Stream. Tune against the configured analytics Redis memory limit. |
-| `ABUSE_QUARANTINE_REPORT_THRESHOLD` | `5` | Distinct request fingerprints needed to quarantine a non-phishing/non-malware link. |
-| `ABUSE_AUTO_DELETE_REPORT_THRESHOLD` | `10` | Distinct report threshold for permanent link deletion; must exceed the quarantine threshold. |
-| `ABUSE_REPORT_DEDUP_WINDOW_SECONDS` | `86400` | Window during which a matching keyed request fingerprint is counted once per link (60 seconds to 7 days). |
 | `PRIMARY_DOMAIN` | `localhost:8000` | The instance's own shared domain — used for short links when no custom domain is set, and as the CNAME/verification target for custom domains. Set this to your real deployed host (e.g. `links.example.com`). |
 | `ALLOW_CUSTOM_DOMAINS` | `true` | Whether logged-in workspace owners/admins can add a custom domain at all. Set `false` to disable the feature entirely. |
 | `REQUIRE_CUSTOM_DOMAIN` | `false` | `false` = shared-instance mode, everyone (anonymous included) can create links on `PRIMARY_DOMAIN`. `true` = bring-your-own-domain mode: link creation on the shared domain is disabled entirely, every workspace must add + verify its own domain first. |
 | `ENFORCE_SAFE_BROWSING` | `true` | Rejects known-malicious/phishing destination URLs at link-creation time. |
 | `ENFORCE_EMAIL_DOMAIN_CHECK` | `true` | Rejects registration if the email's domain has no MX/A record at all (catches typo/garbage domains). Fails open on DNS timeouts. |
+| `MODERATION_OWNER_EMAIL` | unset | Optional owner login email; `/ad434mi232n` remains hidden until both moderation settings are set. |
+| `MODERATION_OWNER_PASSWORD_HASH` | unset | bcrypt password hash for the owner login; configure as a secret, never use plaintext, and keep the password within bcrypt’s 72-byte limit. |
 | `OPERATOR_CONTACT_EMAIL` | unset | Shown (bot-obfuscated) on `/privacy` as the data-controller contact for this instance. |
 | `ANALYTICS_RETENTION_DAYS` | `90` | Purge granular click telemetry logs older than N days (KVKK/GDPR storage minimization). Aggregate click totals remain intact. |
 | `GLOBAL_ADSENSE_CLIENT_ID` / `GLOBAL_ADSENSE_SLOT_ID` | unset | The single, server-wide Google AdSense unit shown on interstitial pages (see Security & Privacy above — this is not per-user). |

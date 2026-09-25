@@ -11,7 +11,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;500&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/legal.css">
+    <link rel="stylesheet" href="/static/legal.css?v=20260926-1">
 </head>
 <body>
 {% include "_language_switch.html" %}
@@ -85,10 +85,10 @@
                 </section>
                 <section class="legal-section" id="abuse">
                     <h2><span class="section-no">07</span>Abuse reports and deduplication</h2>
-                    <p>When you submit a report through the <a href="/abuse">abuse portal</a> or API, the service processes the submitted link, reason, details, reporter email, and a masked IP to review the notice and prevent misuse of the reporting channel. Reports may be retained as required to investigate incidents and meet legal obligations under Law No. 5651 and applicable data protection law.</p>
-                    <p>To prevent repeated submissions from automatically affecting a link, the service derives a keyed HMAC-SHA-256 digest from the request IP, user-agent, and language headers. The raw values used for this matching digest are not stored by this feature. The digest is pseudonymous personal data, not anonymous data: it is used for matching during the configured window (default 24 hours), then cleared on the next retention pass, which runs every 15 minutes. The digest is not used for advertising or cross-site tracking.</p>
-                    <p>Distinct reports can cause a link to be quarantined at the configured threshold; phishing or malware reports may quarantine immediately. Permanent deletion follows the higher configured threshold. Automated signals can miss harmful material or flag a link incorrectly. See <a href="/terms">Terms and Acceptable Use</a> for the report handling rules.</p>
-                    <p>The service does not continuously monitor every third-party destination, and no human operator is continuously available for immediate review. Reports are reviewed as operational capacity allows; a submission does not guarantee an immediate response or a particular decision. Applicable legal duties and valid notices or orders continue to apply. Automated controls may quarantine a link without prior human review.</p>
+                    <p>When you submit a report through the <a href="/abuse">abuse portal</a> or API, the service processes the submitted link, reason, details, reporter email, and a masked IP to record the report, apply automated safety controls, and prevent misuse of the reporting channel. The online form does not email the instance operator. Open reports and appeals are deleted 180 days after submission if they remain unresolved. Closed report and appeal records are deleted 180 days after resolution, subject to applicable legal obligations.</p>
+                    <p>To prevent repeated submissions from automatically affecting a link, the service derives a keyed HMAC-SHA-256 digest from the request IP, user-agent, and language headers. The raw values used for this matching digest are not stored by this feature. The digest is pseudonymous personal data, not anonymous data: it is used for matching during a fixed 24-hour window, then cleared during the daily retention pass. The digest is not used for advertising or cross-site tracking.</p>
+                    <p>Five distinct reports can quarantine a link; phishing or malware reports may quarantine immediately. Ten distinct reports can disable it while preserving its moderation and appeal history. Open cases are removed after 180 days if unresolved; closed report and appeal records are deleted 180 days after resolution, subject to applicable legal obligations. Automated signals can miss harmful material or flag a link incorrectly. See <a href="/terms">Terms and Acceptable Use</a> for the report handling rules.</p>
+                    <p>The service does not continuously monitor every third-party destination. A report submission does not guarantee human review, an immediate response, or a particular decision. Applicable legal duties and valid notices or orders continue to apply. Automated controls may quarantine a link without prior human review.</p>
                 </section>
             </div>
         </article>

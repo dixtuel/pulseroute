@@ -569,6 +569,14 @@
         </div>
     </div>
 
+    <div id="appealModal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-card border border-line rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-center pb-2 border-b border-line"><h3 class="font-display font-semibold text-lg" data-i18n="Appeal link restriction">Appeal link restriction</h3><button onclick="closeModal('appealModal')" aria-label="Close">×</button></div>
+            <p class="text-sm text-inkSoft" data-i18n="Explain why this link should be restored. The owner team will review the request when available.">Explain why this link should be restored. The owner team will review the request when available.</p>
+            <form id="appealForm" class="space-y-3"><input id="appealSlug" type="hidden"><input id="appealLinkId" type="hidden"><textarea id="appealDetails" required minlength="20" maxlength="3000" class="w-full min-h-32 px-3 py-2.5 rounded-lg bg-paper border border-line outline-none focus:border-rail" aria-label="Appeal details" placeholder="Add context or evidence"></textarea><p id="appealError" class="text-xs text-stamp"></p><button type="submit" class="w-full py-2.5 rounded-full bg-rail hover:bg-railDeep text-white font-medium" data-i18n="Submit appeal">Submit appeal</button></form>
+        </div>
+    </div>
+
     <div id="newWorkspaceModal" class="hidden fixed inset-0 bg-ink/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div class="bg-card border border-line rounded-2xl max-w-sm w-full p-6 space-y-4">
             <div class="flex justify-between items-center pb-2 border-b border-line">
@@ -594,13 +602,13 @@
     <!-- Footer -->
     <footer class="border-t border-line py-6 text-center text-xs text-inkSoft">
         <div class="max-w-5xl mx-auto px-5 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <span>PulseRoute • Open-source URL shortener</span>
+            <span class="pr-footer-locale" data-no-i18n>PulseRoute • <span data-footer-locale="tr">Açık kaynak bağlantı kısaltıcı</span><span data-footer-locale="en">Open-source URL shortener</span></span>
             <div class="flex items-center gap-4">
                 <a href="https://github.com/dixtuel/pulseroute" target="_blank" class="hover:text-ink transition"><i class="fa-brands fa-github mr-1"></i>GitHub</a>
-                <a href="/privacy" class="hover:text-ink transition">Privacy</a>
-                <a href="/terms" class="hover:text-ink transition">Terms</a>
-                <a href="/accessibility" class="hover:text-ink transition">Accessibility</a>
-                <a href="/healthz" target="_blank" class="hover:text-ink transition">Status</a>
+                <a href="/privacy" class="hover:text-ink transition"><span class="pr-footer-locale" data-no-i18n><span data-footer-locale="tr">Gizlilik</span><span data-footer-locale="en">Privacy</span></span></a>
+                <a href="/terms" class="hover:text-ink transition"><span class="pr-footer-locale" data-no-i18n><span data-footer-locale="tr">Kullanım şartları</span><span data-footer-locale="en">Terms</span></span></a>
+                <a href="/accessibility" class="hover:text-ink transition"><span class="pr-footer-locale" data-no-i18n><span data-footer-locale="tr">Erişilebilirlik</span><span data-footer-locale="en">Accessibility</span></span></a>
+                <a href="/healthz" target="_blank" class="hover:text-ink transition"><span class="pr-footer-locale" data-no-i18n><span data-footer-locale="tr">Durum</span><span data-footer-locale="en">Status</span></span></a>
             </div>
         </div>
     </footer>
@@ -842,6 +850,27 @@
             } catch (e) { alert(window.PulseRouteI18n.translate('Could not reach the server. Try again.')); }
         });
 
+        window.openAppeal = function(linkId) {
+            const link = allLinks.find(item => item.id === linkId);
+            if (!link) return;
+            document.getElementById('appealSlug').value = link.slug;
+            document.getElementById('appealLinkId').value = link.id;
+            document.getElementById('appealDetails').value = '';
+            document.getElementById('appealError').textContent = '';
+            openModal('appealModal');
+        };
+
+        document.getElementById('appealForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const details = document.getElementById('appealDetails').value.trim();
+            try {
+                const response = await fetch('/api/v1/moderation/appeals', { method: 'POST', headers: getAuthHeaders(), body: JSON.stringify({ link_id: Number(document.getElementById('appealLinkId').value), details }) });
+                if (!response.ok) { const data = await response.json(); throw new Error(data.detail || 'Could not submit appeal'); }
+                closeModal('appealModal');
+                alert(window.PulseRouteI18n.translate('Appeal submitted for review.'));
+            } catch (error) { document.getElementById('appealError').textContent = window.PulseRouteI18n.translateOr(error.message, 'Could not submit appeal.'); }
+        });
+
         async function loadLinks() {
             if (!getToken() || !currentWorkspaceId) return;
             try {
@@ -881,7 +910,8 @@
                     <div class="hidden sm:flex items-center gap-2 shrink-0 text-xs text-inkSoft">
                         <i class="fa-solid fa-arrow-pointer text-[10px]"></i> ${link.total_clicks ?? 0}
                     </div>
-                    ${statusBadge}
+                    ${link.moderation_status && link.moderation_status !== 'active' ? `<span class="px-2 py-0.5 rounded-full bg-stamp/10 text-stamp text-[11px] font-medium whitespace-nowrap">${link.moderation_status}</span>` : statusBadge}
+                    ${link.moderation_status && link.moderation_status !== 'active' ? `<button onclick="openAppeal(${link.id})" class="text-rail text-xs font-medium px-2 py-1" data-i18n="Appeal">Appeal</button>` : ''}
                     <div class="flex items-center gap-1 shrink-0">
                         <a href="/api/v1/qr?data=${encodeURIComponent(link.short_url)}&format=svg" target="_blank" class="text-inkSoft hover:text-rail p-1.5 transition" title="QR code">
                             <i class="fa-solid fa-qrcode"></i>

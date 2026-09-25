@@ -59,6 +59,8 @@ class LinkResponse(BaseModel):
     total_clicks: int
     public_stats: bool
     is_active: bool
+    is_quarantined: bool = False
+    moderation_status: str = "active"
     created_at: datetime
     expires_at: datetime | None = None
 

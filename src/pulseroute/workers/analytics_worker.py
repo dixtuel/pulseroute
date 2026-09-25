@@ -3,12 +3,14 @@ import time
 from datetime import UTC, datetime, timedelta
 
 import structlog
-from sqlalchemy import delete, func, select, update
+from sqlalchemy import and_, delete, func, or_, select, update
 
 from pulseroute.core.config import settings
 from pulseroute.core.database import async_session_maker
+from pulseroute.core.moderation_policy import CLOSED_REPORT_RETENTION_DAYS, REPORT_DEDUP_WINDOW_SECONDS
 from pulseroute.core.redis import get_analytics_redis, get_redis
 from pulseroute.models.abuse import AbuseReport
+from pulseroute.models.appeal import ModerationAction, ModerationAppeal
 from pulseroute.models.click import ClickEvent
 from pulseroute.models.link import ShortLink
 from pulseroute.services.webhook_service import WebhookService
@@ -61,6 +63,35 @@ async def purge_expired_reporter_fingerprints(window_seconds: int) -> int:
     except Exception as e:
         logger.warning("abuse_fingerprint_retention_failed", error=type(e).__name__)
         return 0
+
+async def purge_closed_moderation_records() -> tuple[int, int]:
+    """Purge closed abuse/appeal details after the fixed retention window; pending cases remain."""
+    cutoff = datetime.now(UTC) - timedelta(days=CLOSED_REPORT_RETENTION_DAYS)
+    try:
+        async with async_session_maker() as db:
+            reports = await db.execute(
+                delete(AbuseReport).where(
+                    or_(
+                        and_(AbuseReport.resolved_at.is_not(None), AbuseReport.resolved_at < cutoff),
+                        and_(AbuseReport.resolved_at.is_(None), AbuseReport.created_at < cutoff),
+                    )
+                )
+            )
+            appeals = await db.execute(
+                delete(ModerationAppeal).where(
+                    or_(
+                        and_(ModerationAppeal.resolved_at.is_not(None), ModerationAppeal.resolved_at < cutoff),
+                        and_(ModerationAppeal.resolved_at.is_(None), ModerationAppeal.created_at < cutoff),
+                    )
+                )
+            )
+            await db.execute(delete(ModerationAction).where(ModerationAction.created_at < cutoff))
+            await db.commit()
+            return reports.rowcount or 0, appeals.rowcount or 0
+    except Exception as exc:
+        logger.warning("moderation_retention_failed", error=type(exc).__name__)
+        return 0, 0
+
 
 async def run_analytics_batch_worker(
     batch_size: int = 100,
@@ -130,7 +161,6 @@ async def run_analytics_batch_worker(
 
     current_idle = interval_seconds
     last_retention_purge_ts = 0.0
-    last_fingerprint_purge_ts = 0.0
     recover_pending = True
 
     while True:
@@ -140,9 +170,9 @@ async def run_analytics_batch_worker(
             if now_ts - last_retention_purge_ts >= 86400:
                 last_retention_purge_ts = now_ts
                 await purge_expired_click_events(settings.ANALYTICS_RETENTION_DAYS)
-            if now_ts - last_fingerprint_purge_ts >= 900:
-                last_fingerprint_purge_ts = now_ts
-                await purge_expired_reporter_fingerprints(settings.ABUSE_REPORT_DEDUP_WINDOW_SECONDS)
+                # Run moderation retention in the same daily window to let Neon scale to zero between passes.
+                await purge_expired_reporter_fingerprints(REPORT_DEDUP_WINDOW_SECONDS)
+                await purge_closed_moderation_records()
 
             _new_click_event.clear()
             entries = []

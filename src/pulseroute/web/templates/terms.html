@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/legal.css">
+    <link rel="stylesheet" href="/static/legal.css?v=20260926-1">
 </head>
 <body>
 {% include "_language_switch.html" %}
@@ -69,8 +69,8 @@
                     </section>
                     <section class="legal-section" id="rate-limits">
                         <h2><span class="section-no">04</span>Rate limits and abuse response</h2>
-                        <p>Sliding-window rate limits protect the service from automated abuse. Repeated failed sign-ins trigger a 10-minute IP lockout. Abuse reports about phishing or malware can quarantine a link immediately. Other report types are counted once per reporter signal during the deduplication window; {{ abuse_quarantine_threshold }} distinct reports quarantine a link, and {{ abuse_delete_threshold }} can result in permanent deletion.</p>
-                        <p>Automated actions may be taken before a human review. Reports are reviewed as operational capacity allows, and immediate review is not guaranteed. Accounts and workspaces found to repeatedly violate these terms may be closed.</p>
+                        <p>Sliding-window rate limits protect the service from automated abuse. Repeated failed sign-ins trigger a 10-minute IP lockout. Abuse reports about phishing or malware can quarantine a link immediately. Other report types are counted once per reporter signal during the fixed 24-hour deduplication window; 5 distinct reports can quarantine a link and 10 can disable it. A disabled link record remains available for moderation and an owner appeal; it is not immediately erased from the database.</p>
+                        <p>Reports submitted through the form are recorded in the service database; the form does not email the operator. Human review or a response within a specific timeframe is not guaranteed. Automated actions may be taken without prior human review. Accounts and workspaces found to repeatedly violate these terms may be closed.</p>
                     </section>
                     <section class="legal-section" id="liability">
                         <h2><span class="section-no">05</span>Warranty and limitation of liability</h2>
@@ -79,7 +79,7 @@
                     <section class="legal-section" id="reporting">
                         <h2><span class="section-no">06</span>5651 notice and takedown</h2>
                         <p><strong>Hosting provider notice:</strong> Under Article 5 of Turkish Law No. 5651, a hosting provider is not required to monitor hosted content or investigate whether an unlawful activity is taking place. Duties to act on notices or orders that legally require action remain in force.</p>
-                        <p>This service is not staffed around the clock for manual review. We cannot promise an immediate human response or a particular outcome for every report. Automated risk signals may block or quarantine a link without prior human review; they can miss harmful material or flag a link incorrectly. This does not limit any action required by applicable law.</p>
+                        <p>The online form records a report in the service database and does not email the operator. This service does not promise a human review, an immediate response, or a particular outcome for every report. Automated risk signals may block or quarantine a link without prior human review; they can miss harmful material or flag a link incorrectly. This does not limit any action required by applicable law.</p>
                         <p>Phishing, malware, copyright, or unlawful-content notices can be sent through the online form or directly to the data controller:</p>
                         <p><a href="/abuse">Open the abuse report form</a></p>
                         <div class="legal-contact">

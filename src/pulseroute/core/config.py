@@ -1,6 +1,6 @@
 from typing import Optional
 
-from pydantic import Field, model_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from pulseroute.common.contact import PUBLIC_CONTACT_EMAIL, PUBLIC_OPERATOR_NAME
@@ -25,11 +25,8 @@ class Settings(BaseSettings):
     BING_SITE_VERIFICATION: Optional[str] = None  # Bing Webmaster Tools meta tag content
     YANDEX_SITE_VERIFICATION: Optional[str] = None  # Yandex Webmaster meta tag content
     ENFORCE_EMAIL_DOMAIN_CHECK: bool = True  # Reject registration if the email's domain has no MX/A record at all.
-
-    # Abuse Thresholds (Notice & Takedown automated quarantine/deletion)
-    ABUSE_QUARANTINE_REPORT_THRESHOLD: int = Field(default=5, ge=1)
-    ABUSE_AUTO_DELETE_REPORT_THRESHOLD: int = Field(default=10, ge=1)
-    ABUSE_REPORT_DEDUP_WINDOW_SECONDS: int = Field(default=86400, ge=60, le=604800)
+    MODERATION_OWNER_EMAIL: Optional[str] = None
+    MODERATION_OWNER_PASSWORD_HASH: Optional[str] = None  # bcrypt hash; never store the password itself.
 
     # Database & Cache
     DATABASE_URL: str = "sqlite+aiosqlite:///./pulseroute.db"
@@ -68,12 +65,6 @@ class Settings(BaseSettings):
 
     # Data Retention & Privacy (KVKK / GDPR Compliance & Database Storage Protection)
     ANALYTICS_RETENTION_DAYS: int = 90  # Purge raw ClickEvent logs older than 90 days; total_clicks aggregate remains permanent
-
-    @model_validator(mode="after")
-    def validate_abuse_thresholds(self):
-        if self.ABUSE_AUTO_DELETE_REPORT_THRESHOLD <= self.ABUSE_QUARANTINE_REPORT_THRESHOLD:
-            raise ValueError("ABUSE_AUTO_DELETE_REPORT_THRESHOLD must be greater than the quarantine threshold")
-        return self
 
 
 

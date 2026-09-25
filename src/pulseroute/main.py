@@ -291,7 +291,7 @@ async def get_robots_txt():
     domain = settings.PRIMARY_DOMAIN
     sitemap_url = f"https://{domain}/sitemap.xml" if domain else "/sitemap.xml"
     return PlainTextResponse(
-        content=f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /internal/\n\nSitemap: {sitemap_url}\n",
+        content=f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /internal/\nDisallow: /ad434mi232n\n\nSitemap: {sitemap_url}\n",
         media_type="text/plain",
     )
 
@@ -340,6 +340,13 @@ async def yandex_verification(token: str):
     raise HTTPException(status_code=404, detail="Not Found")
 
 
+@app.get("/ad434mi232n", response_class=HTMLResponse, include_in_schema=False)
+async def render_moderation(request: Request):
+    if not (settings.MODERATION_OWNER_EMAIL and settings.MODERATION_OWNER_PASSWORD_HASH):
+        raise HTTPException(status_code=404, detail="Not Found")
+    return templates.TemplateResponse(request=request, name="moderation.html", context={})
+
+
 @app.get("/dashboard", response_class=HTMLResponse, tags=["Web Dashboard"])
 async def render_dashboard(request: Request):
     return templates.TemplateResponse(
@@ -385,8 +392,8 @@ async def render_terms(request: Request):
     ctx = {
         "adsense_client_id": settings.GLOBAL_ADSENSE_CLIENT_ID,
         "primary_domain": settings.PRIMARY_DOMAIN,
-        "abuse_quarantine_threshold": settings.ABUSE_QUARANTINE_REPORT_THRESHOLD,
-        "abuse_delete_threshold": settings.ABUSE_AUTO_DELETE_REPORT_THRESHOLD,
+        "abuse_quarantine_threshold": 5,
+        "abuse_delete_threshold": 10,
         **_get_operator_context(),
     }
     return templates.TemplateResponse(request=request, name="terms.html", context=ctx)
@@ -408,8 +415,6 @@ async def render_abuse(request: Request, slug: str | None = None, link: str | No
     ctx = {
         "prefill_slug": prefill,
         "primary_domain": settings.PRIMARY_DOMAIN,
-        "abuse_quarantine_threshold": settings.ABUSE_QUARANTINE_REPORT_THRESHOLD,
-        "abuse_delete_threshold": settings.ABUSE_AUTO_DELETE_REPORT_THRESHOLD,
         **_get_operator_context(),
     }
     return templates.TemplateResponse(request=request, name="abuse.html", context=ctx)

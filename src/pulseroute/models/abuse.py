@@ -16,6 +16,7 @@ class AbuseReport(Base):
         Index("ix_abuse_reports_slug", "slug"),
         Index("ix_abuse_reports_created_at", "created_at"),
         Index("ix_abuse_reports_slug_fp", "slug", "reporter_fingerprint"),
+        Index("ix_abuse_reports_review_page", "review_status", "id"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -28,7 +29,9 @@ class AbuseReport(Base):
     reporter_email: Mapped[str] = mapped_column(String(255), nullable=False)
     reporter_ip: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Anonymized / masked client IP
     reporter_fingerprint: Mapped[str | None] = mapped_column(String(64), nullable=True)  # Salted HMAC-SHA256 fingerprint
-    status: Mapped[str] = mapped_column(String(50), default="quarantined")  # quarantined, pending, resolved, dismissed
+    status: Mapped[str] = mapped_column(String(50), default="pending")  # automated action taken
+    review_status: Mapped[str] = mapped_column(String(20), default="new", nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(UTC))
 
     link: Mapped[Optional["ShortLink"]] = relationship("ShortLink", back_populates="abuse_reports")

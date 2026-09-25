@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class ShortLink(Base):
     __tablename__ = "short_links"
-    __table_args__ = (Index("ix_domain_slug", "domain_id", "slug", unique=True),)
+    __table_args__ = (Index("ix_domain_slug", "domain_id", "slug", unique=True), Index("ix_short_links_moderation_id", "moderation_status", "id"))
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     workspace_id: Mapped[int | None] = mapped_column(
@@ -58,6 +58,9 @@ class ShortLink(Base):
     is_quarantined: Mapped[bool] = mapped_column(Boolean, default=False)
     quarantine_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     abuse_reports_count: Mapped[int] = mapped_column(Integer, default=0)
+    moderation_status: Mapped[str] = mapped_column(String(20), default="active", nullable=False)
+    moderation_was_active: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    moderation_updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # UTM Parameters
     utm_source: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -70,4 +73,4 @@ class ShortLink(Base):
     workspace: Mapped["Workspace | None"] = relationship("Workspace", back_populates="links")
     custom_domain: Mapped["CustomDomain | None"] = relationship("CustomDomain", back_populates="links")
     clicks: Mapped[list["ClickEvent"]] = relationship("ClickEvent", back_populates="link", cascade="all, delete-orphan")
-    abuse_reports: Mapped[list["AbuseReport"]] = relationship("AbuseReport", back_populates="link", cascade="all, delete-orphan")
+    abuse_reports: Mapped[list["AbuseReport"]] = relationship("AbuseReport", back_populates="link")

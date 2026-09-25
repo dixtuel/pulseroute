@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from typing import List, Optional
 
 import orjson
@@ -27,6 +28,21 @@ class LinkService:
             return None
         result = await db.execute(select(CustomDomain.domain).where(CustomDomain.id == link.domain_id))
         return result.scalar_one_or_none()
+
+    @staticmethod
+    async def invalidate_link_cache(db: AsyncSession, redis_cli: Optional[aioredis.Redis], link: ShortLink) -> None:
+        domain_name = await LinkService._link_domain_name(db, link)
+        try:
+            from pulseroute.services.redirect_service import RedirectService
+
+            RedirectService.invalidate_l1(domain_name, link.slug)
+        except Exception:
+            pass
+        if redis_cli:
+            try:
+                await redis_cli.delete(LinkService._build_cache_key(domain_name, link.slug))
+            except Exception:
+                pass
 
     @staticmethod
     def serialize_cache_payload(link: ShortLink) -> dict:
@@ -288,8 +304,12 @@ class LinkService:
         if not link:
             return None
 
+        if link.moderation_was_active is None:
+            link.moderation_was_active = link.is_active
         link.is_active = False
         link.is_quarantined = True
+        link.moderation_status = "quarantined"
+        link.moderation_updated_at = datetime.now(UTC)
         link.quarantine_reason = reason
         if increment_abuse_count:
             link.abuse_reports_count = (link.abuse_reports_count or 0) + 1

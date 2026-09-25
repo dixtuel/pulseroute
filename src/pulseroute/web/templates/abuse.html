@@ -10,7 +10,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/legal.css">
+    <link rel="stylesheet" href="/static/legal.css?v=20260926-1">
 </head>
 <body>
 {% include "_language_switch.html" %}
@@ -25,34 +25,37 @@
     </header>
 
     <main id="report-main" class="abuse-layout">
-        <aside class="abuse-rail" aria-label="Bildirim bilgisi">
-            <p class="legal-kicker">GÜVENLİK · BİLDİRİM</p>
-            <h2>Şüpheli bağlantıyı bize iletin.</h2>
-            <p>PulseRoute kısa bağlantısıyla yönlendirilen bir hedefte oltalama, zararlı yazılım, telif ihlali veya başka bir güvenlik sorunu gördüyseniz formu doldurun.</p>
-            <div class="abuse-rule">
-                <span class="abuse-rule-mark" aria-hidden="true">!</span>
-                <p><strong>Oltalama ve zararlı yazılım</strong> bildirimleri bağlantıyı hemen karantinaya alabilir. Diğer bildirimler inceleme kuyruğuna alınır; {{ abuse_quarantine_threshold }} farklı bildirim sinyalinde karantina, {{ abuse_delete_threshold }} sinyalde kalıcı silme uygulanabilir.</p>
-            </div>
-            <p class="abuse-aside-note">Bildiriminiz değerlendirilirken verdiğiniz e-posta adresi gerekirse sizinle iletişim kurmak için kullanılır.</p>
-        </aside>
+        <section class="abuse-intro" aria-labelledby="report-title">
+            <p class="abuse-eyebrow"><span class="abuse-signal" aria-hidden="true"></span>GÜVENLİK MERKEZİ <span>·</span> BİLDİRİM</p>
+            <h1 id="report-title">Şüpheli bir bağlantı mı buldunuz?</h1>
+            <p class="abuse-lede">PulseRoute kısa bağlantısıyla ulaşılan bir sayfada oltalama, zararlı yazılım, telif ihlali veya başka bir güvenlik sorunu varsa bize bildirin.</p>
 
-        <article class="abuse-sheet" aria-labelledby="report-title">
+            <section class="abuse-process" aria-labelledby="process-title">
+                <h2 id="process-title">Bildiriminiz nasıl işlenir?</h2>
+                <ol>
+                    <li><span class="process-icon process-icon-stop" aria-hidden="true">↗</span><div><strong>Oltalama ve zararlı yazılım</strong><p>Bu bildirimler bağlantıyı hemen karantinaya alabilir.</p></div></li>
+                    <li><span class="process-icon" aria-hidden="true">≋</span><div><strong>Diğer ihlal türleri</strong><p>Sistem güvenlik sinyallerini ve bildirimleri değerlendirip gerekirse bağlantıyı otomatik karantinaya alabilir veya kaldırabilir.</p></div></li>
+                </ol>
+            </section>
+
+            <p class="abuse-human-note"><span aria-hidden="true">i</span><span><strong>Bildiriminiz sisteme kaydedilir.</strong> İnsan incelemesi veya belirli bir sürede yanıt garanti edilmez; sistem bazı bağlantıları otomatik olarak karantinaya alabilir ya da kaldırabilir.</span></p>
+        </section>
+
+        <article class="abuse-sheet" aria-labelledby="form-title">
             <header class="abuse-hero">
-                <p class="legal-kicker">5651 · UYAR-KALDIR</p>
-                <h1 id="report-title">Kötüye kullanım bildirimi</h1>
-                <p>İncelemeye başlayabilmemiz için kısa bağlantıyı ve ihlal türünü belirtin.</p>
-                <span class="legal-stamp">GÜVENLİK BİLDİRİMİ</span>
+                <div><p class="form-kicker">GÜVENLİK BİLDİRİMİ <span>·</span> 5651</p><h2 id="form-title">Bildirim formu</h2></div>
+                <p>Bağlantıyı ve ihlal türünü bildirimin kaydedilmesi için belirtin.</p>
             </header>
 
             <form id="abuseForm" class="abuse-form" novalidate>
                 <div class="abuse-field">
-                    <label for="linkInput"><span class="field-index">01</span>Kısa bağlantı veya kod <span aria-hidden="true">*</span></label>
+                    <label for="linkInput">Kısa bağlantı veya kod <span aria-hidden="true">*</span></label>
                     <input type="text" id="linkInput" required maxlength="2048" autocomplete="url" placeholder="ps.sely.tr/ornek-kod veya ornek-kod" value="{{ prefill_slug or '' }}" aria-describedby="linkHint">
                     <p class="field-hint" id="linkHint">Bildirilecek PulseRoute bağlantısını yapıştırın.</p>
                 </div>
 
                 <div class="abuse-field">
-                    <label for="reasonSelect"><span class="field-index">02</span>İhlal türü <span aria-hidden="true">*</span></label>
+                    <label for="reasonSelect">İhlal türü <span aria-hidden="true">*</span></label>
                     <select id="reasonSelect" required>
                         <option value="" disabled selected>Bir kategori seçin</option>
                         <option value="phishing">Oltalama veya sahte giriş sayfası</option>
@@ -62,17 +65,17 @@
                         <option value="spam">İstenmeyen toplu ileti / spam</option>
                         <option value="other">Diğer güvenlik ihlali</option>
                     </select>
-                    <p class="field-hint">Oltalama ve zararlı yazılım bildirimleri anında karantinaya alınır.</p>
+                    <p class="field-hint">Oltalama ve zararlı yazılım bildirimleri bağlantıyı hemen karantinaya alabilir.</p>
                 </div>
 
                 <div class="abuse-field">
-                    <label for="emailInput"><span class="field-index">03</span>İletişim e-posta adresiniz <span aria-hidden="true">*</span></label>
+                    <label for="emailInput">İletişim e-posta adresiniz <span aria-hidden="true">*</span></label>
                     <input type="email" id="emailInput" required maxlength="255" autocomplete="email" placeholder="guvenlik@kurumunuz.com">
-                    <p class="field-hint">Ek bilgi veya inceleme sonucu için sizinle iletişim kurabiliriz.</p>
+                    <p class="field-hint">E-posta adresiniz bildirim kaydına eklenir; otomatik e-posta gönderilmez.</p>
                 </div>
 
                 <div class="abuse-field">
-                    <label for="detailsInput"><span class="field-index">04</span>Açıklama veya delil <span class="optional-label">İsteğe bağlı</span></label>
+                    <label for="detailsInput">Açıklama veya delil <span class="optional-label">İsteğe bağlı</span></label>
                     <textarea id="detailsInput" rows="4" maxlength="2000" placeholder="Gördüğünüz sorunu ve varsa ilgili ayrıntıları açıklayın."></textarea>
                     <p class="field-hint">Parola, ödeme bilgisi veya başka hassas kişisel veri eklemeyin.</p>
                 </div>
@@ -85,9 +88,13 @@
             </form>
 
             <footer class="abuse-card-footer">
-                <p><strong>Yer sağlayıcı bildirimi</strong> · 5651 sayılı Kanun’un 5. maddesi yer sağlayıcı için içerikleri sürekli izleme veya hukuka aykırılığı araştırma yükümlülüğü öngörmez. Kanundaki geçerli bildirim ve kararlar üzerine doğan yükümlülükler saklıdır.</p>
-                <p>Bu hizmette 7/24 insan incelemesi yoktur; anında yanıt veya belirli bir sonuç garanti edilemez. Otomatik güvenlik sinyalleri insan incelemesinden önce karantina uygulayabilir; zararlı içerik gözden kaçabilir veya bağlantı yanlış işaretlenebilir. Bildirim, zorunlu hukuki süreçlerin yerine geçmez.</p>
-                <p>Otomatik eşikler kişi doğrulaması değildir; tek başına kesin hukuki karar sayılmaz.</p>
+                <details class="abuse-disclosure">
+                    <summary>İşleyiş ve yasal çerçeve</summary>
+                    <div class="disclosure-copy">
+                        <p><strong>Yer sağlayıcı bildirimi.</strong> 5651 sayılı Kanun’un 5. maddesi yer sağlayıcı için içerikleri sürekli izleme veya hukuka aykırılığı araştırma yükümlülüğü öngörmez. Kanundaki geçerli bildirim ve kararlar üzerine doğan yükümlülükler saklıdır.</p>
+                        <p>Otomatik güvenlik sinyalleri karantina uygulayabilir. Zararlı içerik gözden kaçabilir veya bağlantı yanlış işaretlenebilir. Otomatik eşikler bildirim yapan kişinin kimliğini doğrulamaz ve tek başına kesin hukuki karar sayılmaz. Bildirim, zorunlu hukuki süreçlerin yerine geçmez.</p>
+                    </div>
+                </details>
                 <div class="abuse-contact-row">
                     <span>Yetkili iletişim</span>
                     <span class="protected-contact-link" data-email="{{ operator_email }}" title="E-posta göndermek veya adresi kopyalamak için seçin" role="button" tabindex="0">

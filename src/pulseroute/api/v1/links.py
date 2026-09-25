@@ -44,6 +44,8 @@ def _serialize_link(link: ShortLink, request: Optional[Request], domain_name: Op
         "total_clicks": link.total_clicks,
         "public_stats": link.public_stats,
         "is_active": link.is_active,
+        "is_quarantined": link.is_quarantined,
+        "moderation_status": link.moderation_status,
         "created_at": link.created_at,
         "expires_at": link.expires_at,
     }

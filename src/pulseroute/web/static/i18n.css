@@ -20,6 +20,9 @@ html.i18n-pending body { visibility: hidden; }
 .pr-language-switch [aria-current="true"], .pr-language-switch .is-current { color: #146D6C; }
 .pr-language-switch:focus-visible { outline: 3px solid #B9861E; outline-offset: 2px; }
 .pr-language-divider { color: #B7AA82; }
+.pr-footer-locale [data-footer-locale] { display: none; }
+html[data-locale="tr"] .pr-footer-locale [data-footer-locale="tr"],
+html:not([data-locale="tr"]) .pr-footer-locale [data-footer-locale="en"] { display: inline; }
 .legal-topbar { padding-right: 5.5rem; }
 .pr-header-inner { padding-right: 5.5rem !important; }
 @media (max-width: 600px) {

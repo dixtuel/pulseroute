@@ -80,26 +80,72 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # Ensure new columns exist on existing databases without requiring external migration tooling
-        for col_def in [
-            ("short_links", "is_quarantined", "BOOLEAN DEFAULT FALSE"),
-            ("short_links", "quarantine_reason", "VARCHAR(255)"),
-            ("short_links", "abuse_reports_count", "INTEGER DEFAULT 0"),
-        ]:
-            try:
-                await conn.execute(text(f"ALTER TABLE {col_def[0]} ADD COLUMN {col_def[1]} {col_def[2]}"))
-            except Exception:
-                pass
 
-        # Idempotent production migration for databases created before reporter fingerprints existed.
+        link_columns = await conn.run_sync(
+            lambda sync_conn: {column["name"] for column in inspect(sync_conn).get_columns("short_links")}
+        )
+        moderation_backfill_needed = (
+            "moderation_status" not in link_columns or "moderation_was_active" not in link_columns
+        )
+        for column, definition in (
+            ("is_quarantined", "BOOLEAN DEFAULT FALSE"),
+            ("quarantine_reason", "VARCHAR(255)"),
+            ("abuse_reports_count", "INTEGER DEFAULT 0"),
+            ("moderation_status", "VARCHAR(20) DEFAULT 'active' NOT NULL"),
+            ("moderation_was_active", "BOOLEAN"),
+            ("moderation_updated_at", "TIMESTAMP WITH TIME ZONE"),
+        ):
+            if column not in link_columns:
+                await conn.execute(text(f"ALTER TABLE short_links ADD COLUMN {column} {definition}"))
+
         abuse_columns = await conn.run_sync(
             lambda sync_conn: {column["name"] for column in inspect(sync_conn).get_columns("abuse_reports")}
         )
-        if "reporter_fingerprint" not in abuse_columns:
+        reporter_fingerprint_missing = "reporter_fingerprint" not in abuse_columns
+        if reporter_fingerprint_missing:
             await conn.execute(text("ALTER TABLE abuse_reports ADD COLUMN reporter_fingerprint VARCHAR(64)"))
-        await conn.execute(
-            text(
-                "CREATE INDEX IF NOT EXISTS ix_abuse_reports_slug_fp "
-                "ON abuse_reports (slug, reporter_fingerprint)"
+        review_status_missing = "review_status" not in abuse_columns
+        resolved_at_missing = "resolved_at" not in abuse_columns
+        if review_status_missing:
+            await conn.execute(
+                text("ALTER TABLE abuse_reports ADD COLUMN review_status VARCHAR(20) DEFAULT 'new' NOT NULL")
             )
+        if resolved_at_missing:
+            await conn.execute(text("ALTER TABLE abuse_reports ADD COLUMN resolved_at TIMESTAMP WITH TIME ZONE"))
+
+        if review_status_missing:
+            await conn.execute(
+                text(
+                    "UPDATE abuse_reports SET review_status = CASE "
+                    "WHEN status = 'dismissed' THEN 'rejected' "
+                    "WHEN status IN ('resolved', 'deleted', 'removed') THEN 'approved' "
+                    "ELSE 'new' END"
+                )
+            )
+        if review_status_missing or resolved_at_missing:
+            await conn.execute(
+                text(
+                    "UPDATE abuse_reports SET resolved_at = CURRENT_TIMESTAMP "
+                    "WHERE review_status IN ('approved', 'rejected') AND resolved_at IS NULL"
+                )
+            )
+
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_abuse_reports_review_page ON abuse_reports (review_status, id)")
         )
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_abuse_reports_slug_fp ON abuse_reports (slug, reporter_fingerprint)")
+        )
+        await conn.execute(
+            text("CREATE INDEX IF NOT EXISTS ix_short_links_moderation_id ON short_links (moderation_status, id)")
+        )
+
+        if moderation_backfill_needed:
+            await conn.execute(
+                text(
+                    "UPDATE short_links SET moderation_status = "
+                    "CASE WHEN moderation_status = 'active' THEN 'quarantined' ELSE moderation_status END, "
+                    "moderation_was_active = FALSE WHERE is_quarantined = TRUE "
+                    "AND (moderation_status = 'active' OR moderation_was_active IS NULL)"
+                )
+            )
